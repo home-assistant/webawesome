@@ -244,7 +244,8 @@ export async function build(options = {}) {
 
     const unbundledConfig = {
       ...config,
-      splitting: true,
+      bundle: false,
+      splitting: false,
       treeShaking: true,
       // Don't inline libraries like Lit etc.
       packages: 'external',
