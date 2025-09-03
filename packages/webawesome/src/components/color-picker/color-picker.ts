@@ -490,7 +490,7 @@ export default class WaColorPicker extends WebAwesomeFormAssociatedElement {
     const target = event.target as HTMLInputElement;
     const oldValue = this.value;
 
-    // Prevent the `<wa-input>` element's `wa-change` event from bubbling up
+    // Prevent the `<wa-input>` element's `change` event from bubbling up
     event.stopPropagation();
 
     if (this.input.value) {
@@ -1327,6 +1327,10 @@ export default class WaColorPicker extends WebAwesomeFormAssociatedElement {
         distance="0"
         skidding="0"
         sync="width"
+        flip
+        flip-fallback-strategy="best-fit"
+        shift
+        shift-padding="10"
         aria-disabled=${this.disabled ? 'true' : 'false'}
         @wa-after-show=${this.handleAfterShow}
         @wa-after-hide=${this.handleAfterHide}

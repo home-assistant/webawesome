@@ -10,10 +10,30 @@ Components with the <wa-badge variant="warning">Experimental</wa-badge> badge sh
 
 ## Next
 
+### Bug Fixes and Improvements {data-no-outline}
+
+- 🚨 BREAKING: Updated `<wa-icon>` to use Font Awesome 7 [pr:1222]
+  - Added the `auto-width` attribute to automatically size icons, since FA7 is fixed-width by default now
+  - Improved support for duotone icons in `<wa-icon>`, including custom colors, custom opacity, and opacity swapping
+  - Removed the `fixed-width` attribute as it's now the default behavior
+- 🚨 BREAKING: Renamed the `icon-position` attribute to `icon-placement` in `<wa-details>` [discuss:1340]
+- 🚨 BREAKING: Removed the `size` attribute from `<wa-button-group>` as it only set the initial size and gets out of sync when buttons are updated (apply a `size` to each button instead)
+- Added the Hindi translation [pr:1307]
+- Added `--show-duration` and `--hide-duration` to `<wa-select>` [issue:1281]
 - Fixed incorrectly named exported tooltip parts in `<wa-slider>` [pr:1277]
 - Fixed a bug in `<wa-dropdown>` that caused menus to overflow the viewport instead of resizing [issue:1267]
 - Fixed a bug in `<wa-dropdown>` that prevented keyboard selection of items when nested in shadow roots [issue:1270]
 - Fixed a bug in `<wa-dropdown>` that prevented items passed in from slots from being detected [issue:1271]
+- Fixed a bug in JSX typings that prevented the types file from being exported [pr:1295]
+- Fixed a bug in JSX typings that generated the incorrect component imports [issue:1303]
+- Fixed a bug in `<wa-slider>` that prevented the thumb from receiving focus when clicking/tapping [issue:1312]
+- Fixed a bug in `<wa-scroller>` that caused the shadow to appear below relatively-positioned elements [issue:1326]
+- Fixed a bug in `<wa-details>` that caused it to expand/collapse when clicking on interactive elements in the summary [issue:1252]
+- Fixed `<wa-button>` to have `static` positioning by default and `relative` positioning only when used with `<wa-badge>` [pr:1346]
+- Fixed spacing in `<wa-input>` when both clear and password toggle icons are present [issue:1325]
+- Fixed a bug in `<wa-radio-group>` and `<wa-radio>` where changing appearances dynamically would render incorrectly [issue:1178]
+- Fixed a bug in `<wa-input>` that prevented the value from changing when assigning non-string values to `value` [issue:1323]
+- Fixed a bug in `<wa-color-picker>` that prevent the picker from staying in the viewport
 
 ## 3.0.0-beta.4
 
