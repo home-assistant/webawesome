@@ -215,7 +215,7 @@ export async function build(options = {}) {
       });
 
       // Create a JS module that exports the CSS as text
-      const jsContent = `export default ${JSON.stringify(transformedCss.code)};`;
+      const jsContent = `import { css } from 'lit';\nexport default css\`${transformedCss.code}\`;\n`;
 
       // Write to dist directory with .css.js extension to avoid conflicts
       const outputPath = join(getDistDir(), relative(join(rootDir, 'src'), cssFile)) + '.js';
