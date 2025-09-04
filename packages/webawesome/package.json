@@ -44,10 +44,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/shoelace-style/webawesome.git"
+    "url": "git+https://github.com/home-assistant/webawesome.git"
   },
   "bugs": {
-    "url": "https://github.com/shoelace-style/webawesome/issues"
+    "url": "https://github.com/home-assistant/webawesome/issues"
   },
   "scripts": {
     "start": "node scripts/build.js --develop",
