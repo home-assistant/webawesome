@@ -133,6 +133,9 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
   /** Used to override the form owner's `target` attribute. */
   @property({ attribute: 'formtarget' }) formTarget: '_self' | '_blank' | '_parent' | '_top' | string;
 
+  /** The tag name of the icon element. Need to be set if not wa-icon is used for an icon button */
+  @property() iconTag = 'wa-icon';
+
   private constructLightDOMButton() {
     const button = document.createElement('button');
     button.type = this.type;
@@ -179,11 +182,17 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
     let hasIcon = false;
     let hasText = false;
     let hasOtherElements = false;
+    const standardIconTag = this.iconTag === 'wa-icon';
 
     // Check all slotted nodes
     [...nodes].forEach(node => {
       if (node.nodeType === Node.ELEMENT_NODE) {
         const element = node as HTMLElement;
+        if ((node as HTMLElement).localName === this.iconTag) {
+          hasIcon = true;
+          if (!hasIconLabel)
+            hasIconLabel = (node as HTMLElement).hasAttribute(standardIconTag ? 'label' : 'aria-label');
+        }
 
         if (element.localName === 'wa-icon') {
           hasIcon = true;
@@ -206,7 +215,7 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
 
     if (this.isIconButton && !hasIconLabel) {
       console.warn(
-        'Icon buttons must have a label for screen readers. Add <wa-icon label="..."> to remove this warning.',
+        `Icon buttons must have a label for screen readers. Add <${this.iconTag} ${standardIconTag ? 'label' : 'aria-label'}="..."> to remove this warning.`,
         this,
       );
     }
