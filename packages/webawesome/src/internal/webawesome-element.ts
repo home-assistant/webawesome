@@ -41,29 +41,12 @@ export default class WebAwesomeElement extends LitElement {
   @property() lang: string;
   @property({ type: Boolean, reflect: true, attribute: 'did-ssr' }) didSSR = isServer || Boolean(this.shadowRoot);
 
-  /**
-   * Attaches (or returns a previously attached) `ElementInternals` object for this custom element,
-   * normalizing the `states` API across browsers.
-   * @returns The attached and normalized `ElementInternals` instance.
-   */
+  // Polyfill attachInternals to always use our StateSet
   attachInternals() {
-    // If we already have internals, return them.
-    if (this.internals) {
-      return this.internals;
-    }
-
     const internals = super.attachInternals();
-
-    // Polyfill ElementInternals.states with our StateSet if missing or not the expected instance.
-    // This normalizes custom state handling across browsers that lack native CustomStateSet support.
-    if (!internals.states || !(internals.states instanceof StateSet)) {
-      Object.defineProperty(internals, 'states', {
-        value: new StateSet(this, internals.states),
-        configurable: true,
-        writable: false,
-      });
-    }
-
+    Object.defineProperty(internals, 'states', {
+      value: new StateSet(this, internals.states),
+    });
     return internals;
   }
 
