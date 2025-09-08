@@ -51,22 +51,22 @@ export default class WaButtonGroup extends WebAwesomeElement {
   }
 
   private handleFocus(event: Event) {
-    const button = findButton(event.target as HTMLElement);
+    const button = findButton(event.target as HTMLElement, this.childSelector);
     button?.classList.add('button-focus');
   }
 
   private handleBlur(event: Event) {
-    const button = findButton(event.target as HTMLElement);
+    const button = findButton(event.target as HTMLElement, this.childSelector);
     button?.classList.remove('button-focus');
   }
 
   private handleMouseOver(event: Event) {
-    const button = findButton(event.target as HTMLElement);
+    const button = findButton(event.target as HTMLElement, this.childSelector);
     button?.classList.add('button-hover');
   }
 
   private handleMouseOut(event: Event) {
-    const button = findButton(event.target as HTMLElement);
+    const button = findButton(event.target as HTMLElement, this.childSelector);
     button?.classList.remove('button-hover');
   }
 
@@ -80,7 +80,7 @@ export default class WaButtonGroup extends WebAwesomeElement {
 
     slottedElements.forEach(el => {
       const index = slottedElements.indexOf(el);
-      const button = findButton(el);
+      const button = findButton(el, this.childSelector);
 
       if (button) {
         if ((button as WaButton).appearance === 'outlined') this.hasOutlined = true;
@@ -116,9 +116,7 @@ export default class WaButtonGroup extends WebAwesomeElement {
   }
 }
 
-function findButton(el: HTMLElement) {
-  const selector = this.childSelector;
-
+function findButton(el: HTMLElement, selector: string) {
   // The button could be the target element or a child of it (e.g. a dropdown or tooltip anchor)
   return (el.closest(selector) ?? el.querySelector(selector)) as WaButton;
 }
