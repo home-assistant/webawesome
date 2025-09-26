@@ -5,6 +5,7 @@
 @import 'search.css';
 @import 'cera-typeface.css';
 @import 'theme-icons.css';
+@import 'utils.css';
 
 :root {
   --wa-brand-orange: #f36944;
@@ -67,13 +68,6 @@ wa-page > header {
     &::part(base) {
       padding: 0;
       padding-inline: 0.875rem;
-    }
-  }
-
-  /* increasing visual size of icons-only within buttons */
-  wa-button[appearance='plain'] {
-    > wa-icon {
-      font-size: round(1.125em, 1px);
     }
   }
 }
@@ -154,13 +148,6 @@ wa-page > header {
 
 #outline-standard h2 {
   margin-block-end: var(--wa-space-m);
-}
-
-/* Pro badges */
-wa-badge.pro {
-  color: white;
-  background-color: var(--wa-brand-orange);
-  border-color: var(--wa-brand-orange);
 }
 
 #sidebar {
@@ -366,24 +353,6 @@ h1.title {
   code {
     background-color: var(--wa-color-warning-fill-normal);
   }
-}
-
-/* Search trigger */
-wa-button#search-trigger {
-  &::part(base) {
-    background-color: var(--wa-form-control-background-color);
-    border: var(--wa-form-control-border-width) var(--wa-form-control-border-style) var(--wa-form-control-border-color);
-    box-shadow: none;
-  }
-  &::part(label) {
-    text-align: start;
-    width: 100%;
-  }
-}
-#search-trigger kbd {
-  font-size: var(--wa-font-size-2xs);
-  line-height: var(--wa-form-control-value-line-height);
-  padding-inline: 0.33em;
 }
 
 /* Search list pages */
