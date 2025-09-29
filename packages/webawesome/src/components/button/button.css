@@ -178,6 +178,10 @@
   aspect-ratio: 1;
 }
 
+.button.is-icon-button:has(wa-icon) {
+  width: auto;
+}
+
 /* Pill modifier */
 :host([pill]) .button {
   border-radius: var(--wa-border-radius-pill);
@@ -258,7 +262,7 @@ wa-icon[part~='caret'] {
  * Badges
  */
 
-button ::slotted(wa-badge) {
+.button ::slotted(wa-badge) {
   border-color: var(--wa-color-surface-default);
   position: absolute;
   inset-block-start: 0;
