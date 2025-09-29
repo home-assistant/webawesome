@@ -308,6 +308,20 @@ wa-page > [slot='navigation-header'] {
   }
 }
 
+/* smaller viewports-based navigation */
+wa-page > [slot='navigation-header'] {
+  padding: 0;
+
+  .brand-logo svg {
+    height: 1.25rem;
+  }
+
+  /* resetting font-weight of dropdown items in .title */
+  wa-dropdown {
+    font-weight: var(--wa-font-weight-normal);
+  }
+}
+
 wa-page[view='mobile'] :is([slot='navigation-header'], [slot='navigation']) {
   padding: 0;
 
