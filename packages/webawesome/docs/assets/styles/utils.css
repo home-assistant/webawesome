@@ -73,7 +73,17 @@
     color: white;
     background-color: var(--wa-brand-orange);
     border-color: var(--wa-brand-orange);
-    text-transform: uppercase;
+
+    + wa-tooltip {
+      font-size: var(--wa-font-size-xs);
+      --max-width: unset;
+    }
+  }
+
+  /* planned badge */
+  wa-badge.planned {
+    background-color: var(--wa-color-neutral-fill-quiet);
+    color: var(--wa-color-neutral-on-quiet);
 
     + wa-tooltip {
       font-size: var(--wa-font-size-xs);
@@ -144,6 +154,11 @@
   /* increasing visual size of icons in certain contexts (such as in plain buttons) */
   wa-icon.icon-embiggen {
     font-size: round(1.125em, 1px);
+  }
+
+  /* decreasing visual size of icons in certain contexts (such as in sidebar nav) */
+  wa-icon.icon-shrink {
+    font-size: round(0.875em, 1px);
   }
   /* #endregion */
 }
