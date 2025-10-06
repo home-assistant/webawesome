@@ -68,10 +68,10 @@ export default class WaDropdown extends WebAwesomeElement {
   @property({ reflect: true }) size: 'small' | 'medium' | 'large' = 'medium';
 
   /** The tag name of the dropdown element. Needs to be set if a custom dropdown element is used */
-  @property() dropdownTag = 'wa-dropdown';
+  @property({ attribute: "tag" }) dropdownTag = 'wa-dropdown';
 
   /** The tag name of the dropdown item element. Needs to be set if a custom dropdown item element is used */
-  @property() dropdownItemTag = 'wa-dropdown-item';
+  @property({ attribute: "item-tag" }) dropdownItemTag = 'wa-dropdown-item';
 
   /**
    * The placement of the dropdown menu in reference to the trigger. The menu will shift to a more optimal location if
@@ -196,7 +196,7 @@ export default class WaDropdown extends WebAwesomeElement {
 
   /** Closes sibling submenus at the same level as the specified item. */
   private closeSiblingSubmenus(item: WaDropdownItem) {
-    const parentDropdownItem = item.closest<WaDropdownItem>(this.dropdownItemTag + ':not([slot="submenu"])');
+    const parentDropdownItem = item.closest<WaDropdownItem>(`${this.dropdownItemTag}:not([slot="submenu"])`);
     let siblingItems: WaDropdownItem[];
 
     if (parentDropdownItem) {
@@ -453,7 +453,7 @@ export default class WaDropdown extends WebAwesomeElement {
     const path = event.composedPath();
     const isInDropdownHierarchy = path.some(el => {
       if (el instanceof HTMLElement) {
-        return el === this || el.closest(this.dropdownTag + ', [part="submenu"]');
+        return el === this || el.closest(`${this.dropdownTag}, [part="submenu"]`);
       }
       return false;
     });
