@@ -531,10 +531,9 @@ export default class WaDropdown extends WebAwesomeElement {
     const submenuSlot = item.submenuElement.querySelector('slot[name="submenu"]');
     if (submenuSlot) {
       submenuSlot.removeEventListener('slotchange', WaDropdown.handleSubmenuSlotChange as EventListener);
-      submenuSlot.addEventListener(
-        'slotchange',
-        (event: Event) => WaDropdown.handleSubmenuSlotChange(event, this.dropdownItemTag)
-      );
+      submenuSlot.addEventListener('slotchange', (event: Event) => {
+        WaDropdown.handleSubmenuSlotChange(event, this.dropdownItemTag);
+      });
       WaDropdown.handleSubmenuSlotChange({ target: submenuSlot } as unknown as Event, this.dropdownItemTag);
     }
   }
