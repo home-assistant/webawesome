@@ -18,6 +18,7 @@ Components with the <wa-badge variant="warning">Experimental</wa-badge> badge sh
 - Fixed a bug in `<wa-button>` where slotted badges weren't properly positioned in buttons with an `href` [issue:1377]
 - Fixed focus outline styles in `<wa-details>` and native `<details>` [issue:1456]
 - Fixed focus outline styles in `<wa-scroller>`, `<wa-dialog>`, and `<wa-drawer>` [issue:1484]
+- Fixed a bug in `<wa-checkbox>` where its value would revert to `""` when checked / unchecked [pr:1547]
 - Fixed a bug that caused icon button labels to not render in frameworks [issue:1542]
 - Fixed a bug in `<wa-details>` that caused the `name` property not to reflect [pr:1538]
 
