@@ -21,6 +21,7 @@ Components with the <wa-badge variant="warning">Experimental</wa-badge> badge sh
 - Fixed a bug in `<wa-checkbox>` where its value would revert to `""` when checked / unchecked [pr:1547]
 - Fixed a bug that caused icon button labels to not render in frameworks [issue:1542]
 - Fixed a bug in `<wa-details>` that caused the `name` property not to reflect [pr:1538]
+- Fixed an overflow style that was causing tab group content to be unnecessarily truncated [issue:1401]
 - Fixed a bug in `<wa-icon>` that caused icon buttons to render when non-text nodes were slotted in [issue:1475]
 
 ## 3.0.0-beta.6
