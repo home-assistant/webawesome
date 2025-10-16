@@ -109,6 +109,15 @@
     line-height: var(--wa-form-control-value-line-height);
     padding-inline: 0.33em;
   }
+
+  /* step icons for ordered instructions */
+  .step-icon {
+    --primary-color: var(--wa-color-neutral-on-normal);
+    --secondary-color: var(--wa-color-neutral-fill-normal);
+    --secondary-opacity: 1;
+    font-size: 2em;
+  }
+
   /* #endregion */
 
   /* #region funsies + cosmetics */
