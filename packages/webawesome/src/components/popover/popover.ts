@@ -302,9 +302,17 @@ export default class WaPopover extends WebAwesomeElement {
     return waitForEvent(this, 'wa-after-hide');
   }
 
+  private handleDialogCancel(event: Event) {
+    event.preventDefault();
+
+    if (!this.dialog.classList.contains('hide')) {
+      this.open = false;
+    }
+  }
+
   render() {
     return html`
-      <dialog part="dialog" class="dialog">
+      <dialog part="dialog" class="dialog" @cancel=${this.handleDialogCancel}>
         <wa-popup
           part="popup"
           exportparts="
