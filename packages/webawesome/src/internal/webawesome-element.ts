@@ -134,7 +134,7 @@ export default class WebAwesomeElement extends LitElement {
           this.internals.states.delete(customState);
         }
       } catch (e) {
-        if (String(e).includes("must start with '--'")) {          
+        if (String(e).includes("must start with '--'")) {
           /* eslint-disable-next-line */
           console.error('Your browser implements an outdated version of CustomStateSet. Consider using a polyfill');
         } else {
