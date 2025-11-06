@@ -236,7 +236,7 @@ export default class WaDrawer extends WebAwesomeElement {
       <dialog
         aria-labelledby=${this.ariaLabelledby ?? 'title'}
         aria-describedby=${ifDefined(this.ariaDescribedby)}
-        part="drawer"
+        part="dialog"
         class=${classMap({
           drawer: true,
           open: this.open,
