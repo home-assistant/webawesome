@@ -285,7 +285,7 @@ export async function build(options = {}) {
       bundle: true,
       splitting: true,
       minify: false,
-      plugins: [cssToTextLoader, replace({ __WEBAWESOME_VERSION__: await getVersion() })],
+      plugins: [replace({ __WEBAWESOME_VERSION__: await getVersion() })],
     };
 
     const unbundledConfig = {
