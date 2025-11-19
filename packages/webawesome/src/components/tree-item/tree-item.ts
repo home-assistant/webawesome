@@ -89,6 +89,9 @@ export default class WaTreeItem extends WebAwesomeElement {
   /** Disables the tree item. */
   @property({ type: Boolean, reflect: true }) disabled = false;
 
+  /** Disables the possibility to select the tree item */
+  @property({ type: Boolean, reflect: true, attribute: 'disabled-selection' }) disabledSelection = false;
+
   /** Enables lazy loading behavior. */
   @property({ type: Boolean, reflect: true }) lazy = false;
 
