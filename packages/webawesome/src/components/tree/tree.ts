@@ -187,12 +187,12 @@ export default class WaTree extends WebAwesomeElement {
         selectedItem.expanded = true;
       }
       syncCheckboxes(selectedItem);
-    } else if ((this.selection === 'single' || selectedItem.isLeaf) && !selectedItem.disabledSelection) {
+    } else if ((this.selection === 'single' || selectedItem.isLeaf) && !selectedItem.preventSelection) {
       const items = this.getAllTreeItems();
       for (const item of items) {
         item.selected = item === selectedItem;
       }
-    } else if (this.selection === 'leaf' || selectedItem.disabledSelection) {
+    } else if (this.selection === 'leaf' || selectedItem.preventSelection) {
       selectedItem.expanded = !selectedItem.expanded;
     }
 
