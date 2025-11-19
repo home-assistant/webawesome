@@ -15,6 +15,7 @@ Components with the <wa-badge variant="warning">Experimental</wa-badge> badge sh
 
 - Fixed a bug in `<wa-slider>` that caused some touch devices to end up with the incorrect value [issue:1703]
 - Fixed a bug in `<wa-card>` that prevented some slots from being detected correctly [discuss:1450]
+- Fixed a z-index bug in `<wa-scroller>` styles [issue:1724]
 - Fixed a bug in `<wa-icon>` that caused some icon libraries to render with the incorrect SVG fill [issue:1733]
 - Fixed a bug in `<wa-tree-item>` that caused the spinner to not show when lazy loading [issue:1678]
 - Fixed a bug in `<wa-dropdown>` that caused the browser to hang when cancelling the `wa-hide` event [issue:1483]
