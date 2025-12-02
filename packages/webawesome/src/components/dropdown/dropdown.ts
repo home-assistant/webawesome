@@ -239,7 +239,7 @@ export default class WaDropdown extends WebAwesomeElement {
     this.open = true;
     openDropdowns.add(this);
     this.syncAriaAttributes();
-    document.addEventListener('keydown', this.handleDocumentKeyDown);
+    this.addEventListener('keydown', this.handleDocumentKeyDown);
     document.addEventListener('pointerdown', this.handleDocumentPointerDown);
     document.addEventListener('mousemove', this.handleGlobalMouseMove);
 
@@ -268,7 +268,7 @@ export default class WaDropdown extends WebAwesomeElement {
     this.open = false;
     openDropdowns.delete(this);
     this.syncAriaAttributes();
-    document.removeEventListener('keydown', this.handleDocumentKeyDown);
+    this.removeEventListener('keydown', this.handleDocumentKeyDown);
     document.removeEventListener('pointerdown', this.handleDocumentPointerDown);
     document.removeEventListener('mousemove', this.handleGlobalMouseMove);
 
