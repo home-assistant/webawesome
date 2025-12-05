@@ -21,6 +21,7 @@ import styles from './dropdown-item.css';
  * @slot icon - An optional icon to display before the label.
  * @slot details - Additional content or details to display after the label.
  * @slot submenu - Submenu items, typically `<wa-dropdown-item>` elements, to create a nested menu.
+ * @slot checked-icon - An optional custom icon to display when the item is a checkbox and is checked.
  *
  * @csspart checkmark - The checkmark icon (a `<wa-icon>` element) when the item is a checkbox.
  * @csspart icon - The container for the icon slot.
@@ -241,17 +242,7 @@ export default class WaDropdownItem extends WebAwesomeElement {
 
   render() {
     return html`
-      ${this.type === 'checkbox'
-        ? html`
-            <wa-icon
-              id="check"
-              part="checkmark"
-              exportparts="svg:checkmark__svg"
-              library="system"
-              name="check"
-            ></wa-icon>
-          `
-        : ''}
+      ${this.type === 'checkbox' ? html`<slot name="checked-icon">${this.renderCheckboxIcon()}</slot>` : ''}
 
       <span id="icon" part="icon">
         <slot name="icon"></slot>
@@ -291,6 +282,12 @@ export default class WaDropdownItem extends WebAwesomeElement {
             </div>
           `
         : ''}
+    `;
+  }
+
+  protected renderCheckboxIcon() {
+    return html`
+      <wa-icon id="check" part="checkmark" exportparts="svg:checkmark__svg" library="system" name="check"></wa-icon>
     `;
   }
 }
