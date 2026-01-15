@@ -13,6 +13,7 @@ Components with the <wa-badge variant="warning">Experimental</wa-badge> badge sh
 
 ## Next
 
+- Added llms.txt to assist AI agents with using Web Awesome [discuss:1100]
 - Added `justify-content` CSS utilities [pr:1930]
 - Added missing `.wa-gap-4xl` utility class [pr:1931]
 - Added `pointercancel` and `touchcancel` event handling to draggable elements to prevent drags from getting stuck
