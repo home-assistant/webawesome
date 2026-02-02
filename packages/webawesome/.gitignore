@@ -3,5 +3,5 @@ dist
 dist-cdn
 src/react
 
-# Claude Code local settings
+# Claude Code local per-user settings
 .claude/settings.local.json
