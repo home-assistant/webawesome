@@ -223,6 +223,9 @@ export default {
         manifest: {
           schemaVersion: 'off',
         },
+        packageJson: {
+          customElementsProperty: 'off',
+        },
       },
     }),
   ],
