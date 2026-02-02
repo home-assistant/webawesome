@@ -60,9 +60,12 @@ describe('<wa-button>', () => {
           expect(el.shadowRoot!.querySelector('a[disabled]')).not.to.exist;
         });
 
-        it('should inert the native <a> when rendering an <a>', async () => {
+        it('should prevent clicks when disabled and rendering an <a>', async () => {
           const el = await fixture<WaButton>(html` <wa-button href="some/path" disabled>Button Label</wa-button> `);
-          expect(el.shadowRoot!.querySelector('a[inert]')).to.exist;
+          const clickHandler = sinon.spy();
+          el.addEventListener('click', clickHandler);
+          el.click();
+          expect(clickHandler).not.to.have.been.called;
         });
       });
 
