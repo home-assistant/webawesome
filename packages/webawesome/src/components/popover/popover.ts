@@ -13,7 +13,7 @@ import { uniqueId } from '../../internal/math.js';
 import { watch } from '../../internal/watch.js';
 import WebAwesomeElement from '../../internal/webawesome-element.js';
 import WaPopup from '../popup/popup.js';
-import styles from './popover.css';
+import styles from './popover.styles.js';
 
 const openPopovers = new Set<WaPopover>();
 
@@ -113,6 +113,17 @@ export default class WaPopover extends WebAwesomeElement {
     if (!this.id) {
       this.id = uniqueId('wa-popover-');
     }
+
+    // Recreate event controller if it was aborted
+    if (this.eventController.signal.aborted) {
+      this.eventController = new AbortController();
+    }
+
+    // Re-establish anchor connection after being moved in the DOM
+    if (this.for && this.anchor) {
+      this.anchor = null; // force reattach
+      this.handleForChange();
+    }
   }
 
   disconnectedCallback() {
@@ -165,15 +176,13 @@ export default class WaPopover extends WebAwesomeElement {
   };
 
   private handleDocumentClick = (event: PointerEvent) => {
-    const target = event.target as HTMLElement;
-
     // Ignore clicks on the anchor so it will be closed by the anchor's click handler
     if (this.anchor && event.composedPath().includes(this.anchor)) {
       return;
     }
 
-    // Detect when clicks occur outside the popover
-    if (target.closest('wa-popover') !== this) {
+    // Detect when clicks occur outside the popover (using composedPath to traverse shadow DOM boundaries)
+    if (!event.composedPath().includes(this)) {
       this.open = false;
     }
   };

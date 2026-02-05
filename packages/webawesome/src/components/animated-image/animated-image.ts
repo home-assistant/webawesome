@@ -1,12 +1,13 @@
 import { html } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
+import { styleMap } from 'lit/directives/style-map.js';
 import { WaErrorEvent } from '../../events/error.js';
 import { WaLoadEvent } from '../../events/load.js';
 import { watch } from '../../internal/watch.js';
 import WebAwesomeElement from '../../internal/webawesome-element.js';
 import { LocalizeController } from '../../utilities/localize.js';
 import '../icon/icon.js';
-import styles from './animated-image.css';
+import styles from './animated-image.styles.js';
 
 /**
  * @summary A component for displaying animated GIFs and WEBPs that play and pause on interaction.
@@ -133,7 +134,7 @@ export default class WaAnimatedImage extends WebAwesomeElement {
                     library="system"
                     variant="solid"
                     class="default"
-                    style="margin-inline-start: 3px;"
+                    style=${styleMap({ 'margin-inline-start': '3px' })}
                   ></wa-icon>
                 </slot>
                 <slot name="pause-icon">
