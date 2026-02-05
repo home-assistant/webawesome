@@ -70,10 +70,17 @@
   /* #region shared UI */
   /* pro badge */
   wa-badge.pro {
-    color: white;
+    color: var(--wa-color-brand-on-loud);
     background-color: var(--wa-brand-orange);
-    border-color: var(--wa-brand-orange);
 
+    + wa-tooltip {
+      font-size: var(--wa-font-size-xs);
+      --max-width: unset;
+    }
+  }
+
+  /* free badge */
+  wa-badge.free {
     + wa-tooltip {
       font-size: var(--wa-font-size-xs);
       --max-width: unset;
@@ -123,6 +130,35 @@
     }
   }
 
+  /* dialogs */
+  wa-dialog:has([slot='footer']) [slot='footer'] {
+    border-block-start: var(--wa-border-width-s) solid var(--wa-color-surface-border);
+    flex-grow: 1; /* make footer contents span entire width of dialog */
+    padding-block-start: var(--wa-space-l);
+  }
+
+  /* anchor headings  */
+  .anchor-heading a {
+    opacity: 0;
+    visibility: hidden;
+    text-decoration: none;
+    transition: opacity var(--wa-transition-normal) var(--wa-transition-easing);
+  }
+
+  @media (hover: hover) {
+    .anchor-heading:hover a {
+      opacity: 1;
+      visibility: visible;
+      padding: var(--wa-space-3xs);
+    }
+  }
+
+  @media print {
+    /* show URLs for printed links */
+    a:not(.anchor-heading)[href]::after {
+      content: ' (' attr(href) ')';
+    }
+  }
   /* #endregion */
 
   /* #region funsies + cosmetics */
@@ -221,7 +257,6 @@
       z-index: 0;
     }
   }
-  /* #endregion */
 
   /* buttons with icon toggle on hover */
   wa-button .icon-hover {
@@ -232,6 +267,18 @@
   }
   wa-button:hover .icon-hover {
     display: inline-flex;
+  }
+
+  /* buttons that are "shushed" (visually muted) by default, but have their full presentation otherwise  */
+  wa-button.shush {
+    &:not(:hover):not(active)::part(base) {
+      color: var(--wa-color-text-quiet);
+    }
+  }
+
+  /* reducing the visual weight of peripheral presentational content */
+  .de-emphasize {
+    opacity: 0.6;
   }
   /* #endregion */
 

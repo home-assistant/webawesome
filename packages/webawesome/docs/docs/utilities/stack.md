@@ -7,18 +7,20 @@ tags: layoutUtilities
 
 <style>
   :is(.wa-flank, .wa-grid, .wa-stack) > [class*='wa-stack']:has(div:empty) {
-    border: var(--wa-border-width-s) dashed var(--wa-color-neutral-border-normal);
-    border-radius: var(--wa-border-radius-l);
-    padding: var(--wa-space-s);
+    border: var(--layout-example-border);
+    border-radius: var(--layout-example-border-radius);
+    padding: var(--layout-example-padding);
   }
 
   [class*='wa-stack'] div:empty {
-    background-color: var(--wa-color-indigo-60);
-    border-radius: var(--wa-border-radius-m);
+    background-color: var(--layout-example-element-background);
+    border-radius: var(--layout-example-element-border-radius);
     min-block-size: 4rem;
     min-inline-size: 4rem;
   }
 </style>
+
+{{ description }}
 
 ```html {.example}
 <div class="wa-stack">
@@ -62,7 +64,7 @@ Stacks are well suited for forms, text, and ensuring consistent spacing between 
 
 ## Align Items
 
-By default, items stretch to fill the inline size of the `wa-stack` container. You can add any of the following [`wa-align-items-*`](/docs/style-utilities/align-items) classes to an element with `wa-stack` to specify how items are aligned in the inline direction:
+By default, items stretch to fill the inline size of the `wa-stack` container. You can add any of the following [`wa-align-items-*`](/docs/utilities/align-items) classes to an element with `wa-stack` to specify how items are aligned in the inline direction:
 
 - `wa-align-items-start`
 - `wa-align-items-end`
@@ -92,7 +94,7 @@ By default, items stretch to fill the inline size of the `wa-stack` container. Y
 
 ## Gap
 
-By default, the gap between stack items uses `--wa-space-m` from your theme. You can add any of the following [`wa-gap-*`](/docs/style-utilities/gap) classes to an element with `wa-stack` to specify the gap between items:
+By default, the gap between stack items uses `--wa-space-m` from your theme. You can add any of the following [`wa-gap-*`](/docs/utilities/gap) classes to an element with `wa-stack` to specify the gap between items:
 
 - `wa-gap-0`
 - `wa-gap-3xs`

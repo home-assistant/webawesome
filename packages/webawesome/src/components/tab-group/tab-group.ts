@@ -10,7 +10,7 @@ import { LocalizeController } from '../../utilities/localize.js';
 import '../button/button.js';
 import type WaTabPanel from '../tab-panel/tab-panel.js';
 import type WaTab from '../tab/tab.js';
-import styles from './tab-group.css';
+import styles from './tab-group.styles.js';
 
 /**
  * @summary Tab groups organize content into a container that shows one section at a time.

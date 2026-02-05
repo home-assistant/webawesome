@@ -1,14 +1,14 @@
-import type { CSSResult, CSSResultGroup, PropertyValues } from 'lit';
-import { LitElement, isServer, unsafeCSS } from 'lit';
+import type { CSSResultGroup, PropertyValues } from 'lit';
+import { LitElement, isServer } from 'lit';
 import { property } from 'lit/decorators.js';
-import hostStyles from '../styles/component/host.css';
+import hostStyles from '../styles/component/host.styles.js';
 import { StateSet } from '../utilities/polyfills/stateset.js';
 
 // Augment Lit's module
 declare module 'lit' {
   interface PropertyDeclaration {
     /**
-     * Specifies the property’s default value
+     * Specifies the property's default value
      */
     default?: any;
     initial?: any;
@@ -16,20 +16,13 @@ declare module 'lit' {
 }
 
 export default class WebAwesomeElement extends LitElement {
-  /**
-   * One or more CSS files to include in the component's shadow root. Host styles are automatically prepended. We use
-   * this instead of Lit's styles property because we're importing CSS files as strings and need to convert them using
-   * unsafeCSS.
-   */
-  static css?: CSSResultGroup | CSSResult | string | (CSSResult | string)[];
+  /** One or more CSSResultGroup to include in the component's shadow root. Host styles are automatically prepended. */
+  static css?: CSSResultGroup;
 
-  /**
-   * Override the default styles property to fetch and convert string CSS files. Components can override this behavior
-   * by setting their own `static styles = []` property.
-   */
+  /** Prepends host styles to the component's styles. */
   static get styles(): CSSResultGroup {
     const styles = Array.isArray(this.css) ? this.css : this.css ? [this.css] : [];
-    return [hostStyles, ...styles].map(style => (typeof style === 'string' ? unsafeCSS(style) : style));
+    return [hostStyles, ...styles];
   }
 
   #hasRecordedInitialProperties = false;
@@ -131,7 +124,7 @@ export default class WebAwesomeElement extends LitElement {
   }
 
   /**
-   * Methods for setting and checking custom states.
+   * @internal Methods for setting and checking custom states.
    */
   public customStates = {
     /** Adds or removes the specified custom state. */
@@ -165,12 +158,14 @@ export default class WebAwesomeElement extends LitElement {
   };
 
   /**
-   * Given a native event, this function cancels it and dispatches it again from the host element using the desired
+   * @internal Given a native event, this function cancels it and dispatches it again from the host element using the desired
    * event options.
    */
   relayNativeEvent(event: Event, eventOptions?: EventInit) {
     event.stopImmediatePropagation();
 
+    // This triggers an error in CEM, so we need to ignore it.
+    /** @internal */
     this.dispatchEvent(
       new (event.constructor as typeof Event)(event.type, {
         ...event,

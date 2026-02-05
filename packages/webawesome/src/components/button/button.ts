@@ -7,13 +7,13 @@ import { HasSlotController } from '../../internal/slot.js';
 import { MirrorValidator } from '../../internal/validators/mirror-validator.js';
 import { watch } from '../../internal/watch.js';
 import { WebAwesomeFormAssociatedElement } from '../../internal/webawesome-form-associated-element.js';
-import sizeStyles from '../../styles/utilities/size.css';
-import variantStyles from '../../styles/utilities/variants.css';
+import sizeStyles from '../../styles/component/size.styles.js';
+import variantStyles from '../../styles/component/variants.styles.js';
 import { LocalizeController } from '../../utilities/localize.js';
 import '../icon/icon.js';
 import type WaIcon from '../icon/icon.js';
 import '../spinner/spinner.js';
-import styles from './button.css';
+import styles from './button.styles.js';
 
 /**
  * @summary Buttons represent actions that are available to the user.
@@ -72,7 +72,7 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
   /** Draws the button with a caret. Used to indicate that the button triggers a dropdown menu or similar behavior. */
   @property({ attribute: 'with-caret', type: Boolean, reflect: true }) withCaret = false;
 
-  /** Disables the button. Does not apply to link buttons. */
+  /** Disables the button. */
   @property({ type: Boolean }) disabled = false;
 
   /** Draws the button in a loading state. */
@@ -115,7 +115,6 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
    * The "form owner" to associate the button with. If omitted, the closest containing form will be used instead. The
    * value of this attribute must be an id of a form in the same document or shadow root as the button.
    */
-  @property({ reflect: true }) form: string | null = null;
 
   /** Used to override the form owner's `action` attribute. */
   @property({ attribute: 'formaction' }) formAction: string;
@@ -138,28 +137,43 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
 
   private constructLightDOMButton() {
     const button = document.createElement('button');
+
+    for (const attribute of this.attributes) {
+      if (attribute.name === 'style') {
+        // Skip style attributes as they *shouldn't* be necessary
+        continue;
+      }
+      button.setAttribute(attribute.name, attribute.value);
+    }
+
     button.type = this.type;
-    button.style.position = 'absolute';
-    button.style.width = '0';
-    button.style.height = '0';
-    button.style.clipPath = 'inset(50%)';
-    button.style.overflow = 'hidden';
-    button.style.whiteSpace = 'nowrap';
+    button.style.position = 'absolute !important';
+    button.style.width = '0 !important';
+    button.style.height = '0 !important';
+    button.style.clipPath = 'inset(50%) !important';
+    button.style.overflow = 'hidden !important';
+    button.style.whiteSpace = 'nowrap !important';
     if (this.name) {
       button.name = this.name;
     }
     button.value = this.value || '';
 
-    ['form', 'formaction', 'formenctype', 'formmethod', 'formnovalidate', 'formtarget'].forEach(attr => {
-      if (this.hasAttribute(attr)) {
-        button.setAttribute(attr, this.getAttribute(attr)!);
-      }
-    });
-
     return button;
   }
 
-  private handleClick() {
+  private handleClick(event: PointerEvent) {
+    // Prevent disabled and loading buttons from being clicked
+    if (this.disabled || this.loading) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
+
+    // Only create a light dom button for submit / reset buttons.
+    if (this.type !== 'submit' && this.type !== 'reset') {
+      return;
+    }
+
     const form = this.getForm();
 
     if (!form) return;
@@ -285,7 +299,7 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
         download=${ifDefined(isLink ? this.download : undefined)}
         rel=${ifDefined(isLink && this.rel ? this.rel : undefined)}
         role=${ifDefined(isLink ? undefined : 'button')}
-        aria-disabled=${this.disabled ? 'true' : 'false'}
+        aria-disabled=${ifDefined(isLink && this.disabled ? 'true' : undefined)}
         tabindex=${this.disabled ? '-1' : '0'}
         @invalid=${this.isButton() ? this.handleInvalid : null}
         @click=${this.handleClick}

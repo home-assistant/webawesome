@@ -4,11 +4,11 @@
     "access": "public"
   },
   "description": "A forward-thinking library of web components.",
-  "version": "3.0.0-ha.2",
+  "version": "3.2.1",
   "homepage": "https://webawesome.com/",
   "author": "Web Awesome",
   "license": "MIT",
-  "customElements": "dist/custom-elements.json",
+  "customElements": "dist-cdn/custom-elements.json",
   "web-types": "./dist/web-types.json",
   "type": "module",
   "types": "dist/webawesome.d.ts",
@@ -30,12 +30,19 @@
     "./dist/react/*": "./dist/react/*",
     "./dist/translations": "./dist/translations",
     "./dist/translations/*": "./dist/translations/*",
+    "./dist/utilities": "./dist/utilities",
+    "./dist/utilities/*": "./dist/utilities/*",
+    "./dist/events": "./dist/events",
+    "./dist/events/*": "./dist/events/*",
     "./package.json": "./package.json"
   },
   "files": [
     "README.md",
     "dist",
-    "dist-cdn"
+    "dist-cdn",
+    "dist/custom-elements.json",
+    "./dist/custom-elements.json",
+    "custom-elements.json"
   ],
   "keywords": [
     "web components",
@@ -50,7 +57,7 @@
     "url": "https://github.com/home-assistant/webawesome/issues"
   },
   "scripts": {
-    "start": "node scripts/build.js --develop",
+    "start": "node scripts/build.js --develop --no-incremental",
     "start:alpha": "echo 'This command has been deprecated. Use: \"npm start\"\n'",
     "build": "node scripts/build.js",
     "build:serve": "npm run build && npx http-server _site -p 4000",
@@ -64,10 +71,10 @@
     "spellcheck": "cspell \"**/*.{js,ts,json,html,css,md}\" --no-progress --config=\"../../cspell.json\"",
     "verify": "npm run prettier && npm run build && npm run test",
     "prepublishOnly": "npm run verify",
-    "check-updates": "npx npm-check-updates --interactive --format group",
+    "check-updates": "npm-check-updates --cooldown 7 --interactive --format group",
     "print-version": "echo $npm_package_version",
     "tag-version": "git tag -a \"v$(npm run print-version | tail -n1)\" -m \"tag v$(npm run print-version | tail -n1)\"",
-    "postversion": "npm run tag-version"
+    "postversion": "node ./scripts/update-root-version.js"
   },
   "engines": {
     "node": ">=14.17.0"
@@ -89,8 +96,12 @@
     ]
   },
   "devDependencies": {
+    "@wc-toolkit/cem-validator": "^1.0.3",
     "@wc-toolkit/jsx-types": "^1.3.0",
     "eleventy-plugin-git-commit-date": "^0.1.3",
-    "esbuild": "^0.25.11"
+    "esbuild": "^0.25.11",
+    "gray-matter": "^4.0.3",
+    "npm-check-updates": "^19.1.2",
+    "turndown": "^7.2.2"
   }
 }

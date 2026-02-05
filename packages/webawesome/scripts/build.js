@@ -13,7 +13,9 @@ import { fileURLToPath } from 'node:url';
 import ora from 'ora';
 import copy from 'recursive-copy';
 import { SimulateWebAwesomeApp } from '../docs/_utils/simulate-webawesome-app.js';
+import { generateAgentSkill } from './agent-skill.js';
 import { generateDocs } from './docs.js';
+import { generateLlmsTxtFile } from './llms.js';
 import { getCdnDir, getDistDir, getDocsDir, getRootDir, getSiteDir } from './utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -81,6 +83,16 @@ export async function build(options = {}) {
       await updateCssImportsUnbundledBuild();
 
       await generateDocs({ spinner });
+
+      // Generate llms.txt (needs CEM, runs before docs)
+      spinner.start('Generating llms.txt');
+      await generateLlmsTxtFile();
+      spinner.succeed();
+
+      // Generate Agent Skill (must run after Eleventy generates _site)
+      spinner.start('Generating Agent Skill');
+      await generateAgentSkill();
+      spinner.succeed();
 
       const time = (Date.now() - start) / 1000 + 's';
       spinner.succeed(`The build is complete ${chalk.gray(`(finished in ${time})`)}`);
@@ -274,6 +286,11 @@ export async function build(options = {}) {
         ...(await globby(posix.join(rootDir, 'src/components/**/!(*.(style|test)).ts'))),
         // Translations
         ...(await globby(posix.join(rootDir, 'src/translations/**/*.ts'))),
+        // Utilities
+        ...(await globby(posix.join(rootDir, 'src/utilities/**/*.ts'))),
+        // Events
+        ...(await globby(posix.join(rootDir, 'src/events/**/*.ts'))),
+        // TODO: Should `src/internal` be included?
         // React wrappers
         ...(await globby(posix.join(rootDir, 'src/react/**/*.ts'))),
       ],
@@ -285,10 +302,10 @@ export async function build(options = {}) {
       bundle: true,
       splitting: true,
       minify: false,
-      plugins: [replace({ __WEBAWESOME_VERSION__: await getVersion() })],
-      loader: {
-        '.css': 'text',
+      banner: {
+        js: `/*! Copyright ${currentYear} Fonticons, Inc. - https://webawesome.com/license */`,
       },
+      plugins: [replace({ __WEBAWESOME_VERSION__: await getVersion() })],
     };
 
     const unbundledConfig = {
@@ -501,6 +518,7 @@ export async function build(options = {}) {
             }
 
             // copy everything to unbundled before we generate bundles.
+            // this may cause watcher events to break. if things are broken with file watching, comment this out.
             await copy(getCdnDir(), getDistDir(), { overwrite: true });
             await regenerateBundle();
 

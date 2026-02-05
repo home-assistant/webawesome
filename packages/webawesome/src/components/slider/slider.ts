@@ -2,18 +2,19 @@ import type { PropertyValues } from 'lit';
 import { html } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
+import { styleMap } from 'lit/directives/style-map.js';
 import { DraggableElement } from '../../internal/drag.js';
 import { clamp } from '../../internal/math.js';
 import { HasSlotController } from '../../internal/slot.js';
 import { submitOnEnter } from '../../internal/submit-on-enter.js';
 import { SliderValidator } from '../../internal/validators/slider-validator.js';
 import { WebAwesomeFormAssociatedElement } from '../../internal/webawesome-form-associated-element.js';
-import formControlStyles from '../../styles/component/form-control.css';
-import sizeStyles from '../../styles/utilities/size.css';
+import formControlStyles from '../../styles/component/form-control.styles.js';
+import sizeStyles from '../../styles/component/size.styles.js';
 import { LocalizeController } from '../../utilities/localize.js';
 import '../tooltip/tooltip.js';
 import type WaTooltip from '../tooltip/tooltip.js';
-import styles from './slider.css';
+import styles from './slider.styles.js';
 
 /**
  * <wa-slider>
@@ -166,12 +167,6 @@ export default class WaSlider extends WebAwesomeFormAssociatedElement {
 
   /** The starting value from which to draw the slider's fill, which is based on its current value. */
   @property({ attribute: 'indicator-offset', type: Number }) indicatorOffset: number;
-
-  /**
-   * The form to associate this control with. If omitted, the closest containing `<form>` will be used. The value of
-   * this attribute must be an ID of a form in the same document or shadow root.
-   */
-  @property({ reflect: true }) form = null;
 
   /** The minimum value allowed. */
   @property({ type: Number }) min: number = 0;
@@ -437,8 +432,14 @@ export default class WaSlider extends WebAwesomeFormAssociatedElement {
   /** Clamps a number to min/max while ensuring it's a valid step interval. */
   private clampAndRoundToStep(value: number) {
     const stepPrecision = (String(this.step).split('.')[1] || '').replace(/0+$/g, '').length;
-    value = Math.round(value / this.step) * this.step;
-    value = clamp(value, this.min, this.max);
+
+    // Ensure we're working with numbers (in case the user passes strings to the respective properties)
+    const step = Number(this.step);
+    const min = Number(this.min);
+    const max = Number(this.max);
+
+    value = Math.round(value / step) * step;
+    value = clamp(value, min, max);
 
     return parseFloat(value.toFixed(stepPrecision));
   }
@@ -807,7 +808,7 @@ export default class WaSlider extends WebAwesomeFormAssociatedElement {
         id="label"
         part="label"
         for=${this.isRange ? 'thumb-min' : 'text-box'}
-        class=${classMap({ vh: !hasLabel })}
+        class=${classMap({ vh: !hasLabel, 'has-label': hasLabel })}
         @pointerdown=${this.handleLabelPointerDown}
       >
         <slot name="label">${this.label}</slot>
@@ -829,7 +830,10 @@ export default class WaSlider extends WebAwesomeFormAssociatedElement {
     const markersTemplate = this.withMarkers
       ? html`
           <div id="markers" part="markers">
-            ${markers.map(marker => html`<span part="marker" class="marker" style="--position: ${marker}%"></span>`)}
+            ${markers.map(
+              marker =>
+                html`<span part="marker" class="marker" style=${styleMap({ '--position': `${marker}%` })}></span>`,
+            )}
           </div>
         `
       : '';
@@ -882,10 +886,10 @@ export default class WaSlider extends WebAwesomeFormAssociatedElement {
             <div
               id="indicator"
               part="indicator"
-              style="--start: ${Math.min(minThumbPosition, maxThumbPosition)}%; --end: ${Math.max(
-                minThumbPosition,
-                maxThumbPosition,
-              )}%"
+              style=${styleMap({
+                '--start': `${Math.min(minThumbPosition, maxThumbPosition)}%`,
+                '--end': `${Math.max(minThumbPosition, maxThumbPosition)}%`,
+              })}
             ></div>
 
             ${markersTemplate}
@@ -893,7 +897,7 @@ export default class WaSlider extends WebAwesomeFormAssociatedElement {
             <span
               id="thumb-min"
               part="thumb thumb-min"
-              style="--position: ${minThumbPosition}%"
+              style=${styleMap({ '--position': `${minThumbPosition}%` })}
               role="slider"
               aria-valuemin=${this.min}
               aria-valuenow=${this.minValue}
@@ -914,7 +918,7 @@ export default class WaSlider extends WebAwesomeFormAssociatedElement {
             <span
               id="thumb-max"
               part="thumb thumb-max"
-              style="--position: ${maxThumbPosition}%"
+              style=${styleMap({ '--position': `${maxThumbPosition}%` })}
               role="slider"
               aria-valuemin=${this.min}
               aria-valuenow=${this.maxValue}
@@ -975,11 +979,11 @@ export default class WaSlider extends WebAwesomeFormAssociatedElement {
             <div
               id="indicator"
               part="indicator"
-              style="--start: ${indicatorOffsetPosition}%; --end: ${thumbPosition}%"
+              style=${styleMap({ '--start': `${indicatorOffsetPosition}%`, '--end': `${thumbPosition}%` })}
             ></div>
 
             ${markersTemplate}
-            <span id="thumb" part="thumb" style="--position: ${thumbPosition}%"></span>
+            <span id="thumb" part="thumb" style=${styleMap({ '--position': `${thumbPosition}%` })}></span>
           </div>
 
           ${referencesTemplate} ${hint}

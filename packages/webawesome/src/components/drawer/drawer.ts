@@ -14,7 +14,7 @@ import { watch } from '../../internal/watch.js';
 import WebAwesomeElement from '../../internal/webawesome-element.js';
 import { LocalizeController } from '../../utilities/localize.js';
 import '../button/button.js';
-import styles from './drawer.css';
+import styles from './drawer.styles.js';
 
 /**
  * @summary Drawers slide in from a container to expose additional options and information.
