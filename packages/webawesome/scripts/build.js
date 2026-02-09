@@ -16,6 +16,7 @@ import { SimulateWebAwesomeApp } from '../docs/_utils/simulate-webawesome-app.js
 import { generateAgentSkill } from './agent-skill.js';
 import { generateDocs } from './docs.js';
 import { generateLlmsTxtFile } from './llms.js';
+import { transformCssPlugin } from './transform-css-plugin.js';
 import { getCdnDir, getDistDir, getDocsDir, getRootDir, getSiteDir } from './utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -305,7 +306,10 @@ export async function build(options = {}) {
       banner: {
         js: `/*! Copyright ${currentYear} Fonticons, Inc. - https://webawesome.com/license */`,
       },
-      plugins: [replace({ __WEBAWESOME_VERSION__: await getVersion() })],
+      plugins: [
+        transformCssPlugin(), // Transform CSS in .styles.ts files for browser compatibility
+        replace({ __WEBAWESOME_VERSION__: await getVersion() }),
+      ],
     };
 
     const unbundledConfig = {
@@ -318,6 +322,7 @@ export async function build(options = {}) {
       outdir: getDistDir(),
       entryPoints: [
         ...config.entryPoints,
+        ...(await globby(posix.join(rootDir, 'src/styles/**/*.ts'))),
         ...(await globby(posix.join(rootDir, 'src/internal/**/*.ts'))),
         ...(await globby(posix.join(rootDir, 'src/utilities/**/*.ts'))),
         ...(await globby(posix.join(rootDir, 'src/events/**/*.ts'))),
