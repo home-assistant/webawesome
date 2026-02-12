@@ -201,9 +201,6 @@ export default css`
     outline-offset: 2px;
     width: var(--wa-form-control-height);
     aspect-ratio: 1;
-  }
-
-  .button.is-icon-button:has(wa-icon) {
     width: auto;
   }
 

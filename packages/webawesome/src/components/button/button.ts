@@ -208,7 +208,7 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
             hasIconLabel = (node as HTMLElement).hasAttribute(standardIconTag ? 'label' : 'aria-label');
         }
 
-        if (element.localName === 'wa-icon') {
+        if (element.localName === this.iconTag) {
           hasIcon = true;
           if (!hasIconLabel) hasIconLabel = (element as WaIcon).label !== undefined;
         } else {
