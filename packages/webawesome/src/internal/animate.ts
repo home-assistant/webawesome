@@ -17,7 +17,6 @@ export function animateWithClass(el: Element, className: string) {
     if (el.classList.contains(className)) {
       return;
     }
-    el.classList.remove(className);
     el.classList.add(className);
 
     // if there are no animations or animation is set to 0ms, resolve immediately
