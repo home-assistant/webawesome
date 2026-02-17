@@ -20,7 +20,7 @@ interface ClientRectangles {
 const waitForScrollButtonsToBeRendered = async (tabGroup: WaTabGroup): Promise<void> => {
   await waitUntil(() => {
     const scrollButtons = tabGroup.shadowRoot?.querySelectorAll('wa-button');
-    return scrollButtons?.length === 2;
+    return scrollButtons && scrollButtons.length >= 1;
   });
 };
 
@@ -227,15 +227,57 @@ describe('<wa-tab-group>', () => {
           };
         });
 
-        it('shows scroll buttons on too many tabs', async () => {
+        it('shows only the end scroll button when scrolled to the start', async () => {
           // @TODO: Investigate why this fails with hydratedFixture (generateTabs()) [Konnor]
           // https://github.com/lit/lit/issues/4739
           const tabGroup = await clientFixture<WaTabGroup>(html`<wa-tab-group> ${generateTabs(30)} </wa-tab-group>`);
 
           await waitForScrollButtonsToBeRendered(tabGroup);
 
-          const scrollButtons = tabGroup.shadowRoot?.querySelectorAll('wa-button');
-          expect(scrollButtons, 'Both scroll buttons should be shown').to.have.length(2);
+          const startButton = tabGroup.shadowRoot?.querySelector('wa-button[part*="scroll-button-start"]');
+          const endButton = tabGroup.shadowRoot?.querySelector('wa-button[part*="scroll-button-end"]');
+          expect(startButton, 'start scroll button should not be shown').to.be.null;
+          expect(endButton, 'end scroll button should be shown').not.to.be.null;
+
+          tabGroup.disconnectedCallback();
+        });
+
+        it('shows both scroll buttons when the tabs are scrolled to the middle', async () => {
+          const tabGroup = await clientFixture<WaTabGroup>(html`<wa-tab-group> ${generateTabs(30)} </wa-tab-group>`);
+
+          await waitForScrollButtonsToBeRendered(tabGroup);
+
+          const nav = tabGroup.shadowRoot!.querySelector<HTMLElement>('.nav')!;
+          nav.scrollLeft = Math.round(nav.scrollWidth / 2);
+          // Programmatic scrollLeft changes don't reliably fire scroll events in test environments,
+          // so we trigger the scroll control update explicitly.
+          tabGroup.updateScrollControls();
+          await elementUpdated(tabGroup);
+
+          const startButton = tabGroup.shadowRoot?.querySelector('wa-button[part*="scroll-button-start"]');
+          const endButton = tabGroup.shadowRoot?.querySelector('wa-button[part*="scroll-button-end"]');
+          expect(startButton, 'start scroll button should be shown').not.to.be.null;
+          expect(endButton, 'end scroll button should be shown').not.to.be.null;
+
+          tabGroup.disconnectedCallback();
+        });
+
+        it('shows only the start scroll button when scrolled to the end', async () => {
+          const tabGroup = await clientFixture<WaTabGroup>(html`<wa-tab-group> ${generateTabs(30)} </wa-tab-group>`);
+
+          await waitForScrollButtonsToBeRendered(tabGroup);
+
+          const nav = tabGroup.shadowRoot!.querySelector<HTMLElement>('.nav')!;
+          nav.scrollLeft = nav.scrollWidth;
+          // Programmatic scrollLeft changes don't reliably fire scroll events in test environments,
+          // so we trigger the scroll control update explicitly.
+          tabGroup.updateScrollControls();
+          await elementUpdated(tabGroup);
+
+          const startButton = tabGroup.shadowRoot?.querySelector('wa-button[part*="scroll-button-start"]');
+          const endButton = tabGroup.shadowRoot?.querySelector('wa-button[part*="scroll-button-end"]');
+          expect(startButton, 'start scroll button should be shown').not.to.be.null;
+          expect(endButton, 'end scroll button should not be shown').to.be.null;
 
           tabGroup.disconnectedCallback();
         });
