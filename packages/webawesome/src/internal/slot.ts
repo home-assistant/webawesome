@@ -1,4 +1,4 @@
-import type { ReactiveController, ReactiveControllerHost } from 'lit';
+import { isServer, type ReactiveController, type ReactiveControllerHost } from 'lit';
 
 /** A reactive controller that determines when slots exist. */
 export class HasSlotController implements ReactiveController {
@@ -11,6 +11,11 @@ export class HasSlotController implements ReactiveController {
   }
 
   private hasDefaultSlot() {
+    // `Element#childNodes` is unavailable in Lit's SSR context
+    if (isServer) {
+      return false;
+    }
+
     return [...this.host.childNodes].some(node => {
       if (node.nodeType === Node.TEXT_NODE && node.textContent!.trim() !== '') {
         return true;
@@ -36,6 +41,11 @@ export class HasSlotController implements ReactiveController {
   }
 
   private hasNamedSlot(name: string) {
+    // `Element#querySelector` is unavailable in Lit's SSR context
+    if (isServer) {
+      return false;
+    }
+
     return this.host.querySelector(`:scope > [slot="${name}"]`) !== null;
   }
 
@@ -44,10 +54,20 @@ export class HasSlotController implements ReactiveController {
   }
 
   hostConnected() {
+    // `ShadowRoot#addEventListener` implementation in https://github.com/lit/lit/pull/4893
+    if (isServer) {
+      return;
+    }
+
     this.host.shadowRoot!.addEventListener('slotchange', this.handleSlotChange);
   }
 
   hostDisconnected() {
+    // `ShadowRoot#removeEventListener` implementation in https://github.com/lit/lit/pull/4893
+    if (isServer) {
+      return;
+    }
+
     this.host.shadowRoot!.removeEventListener('slotchange', this.handleSlotChange);
   }
 
