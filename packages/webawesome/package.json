@@ -34,6 +34,7 @@
     "./dist/utilities/*": "./dist/utilities/*",
     "./dist/events": "./dist/events",
     "./dist/events/*": "./dist/events/*",
+    "./dist/internal/*": "./dist/internal/*",
     "./package.json": "./package.json"
   },
   "files": [
