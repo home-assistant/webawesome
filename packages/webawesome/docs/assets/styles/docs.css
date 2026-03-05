@@ -91,11 +91,6 @@ wa-page > [slot='banner'] {
 }
 
 /* Header */
-wa-page::part(header) {
-  background-color: var(--wa-color-surface-default);
-  border-bottom: var(--wa-border-style) var(--wa-panel-border-width) var(--wa-color-surface-border);
-}
-
 wa-page::part(body) {
   padding-top: 0px;
 }
@@ -104,12 +99,20 @@ wa-page::part(header-actions) {
   align-self: center;
 }
 
-wa-page > header {
-  padding-inline: var(--wa-space-xl);
+wa-page > [slot='header'] {
+  .wrapper-nav-products {
+    padding-inline: var(--content-padding-inline);
+  }
 
-  a[href='/'] {
-    color: var(--wa-color-text-normal);
-    line-height: 1;
+  #docs-header {
+    background-color: var(--wa-color-surface-default);
+    border-bottom: var(--wa-border-style) var(--wa-panel-border-width) var(--wa-color-surface-border);
+    padding: var(--wa-space-s) var(--content-padding-inline);
+  }
+
+  /* icon-based logo */
+  .logo-web-awesome {
+    font-size: var(--wa-font-size-xl);
   }
 
   .brand-logo {
@@ -124,14 +127,6 @@ wa-page > header {
 
   wa-button[data-toggle-nav] {
     --text-color: currentColor;
-    font-size: 1rem;
-    margin-inline-start: -0.875rem;
-    margin-inline-end: 0;
-
-    &::part(base) {
-      padding: 0;
-      padding-inline: 0.875rem;
-    }
   }
 }
 
@@ -144,6 +139,12 @@ wa-page > header {
 
   h2:not(:first-child) {
     margin-block-start: var(--wa-space-xs);
+  }
+
+  /* visually align icon with child list's border-start */
+  h2:has(wa-icon) {
+    position: relative;
+    inset-inline-start: calc(var(--wa-space-xs) * -1);
   }
 
   wa-details {
@@ -214,22 +215,8 @@ wa-page > header {
 }
 
 #sidebar {
-  h2 {
-    color: var(--wa-color-text-quiet);
-
-    a {
-      color: var(--wa-color-text-normal);
-      text-decoration: none;
-
-      wa-icon {
-        font-size: var(--wa-font-size-s);
-        font-weight: var(--wa-font-weight-action);
-      }
-
-      &:hover {
-        text-decoration: underline;
-      }
-    }
+  h2 a {
+    --wa-color-text-link: var(--wa-color-text-normal);
   }
 
   wa-button.delete {
@@ -458,6 +445,7 @@ wa-page > main:has(> .search-list) {
 }
 
 .search-list {
+  container-type: inline-size;
   .search-list-input {
     margin-block-end: var(--wa-space-3xl);
   }
@@ -468,16 +456,24 @@ wa-page > main:has(> .search-list) {
     gap: var(--wa-space-2xl);
     margin-block-end: var(--wa-space-3xl);
 
-    @media screen and (max-width: 1470px) {
+    @container (width < 768px) {
       grid-template-columns: repeat(3, 1fr);
     }
 
-    @media screen and (max-width: 960px) {
+    @container (width < 576px) {
       grid-template-columns: repeat(2, 1fr);
     }
 
-    @media screen and (max-width: 500px) {
+    @container (width < 384px) {
       grid-template-columns: repeat(1, 1fr);
+    }
+
+    &.large {
+      grid-template-columns: repeat(2, 1fr);
+
+      @container (width < 640px) {
+        grid-template-columns: repeat(1, 1fr);
+      }
     }
 
     a {
@@ -493,12 +489,13 @@ wa-page > main:has(> .search-list) {
         display: flex;
       }
 
-      &::part(header) {
+      &[with-header]::part(header) {
         background-color: var(--header-background, var(--wa-color-neutral-fill-quiet));
         display: flex;
         align-items: center;
         justify-content: center;
         min-block-size: calc(6rem + var(--spacing));
+        padding: var(--spacing);
       }
 
       &:hover {
