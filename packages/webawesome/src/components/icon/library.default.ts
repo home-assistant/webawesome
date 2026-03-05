@@ -81,21 +81,6 @@ function getIconUrl(name: string, family: string, variant: string) {
   // Whiteboard (Pro+)
   if (family === 'whiteboard') {
     folder = 'whiteboard-semibold';
-<<<<<<< HEAD
-  }
-
-  // Utility (Pro+)
-  // Correct usage: family="utility", family="utility-duo", or family="utility-fill", variant="semibold"
-  if (family === 'utility') {
-    folder = 'utility-semibold';
-  }
-  if (family === 'utility-duo') {
-    folder = 'utility-duo-semibold';
-  }
-  if (family === 'utility-fill') {
-    folder = 'utility-fill-semibold';
-=======
->>>>>>> v3.3.1
   }
 
   // Classic
