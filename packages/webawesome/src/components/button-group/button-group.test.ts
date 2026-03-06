@@ -41,22 +41,25 @@ describe('<wa-button-group>', () => {
           `);
 
           const allButtons = group.querySelectorAll('wa-button');
-          Array.from(allButtons).every(button => expect(button).to.have.style('--_wa-button-horizontal-indent', '1px'));
+          Array.from(allButtons).every(button => {
+            const themedIndent = getComputedStyle(button).getPropertyValue('--wa-form-control-border-width').trim();
+            expect(button).to.have.style('--_button-horizontal-indent', themedIndent);
+          });
 
-          expect(allButtons[0]).to.not.have.style('--_wa-button-start-start-radius', '0');
-          expect(allButtons[0]).to.have.style('--_wa-button-start-end-radius', '0');
-          expect(allButtons[0]).to.not.have.style('--_wa-button-end-start-radius', '0');
-          expect(allButtons[0]).to.have.style('--_wa-button-end-end-radius', '0');
+          expect(allButtons[0]).to.not.have.style('--_button-start-start-radius', '0');
+          expect(allButtons[0]).to.have.style('--_button-start-end-radius', '0');
+          expect(allButtons[0]).to.not.have.style('--_button-end-start-radius', '0');
+          expect(allButtons[0]).to.have.style('--_button-end-end-radius', '0');
 
-          expect(allButtons[1]).to.have.style('--_wa-button-start-start-radius', '0');
-          expect(allButtons[1]).to.have.style('--_wa-button-start-end-radius', '0');
-          expect(allButtons[1]).to.have.style('--_wa-button-end-start-radius', '0');
-          expect(allButtons[1]).to.have.style('--_wa-button-end-end-radius', '0');
+          expect(allButtons[1]).to.have.style('--_button-start-start-radius', '0');
+          expect(allButtons[1]).to.have.style('--_button-start-end-radius', '0');
+          expect(allButtons[1]).to.have.style('--_button-end-start-radius', '0');
+          expect(allButtons[1]).to.have.style('--_button-end-end-radius', '0');
 
-          expect(allButtons[2]).to.have.style('--_wa-button-start-start-radius', '0');
-          expect(allButtons[2]).to.not.have.style('--_wa-button-start-end-radius', '0');
-          expect(allButtons[2]).to.have.style('--_wa-button-end-start-radius', '0');
-          expect(allButtons[2]).to.not.have.style('--_wa-button-end-end-radius', '0');
+          expect(allButtons[2]).to.have.style('--_button-start-start-radius', '0');
+          expect(allButtons[2]).to.not.have.style('--_button-start-end-radius', '0');
+          expect(allButtons[2]).to.have.style('--_button-end-start-radius', '0');
+          expect(allButtons[2]).to.not.have.style('--_button-end-end-radius', '0');
         });
       });
 
