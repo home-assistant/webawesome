@@ -58,12 +58,9 @@ Components with the <wa-badge variant="warning">Experimental</wa-badge> badge sh
 
 ## 3.2.0
 
-<<<<<<< HEAD
-=======
 <small>February 4, 2026</small>
 
 - Fixed a bug in `<wa-select>` where the `selected` attribute on `<wa-option>` was ignored when `with-clear` was present [#1922]
->>>>>>> v3.3.1
 - Added `<wa-file-input>` as an experimental pro component [issue:1240]
 - Added `<wa-sparkline>` as an experimental pro component
 - Added `<wa-number-input>` as an experimental component for numeric input with stepper buttons [issue:1688]
@@ -107,11 +104,8 @@ Components with the <wa-badge variant="warning">Experimental</wa-badge> badge sh
 
 ## 3.1.0
 
-<<<<<<< HEAD
-=======
 <small>December 16, 2025</small>
 
->>>>>>> v3.3.1
 - Added `<wa-combobox>` as an experimental pro component [issue:1074]
 - Added version 2.0.0 of the [official Web Awesome Figma Design Kit](/docs/resources/figma)
 - Added npm support for Web Awesome Pro
@@ -137,11 +131,8 @@ Components with the <wa-badge variant="warning">Experimental</wa-badge> badge sh
 
 ## 3.0.0
 
-<<<<<<< HEAD
-=======
 <small>December 2, 2025</small>
 
->>>>>>> v3.3.1
 - 🚨 BREAKING: Changed `appearance="filled outlined"` to `appearance="filled-outlined"` in the following elements [issue:1127]
   - `<wa-button>`
   - `<wa-callout>`
@@ -180,13 +171,10 @@ Components with the <wa-badge variant="warning">Experimental</wa-badge> badge sh
 - Modified `<wa-slider>` to only show the tooltip on the handle being dragged when in range mode [issue:1320]
 - Upgraded `<wa-page>` from _experimental_ to _stable_
 
-<<<<<<< HEAD
-=======
 <details>
 
 <summary>Pre-release Versions</summary>
 
->>>>>>> v3.3.1
 ## 3.0.0-beta.6
 
 - Fixed a bug in `<wa-dropdown>` that closed the dropdown event when preventing `wa-select` [issue:1432]
@@ -626,9 +614,6 @@ Many of these changes and improvements were the direct result of feedback from u
 
 </details>
 
-<<<<<<< HEAD
-Did we miss something? [Let us know!](https://github.com/shoelace-style/webawesome/discussions)
-=======
 Did we miss something? [Let us know!](https://github.com/shoelace-style/webawesome/discussions)
 
 <style>
@@ -637,4 +622,3 @@ Did we miss something? [Let us know!](https://github.com/shoelace-style/webaweso
     margin-block-start: -1.5rem;
   }
 </style>
->>>>>>> v3.3.1

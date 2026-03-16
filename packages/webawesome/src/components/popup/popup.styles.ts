@@ -10,17 +10,6 @@ export default css`
 
     /*
      * These properties are computed to account for the arrow's dimensions after being rotated 45º. The constant
-<<<<<<< HEAD
-     * 0.7071 is derived from sin(45), which is the diagonal size of the arrow's container after rotating.
-     *
-     * The diamond will be translated inward by the border thickness to ensure crop point is o the inner edge of
-     * the border. This also means we need to increase the size of the diamond by sqrt(2) time the border width
-     * to keep it central (== 2 * sin(45)).
-     */
-    --arrow-offset: var(--arrow-border-size);
-    --arrow-size-diagonal: calc((var(--arrow-size) + var(--arrow-offset) * 2) * 0.7071);
-    --arrow-padding-offset: calc(var(--arrow-size-diagonal) - var(--arrow-size));
-=======
      * 0.7071 is derived from sin(45) to calculate the length of the arrow after rotation.
      *
      * The diamond will be translated inward by --arrow-base-offset, the border thickness, to centralise it on
@@ -37,7 +26,6 @@ export default css`
     --arrow-padding-offset: calc(var(--arrow-size-diagonal) - var(--arrow-size));
     --arrow-size-div: calc(var(--arrow-size-diagonal) * 2);
     --arrow-clipping-corner: calc(var(--arrow-base-offset) * 1.4142);
->>>>>>> v3.3.1
 
     display: contents;
   }
@@ -72,30 +60,6 @@ export default css`
 
   .arrow {
     position: absolute;
-<<<<<<< HEAD
-    width: calc(var(--arrow-size-diagonal) * 2);
-    height: calc(var(--arrow-size-diagonal) * 2);
-    rotate: 45deg;
-    background: var(--arrow-color);
-    z-index: 3;
-    clip-path: polygon(0 100%, 100% 0, 100% 100%);
-    translate: 0 calc(var(--arrow-offset) * -1);
-  }
-
-  :host([data-current-placement^='left']) .arrow {
-    rotate: -45deg;
-    translate: calc(var(--arrow-offset) * -1) 0;
-  }
-
-  :host([data-current-placement^='right']) .arrow {
-    rotate: 135deg;
-    translate: var(--arrow-offset) 0;
-  }
-
-  :host([data-current-placement^='bottom']) .arrow {
-    rotate: 225deg;
-    translate: 0 var(--arrow-offset);
-=======
     width: var(--arrow-size-div);
     height: var(--arrow-size-div);
     background: var(--arrow-color);
@@ -122,7 +86,6 @@ export default css`
 
   :host([data-current-placement|='bottom']) .arrow {
     rotate: 225deg;
->>>>>>> v3.3.1
   }
 
   /* Hover bridge */
