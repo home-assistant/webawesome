@@ -14,10 +14,9 @@ Components with the <wa-badge variant="warning">Experimental</wa-badge> badge sh
 
 <small>TBD</small>
 
-- Added a new free component: `<wa-markdown>` (#6 of 14 per stretch goals)
+- Added a new experimental component: `<wa-markdown>` (#6 of 14 per stretch goals)
 - Added the `data-wa-preload` attribute for preloading components that aren't on the page yet when using the autoloader [issue:1501]
 - Added `placement` attribute to `<wa-color-picker>` [issue:2099]
-- Added a new free component: `<wa-markdown>` (#6 of 14 per stretch goals)
 - Added form association to `<wa-rating>`
 - Added a default slot to `<wa-copy-button>` so users can provide custom buttons [issue:1327]
 - Added `:state(success)` and `:state(error)` CSS custom states to `<wa-copy-button>` for styling feedback on custom triggers
@@ -38,6 +37,8 @@ Components with the <wa-badge variant="warning">Experimental</wa-badge> badge sh
 - Fixed a bug in `<wa-select>`, `<wa-combobox>`, and `<wa-option>` where the `change` and `input` events could dispatch with incorrect timing [pr:2243]
 - Fixed a bug in `<wa-drawer>` that threw an error when including Web Awesome in the `<head>` [discuss:2241]
 - Fixed a bug in Native Styles where text would incorrectly overflow in `<pre>` elements
+- Fixed a bug in `<wa-details>` where rapid toggling of the open state could cause the content visibility to get out of sync with the open attribute
+- Fixed a bug in `<wa-tree-item>` where rapid clicking on the expand button could cause the expand/collapse indicator to get out of sync with the children visibility
 - Fixed a bug in `<wa-select>` and `<wa-combobox>` where the selected value was not displayed when the value property was set before options were added to the DOM [#2253]
 - Updated the Awesome and Shoelace themes [pr:2135]:
   - Adds missing `<input type="range">` overrides to Shoelace theme to match `<wa-slider>`
@@ -410,8 +411,8 @@ Many of these changes and improvements were the direct result of feedback from u
 
 ### New Features {data-no-outline}
 
-- Added a new free component: `<wa-popover>` (#2 of 14 per stretch goals)
-- Added a new free component: `<wa-zoomable-frame>` (#3 of 14 per stretch goals)
+- Added a new component: `<wa-popover>` (#2 of 14 per stretch goals)
+- Added a new component: `<wa-zoomable-frame>` (#3 of 14 per stretch goals)
 - Added a `min-block-size` to `<wa-divider orientation="vertical">` to ensure the divider is visible regardless of container height
 - Added support for `name` in `<wa-details>` for exclusively opening one in a group
 - Added `--wa-content-spacing` to themes to set default spacing between HTML elements in Native Styles
@@ -449,7 +450,7 @@ Many of these changes and improvements were the direct result of feedback from u
 - 🚨 BREAKING: Renamed the `image` slot to `media` for a more appropriate naming convention
 - Added Theme Builder to create your own themes
 - Added a new Blog & News pattern category
-- Added a new free component: `<wa-scroller>` (#1 of 14 per stretch goals)
+- Added a new component: `<wa-scroller>` (#1 of 14 per stretch goals)
 - Added support for Duotone Thin, Light, and Regular styles and the Sharp Duotone family of styles to `<wa-icon>`
 - Added a default `gap` to `<wa-tag>` for better default spacing when used with icons
 - Fixed a bug that caused `<wa-radio-group>` to have an undesired margin below it
