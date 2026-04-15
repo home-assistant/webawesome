@@ -26,13 +26,51 @@ Not sure which icon to use? [Find the perfect icon over at Font Awesome!](https:
 
 ## Examples
 
+### Sizing
+
+Icons are sized relative to the current font size. To change their size, set the `font-size` property on the icon itself or on a parent element as shown below.
+
+```html {.example}
+<div class="wa-cluster" style="font-size: 44px;">
+  <wa-icon name="bell"></wa-icon>
+  <wa-icon name="heart"></wa-icon>
+  <wa-icon name="image"></wa-icon>
+  <wa-icon name="microphone"></wa-icon>
+  <wa-icon name="search"></wa-icon>
+  <wa-icon name="star"></wa-icon>
+</div>
+```
+
+### Colors
+
+Icons inherit their color from the current text color. Thus, you can set the `color` property on the `<wa-icon>` element or an ancestor to change the color.
+
+```html {.example}
+<div class="wa-cluster" style="font-size: 1.5em;">
+  <wa-icon name="heart" style="color: salmon;"></wa-icon>
+  <wa-icon name="fire" style="color: coral;"></wa-icon>
+  <wa-icon name="sun" style="color: gold;"></wa-icon>
+  <wa-icon name="leaf" style="color: mediumseagreen;"></wa-icon>
+  <wa-icon name="cloud-showers-heavy" style="color: steelblue;"></wa-icon>
+  <wa-icon name="hat-wizard" style="color: mediumpurple;"></wa-icon>
+</div>
+```
+
+### Labels
+
+For non-decorative icons, use the `label` attribute to announce it to assistive devices.
+
+```html {.example}
+<wa-icon name="star" label="Favorite" style="font-size: 1.5em;"></wa-icon>
+```
+
 ### Families & Variants
 
 The default icon library is Font Awesome Free, which comes with two icon families: `classic` and `brands`. Use the `family` attribute to set the icon family.
 
 Many Font Awesome Pro icon families have variants such as `thin`, `light`, `regular`, and `solid`. Font Awesome Pro users can [provide their kit code](/docs/#using-font-awesome-kit-codes) to unlock additional premium icon families, including `sharp`, `duotone`, `sharp-duotone`, and additional Pro+ icon packs.
 
-For supportive icon families, use the `variant` attribute to set the variant.
+For families that support multiple weights, use the `variant` attribute to set the variant.
 
 ```html {.example}
 <div class="wa-stack wa-gap-xl">
@@ -84,29 +122,6 @@ For supportive icon families, use the `variant` attribute to set the variant.
 </div>
 ```
 
-### Labels
-
-For non-decorative icons, use the `label` attribute to announce it to assistive devices.
-
-```html {.example}
-<wa-icon name="star" label="Favorite" style="font-size: 1.5em;"></wa-icon>
-```
-
-### Sizing
-
-Icons are sized relative to the current font size. To change their size, set the `font-size` property on the icon itself or on a parent element as shown below.
-
-```html {.example}
-<div class="wa-cluster" style="font-size: 44px;">
-  <wa-icon name="bell"></wa-icon>
-  <wa-icon name="heart"></wa-icon>
-  <wa-icon name="image"></wa-icon>
-  <wa-icon name="microphone"></wa-icon>
-  <wa-icon name="search"></wa-icon>
-  <wa-icon name="star"></wa-icon>
-</div>
-```
-
 ### Auto Width
 
 By default, icons have a `1em` height and a fixed `1.25em` width. Use the `auto-width` attribute to allow the icon to use its natural variable width.
@@ -152,6 +167,10 @@ Web Awesome supports [Font Awesome's rotation and flip utilities](https://docs.f
 ### Animating
 
 Web Awesome supports [Font Awesome's animation utilities](https://docs.fontawesome.com/web/style/animate/) for adding visual interest to icons. To select different types of animations, use the `animation` attribute when you reference an icon.
+
+:::info
+All [icon animations respect](https://docs.fontawesome.com/web/style/animate/#accessibility) `prefers-reduced-motion` and are automatically disabled when set to `reduce`.
+:::
 
 #### Beat
 
@@ -293,25 +312,6 @@ Use the `spin` animation to get any icon to rotate, and use `spin-pulse` to have
   label="Pulse Spinning Spinner"
   style="font-size: 2em; --animation-direction: reverse"
 ></wa-icon>
-```
-
-:::info
-All [icon animations respect](https://docs.fontawesome.com/web/style/animate/#accessibility) `prefers-reduced-motion` and are automatically disabled when set to `reduce`.
-:::
-
-### Colors
-
-Icons inherit their color from the current text color. Thus, you can set the `color` property on the `<wa-icon>` element or an ancestor to change the color.
-
-```html {.example}
-<div class="wa-cluster" style="font-size: 1.5em;">
-  <wa-icon name="heart" style="color: salmon;"></wa-icon>
-  <wa-icon name="fire" style="color: coral;"></wa-icon>
-  <wa-icon name="sun" style="color: gold;"></wa-icon>
-  <wa-icon name="leaf" style="color: mediumseagreen;"></wa-icon>
-  <wa-icon name="cloud-showers-heavy" style="color: steelblue;"></wa-icon>
-  <wa-icon name="hat-wizard" style="color: mediumpurple;"></wa-icon>
-</div>
 ```
 
 ### Duotone
@@ -660,7 +660,7 @@ For example, this will change the default icon library to use [Bootstrap Icons](
   registerIconLibrary('default', {
     resolver: (name, family) => {
       const suffix = family === 'filled' ? '-fill' : '';
-      return `https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/${name}${suffix}.svg`;
+      return `https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/icons/${name}${suffix}.svg`;
     },
   });
 </script>
@@ -753,7 +753,7 @@ Icons in this library are licensed under the [MIT License](https://github.com/tw
   registerIconLibrary('bootstrap', {
     resolver: (name, family) => {
       const suffix = family === 'filled' ? '-fill' : '';
-      return `https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/${name}${suffix}.svg`;
+      return `https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/icons/${name}${suffix}.svg`;
     },
   });
 </script>
@@ -790,7 +790,7 @@ Icons in this library are licensed under the [Creative Commons 4.0 License](http
       let folder = 'regular';
       if (name.substring(0, 4) === 'bxs-') folder = 'solid';
       if (name.substring(0, 4) === 'bxl-') folder = 'logos';
-      return `https://cdn.jsdelivr.net/npm/boxicons@2.0.5/svg/${folder}/${name}.svg`;
+      return `https://cdn.jsdelivr.net/npm/boxicons@2.1.4/svg/${folder}/${name}.svg`;
     },
     mutator: svg => svg.setAttribute('fill', 'currentColor'),
   });
@@ -831,7 +831,7 @@ Icons in this library are licensed under the [MIT License](https://github.com/lu
   import { registerIconLibrary } from '/dist/webawesome.js';
 
   registerIconLibrary('lucide', {
-    resolver: name => `https://cdn.jsdelivr.net/npm/lucide-static@0.16.29/icons/${name}.svg`,
+    resolver: name => `https://cdn.jsdelivr.net/npm/lucide-static@1.8.0/icons/${name}.svg`,
     mutator: svg =>
       svg.querySelectorAll('path').forEach(path => {
         path.setAttribute('fill', 'none');
@@ -861,7 +861,7 @@ Icons in this library are licensed under the [MIT License](https://github.com/ta
   import { registerIconLibrary } from '/dist/webawesome.js';
 
   registerIconLibrary('heroicons', {
-    resolver: name => `https://cdn.jsdelivr.net/npm/heroicons@2.0.1/24/outline/${name}.svg`,
+    resolver: name => `https://cdn.jsdelivr.net/npm/heroicons@2.2.0/24/outline/${name}.svg`,
     mutator: svg =>
       svg.querySelectorAll('path').forEach(path => {
         path.setAttribute('fill', 'none');
@@ -923,7 +923,7 @@ Icons in this library are licensed under the [MIT License](https://github.com/io
   import { registerIconLibrary } from '/dist/webawesome.js';
 
   registerIconLibrary('ionicons', {
-    resolver: name => `https://cdn.jsdelivr.net/npm/ionicons@5.1.2/dist/ionicons/svg/${name}.svg`,
+    resolver: name => `https://cdn.jsdelivr.net/npm/ionicons@8.0.13/dist/ionicons/svg/${name}.svg`,
     mutator: svg => {
       svg.setAttribute('fill', 'currentColor');
       svg.setAttribute('stroke', 'currentColor');
@@ -1003,7 +1003,7 @@ Icons in this library are licensed under the [Apache 2.0 License](https://github
   registerIconLibrary('material', {
     resolver: name => {
       const match = name.match(/^(.*?)(_(round|sharp))?$/);
-      return `https://cdn.jsdelivr.net/npm/@material-icons/svg@1.0.5/svg/${match[1]}/${match[3] || 'outline'}.svg`;
+      return `https://cdn.jsdelivr.net/npm/@material-icons/svg@1.0.33/svg/${match[1]}/${match[3] || 'outline'}.svg`;
     },
     mutator: svg => svg.setAttribute('fill', 'currentColor'),
   });
@@ -1047,7 +1047,7 @@ Icons in this library are licensed under the [Apache 2.0 License](https://github
     resolver: name => {
       const match = name.match(/^(.*?)\/(.*?)?$/);
       match[1] = match[1].charAt(0).toUpperCase() + match[1].slice(1);
-      return `https://cdn.jsdelivr.net/npm/remixicon@2.5.0/icons/${match[1]}/${match[2]}.svg`;
+      return `https://cdn.jsdelivr.net/npm/remixicon@4.9.1/icons/${match[1]}/${match[2]}.svg`;
     },
     mutator: svg => svg.setAttribute('fill', 'currentColor'),
   });
@@ -1081,7 +1081,7 @@ Icons in this library are licensed under the [MIT License](https://github.com/ta
   import { registerIconLibrary } from '/dist/webawesome.js';
 
   registerIconLibrary('tabler', {
-    resolver: name => `https://cdn.jsdelivr.net/npm/@tabler/icons@1.68.0/icons/${name}.svg`,
+    resolver: name => `https://cdn.jsdelivr.net/npm/@tabler/icons@2.47.0/icons/${name}.svg`,
     mutator: svg => {
       svg.style.fill = 'none';
       svg.setAttribute('stroke', 'currentColor');
@@ -1119,7 +1119,7 @@ Icons in this library are licensed under the [Apache 2.0 License](https://github
   registerIconLibrary('unicons', {
     resolver: name => {
       const match = name.match(/^(.*?)(-s)?$/);
-      return `https://cdn.jsdelivr.net/npm/@iconscout/unicons@3.0.3/svg/${match[2] === '-s' ? 'solid' : 'line'}/${
+      return `https://cdn.jsdelivr.net/npm/@iconscout/unicons@4.2.0/svg/${match[2] === '-s' ? 'solid' : 'line'}/${
         match[1]
       }.svg`;
     },
