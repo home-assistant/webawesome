@@ -21,5 +21,5 @@ jobs:
       - run: npm install
       - run: npm install
         working-directory: packages/webawesome
-      - run: npm publish --provenance
+      - run: npm publish --provenance --tag latest
         working-directory: packages/webawesome
