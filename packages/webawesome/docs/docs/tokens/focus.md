@@ -9,10 +9,10 @@ use-cases:
   - keyboard focus
   - accessibility focus
   - tab focus
+hasOutline: true
 ---
 
 A consistent focus ring helps with predictable keyboard navigation. Together with [`--wa-color-focus`](/docs/tokens/color/#interactions), these tokens create a uniform focus state for Web Awesome components.
-
 
 | Custom Property          |  Default Value                                                                |
 | ------------------------ | ----------------------------------------------------------------------------- |

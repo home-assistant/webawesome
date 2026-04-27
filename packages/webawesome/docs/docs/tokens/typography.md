@@ -88,7 +88,6 @@ In Web Awesome, we use `--wa-font-weight-action` for interactive text, such as b
 
 Line heights control the distance between lines of text and are unitless to scale proportionately with text size. For readability, `--wa-line-height-normal`, recommended for paragraph text, should be 1.5 or greater.
 
-
 | Custom Property              | Default Value | Preview                                                                                                                      |
 | ---------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | `--wa-line-height-condensed` | `1.2`       | <div style="line-height: var(--wa-line-height-condensed); border-block-color: var(--wa-color-neutral-border-loud)">AaBb</div> |
