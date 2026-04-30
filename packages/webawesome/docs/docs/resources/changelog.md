@@ -10,9 +10,9 @@ Components with the <wa-badge variant="warning">Experimental</wa-badge> badge sh
 
 {% include "changelog-email-signup.njk" %}
 
-## Unreleased
+## 3.6.0
 
-<small>TBD</small>
+<small>April 30th, 2026</small>
 
 - Added a `:::pro` callout variant in the docs that renders with the same orange/white styling as the Pro badge
 - Added `xs` and `xl` sizes for all form controls and sized components
