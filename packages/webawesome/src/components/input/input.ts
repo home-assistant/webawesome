@@ -215,9 +215,7 @@ export default class WaInput extends WebAwesomeFormAssociatedElement {
     this.relayNativeEvent(event, { bubbles: true, composed: true });
   }
 
-  private handleClearClick(event: MouseEvent) {
-    event.preventDefault();
-
+  public clear() {
     if (this.value !== '') {
       this.value = '';
 
@@ -229,6 +227,12 @@ export default class WaInput extends WebAwesomeFormAssociatedElement {
     }
 
     this.input.focus();
+  }
+
+  private handleClearClick(event: MouseEvent) {
+    event.preventDefault();
+
+    this.clear();
   }
 
   private handleInput() {
@@ -397,42 +401,46 @@ export default class WaInput extends WebAwesomeFormAssociatedElement {
 
         ${isClearIconVisible
           ? html`
-              <button
-                part="clear-button"
-                class="clear"
-                type="button"
-                aria-label=${this.localize.term('clearEntry')}
-                @click=${this.handleClearClick}
-                tabindex="-1"
-              >
-                <slot name="clear-icon">
-                  <wa-icon name="circle-xmark" library="system" variant="regular"></wa-icon>
-                </slot>
-              </button>
+              <slot name="clear-button">
+                <button
+                  part="clear-button"
+                  class="clear"
+                  type="button"
+                  aria-label=${this.localize.term('clearEntry')}
+                  @click=${this.handleClearClick}
+                  tabindex="-1"
+                >
+                  <slot name="clear-icon">
+                    <wa-icon name="circle-xmark" library="system" variant="regular"></wa-icon>
+                  </slot>
+                </button>
+              </slot>
             `
           : ''}
         ${this.passwordToggle && !this.disabled
           ? html`
-              <button
-                part="password-toggle-button"
-                class="password-toggle"
-                type="button"
-                aria-label=${this.localize.term(this.passwordVisible ? 'hidePassword' : 'showPassword')}
-                @click=${this.handlePasswordToggle}
-                tabindex="-1"
-              >
-                ${!this.passwordVisible
-                  ? html`
-                      <slot name="show-password-icon">
-                        <wa-icon name="eye" library="system" variant="regular"></wa-icon>
-                      </slot>
-                    `
-                  : html`
-                      <slot name="hide-password-icon">
-                        <wa-icon name="eye-slash" library="system" variant="regular"></wa-icon>
-                      </slot>
-                    `}
-              </button>
+              <slot name="password-toggle-button">
+                <button
+                  part="password-toggle-button"
+                  class="password-toggle"
+                  type="button"
+                  aria-label=${this.localize.term(this.passwordVisible ? 'hidePassword' : 'showPassword')}
+                  @click=${this.handlePasswordToggle}
+                  tabindex="-1"
+                >
+                  ${!this.passwordVisible
+                    ? html`
+                        <slot name="show-password-icon">
+                          <wa-icon name="eye" library="system" variant="regular"></wa-icon>
+                        </slot>
+                      `
+                    : html`
+                        <slot name="hide-password-icon">
+                          <wa-icon name="eye-slash" library="system" variant="regular"></wa-icon>
+                        </slot>
+                      `}
+                </button>
+              </slot>
             `
           : ''}
 
