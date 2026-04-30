@@ -67,6 +67,9 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
 
   @property() title = ''; // make reactive to pass through
 
+  /** The accessible label for the button, propagated to the underlying `<button>` or `<a>` element. */
+  @property({ attribute: 'aria-label' }) ariaLabel: string | null = null;
+
   /** The button's theme variant. Defaults to `neutral` if not within another element with a variant. */
   @property({ reflect: true }) variant: 'neutral' | 'brand' | 'success' | 'warning' | 'danger' = 'neutral';
 
@@ -327,6 +330,7 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
         rel=${ifDefined(isLink && this.rel ? this.rel : undefined)}
         role=${ifDefined(isLink ? undefined : 'button')}
         aria-disabled=${ifDefined(isLink && this.disabled ? 'true' : undefined)}
+        aria-label=${ifDefined(this.ariaLabel ?? undefined)}
         tabindex=${this.disabled ? '-1' : '0'}
         @invalid=${this.isButton() ? this.handleInvalid : null}
         @click=${this.handleClick}
