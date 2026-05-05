@@ -2,6 +2,7 @@ import type { PropertyValues } from 'lit';
 import { html, isServer } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { uniqueId } from '../../internal/math.js';
 import { HasSlotController } from '../../internal/slot.js';
 import { RequiredValidator } from '../../internal/validators/required-validator.js';
@@ -114,6 +115,12 @@ export default class WaRadioGroup extends WebAwesomeFormAssociatedElement {
    */
   @property({ type: Boolean, attribute: 'with-hint' }) withHint = false;
 
+  /** The accessible label for the radio group, if no label is provided. */
+  @property({ attribute: 'aria-label' }) ariaLabel: string | null = null;
+
+  /** The tag name of the radio element. Needs to be set if a custom radio element is used */
+  @property({ attribute: 'radio-tag' }) radioTag = 'wa-radio';
+
   //
   // We need this because if we don't have it, FormValidation yells at us that it's "not focusable".
   //   If we use `this.tabIndex = -1` we can't focus the radio inside.
@@ -136,7 +143,7 @@ export default class WaRadioGroup extends WebAwesomeFormAssociatedElement {
   get validationTarget() {
     if (isServer) return undefined;
 
-    const radio = this.querySelector<WaRadio>(':is(wa-radio):not([disabled])');
+    const radio = this.querySelector<WaRadio>(`:is(${this.radioTag}):not([disabled])`);
     if (!radio) return undefined;
 
     return radio;
@@ -162,7 +169,7 @@ export default class WaRadioGroup extends WebAwesomeFormAssociatedElement {
   }
 
   private handleRadioClick = (e: Event) => {
-    const clickedRadio = (e.target as HTMLElement).closest<WaRadio>('wa-radio');
+    const clickedRadio = (e.target as HTMLElement).closest<WaRadio>(this.radioTag);
 
     if (!clickedRadio || clickedRadio.disabled || (clickedRadio as any).forceDisabled || this.disabled) {
       return;
@@ -191,7 +198,7 @@ export default class WaRadioGroup extends WebAwesomeFormAssociatedElement {
   };
 
   private getAllRadios() {
-    return [...this.querySelectorAll<WaRadio>('wa-radio')];
+    return [...this.querySelectorAll<WaRadio>(this.radioTag)];
   }
 
   private handleLabelClick() {
@@ -353,6 +360,7 @@ export default class WaRadioGroup extends WebAwesomeFormAssociatedElement {
         aria-describedby="hint"
         aria-errormessage="error-message"
         aria-orientation=${this.orientation}
+        aria-label=${ifDefined(!this.label && !hasLabelSlot && this.ariaLabel ? this.ariaLabel : undefined)}
       >
         <label
           part="form-control-label"
