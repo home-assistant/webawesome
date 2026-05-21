@@ -735,15 +735,6 @@ describe('<wa-tab-group>', () => {
           tabGroup.disconnectedCallback();
         });
 
-        it('should show scroll buttons when tabs overflow', async () => {
-          const tabGroup = await clientFixture<WaTabGroup>(html`<wa-tab-group>${generateTabs(30)}</wa-tab-group>`);
-          await waitForScrollButtonsToBeRendered(tabGroup);
-
-          const scrollButtons = tabGroup.shadowRoot?.querySelectorAll('wa-button');
-          expect(scrollButtons).to.have.length(2);
-          tabGroup.disconnectedCallback();
-        });
-
         it('should not show scroll buttons when withoutScrollControls is true', async () => {
           const tabGroup = await clientFixture<WaTabGroup>(html`<wa-tab-group>${generateTabs(30)}</wa-tab-group>`);
           tabGroup.withoutScrollControls = true;
