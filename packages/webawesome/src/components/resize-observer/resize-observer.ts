@@ -1,4 +1,4 @@
-import { html } from 'lit';
+import { html, isServer } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { WaResizeEvent } from '../../events/resize.js';
 import { watch } from '../../internal/watch.js';
@@ -6,7 +6,8 @@ import WebAwesomeElement from '../../internal/webawesome-element.js';
 import styles from './resize-observer.styles.js';
 
 /**
- * @summary The Resize Observer component offers a thin, declarative interface to the [`ResizeObserver API`](https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver).
+ * @summary Resize observers watch their slotted elements for size changes and emit an event when they occur. Provides a
+ *  thin, declarative interface to the browser's ResizeObserver API.
  * @documentation https://webawesome.com/docs/components/resize-observer
  * @status stable
  * @since 2.0
@@ -27,14 +28,18 @@ export default class WaResizeObserver extends WebAwesomeElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.resizeObserver = new ResizeObserver((entries: ResizeObserverEntry[]) => {
-      this.dispatchEvent(new WaResizeEvent({ entries }));
-    });
 
-    if (!this.disabled) {
-      this.updateComplete.then(() => {
-        this.startObserver();
+    // SSR guard: ResizeObserver is not available during server-side rendering
+    if (!isServer) {
+      this.resizeObserver = new ResizeObserver((entries: ResizeObserverEntry[]) => {
+        this.dispatchEvent(new WaResizeEvent({ entries }));
       });
+
+      if (!this.disabled) {
+        this.updateComplete.then(() => {
+          this.startObserver();
+        });
+      }
     }
   }
 

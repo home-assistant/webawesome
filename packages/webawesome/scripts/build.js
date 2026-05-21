@@ -14,25 +14,21 @@ import open from 'open';
 import ora from 'ora';
 import copy from 'recursive-copy';
 import { SimulateWebAwesomeApp } from '../docs/_utils/simulate-webawesome-app.js';
-import { generateAgentSkill } from './agent-skill.js';
 import { generateDocs } from './docs.js';
 import { generateLlmsTxtFile } from './llms.js';
 import { transformCssPlugin } from './transform-css-plugin.js';
-import { getCdnDir, getDistDir, getDocsDir, getRootDir, getSiteDir } from './utils.js';
+import { formatError, getCdnDir, getDistDir, getDocsDir, getRootDir, getSiteDir } from './utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const currentYear = new Date().getFullYear();
-const spinner = ora({ text: 'Web Awesome', color: 'cyan' }).start();
-const getPackageData = async () => JSON.parse(await readFile(join(getRootDir(), 'package.json'), 'utf-8'));
-const getVersion = async () => JSON.stringify((await getPackageData()).version.toString());
+const spinner = ora();
 let buildContexts = {
   bundledContext: {},
   unbundledContext: {},
 };
 
 const debugPerf = process.env.DEBUG_PERFORMANCE === '1';
-
 const isDeveloping = process.argv.includes('--develop');
 
 /**
@@ -47,6 +43,14 @@ const isDeveloping = process.argv.includes('--develop');
  * @param {BuildOptions} [options={}]
  */
 export async function build(options = {}) {
+  // packageData and version  need to be set within the `build()` function because this file gets imported by the app, which may not have generated its bundled directory yet, so this needs to be "lazily" evaluated.
+  const packageData = JSON.parse(await readFile(join(getRootDir(), 'package.json'), 'utf-8'));
+  const version = packageData.version;
+  console.log(`${chalk.hex('#ef6741')('🦊 Web Awesome')} ${chalk.cyan(`v${version}\n`)}`);
+  if (isDeveloping) {
+    spinner.info('Development mode');
+  }
+
   if (!options.watchedSrcDirectories) {
     options.watchedSrcDirectories = ['src'];
   }
@@ -267,6 +271,7 @@ export async function build(options = {}) {
     const rootDir = process.env.ROOT_DIR || '.';
     // Bundled config
     const config = {
+      conditions: isDeveloping ? ['development'] : [],
       format: 'esm',
       target: ['es2020', 'safari15'],
       entryPoints: [
@@ -303,7 +308,7 @@ export async function build(options = {}) {
       },
       plugins: [
         transformCssPlugin(), // Transform CSS in .styles.ts files for browser compatibility
-        replace({ __WEBAWESOME_VERSION__: await getVersion() }),
+        replace({ __WEBAWESOME_VERSION__: version }),
       ],
     };
 
@@ -533,7 +538,7 @@ export async function build(options = {}) {
 
             reload();
           } catch (err) {
-            console.error(chalk.red(err));
+            console.error(chalk.red(formatError(err)));
 
             if (!isDeveloping) {
               process.exit(1);

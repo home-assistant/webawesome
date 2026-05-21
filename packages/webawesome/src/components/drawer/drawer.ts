@@ -18,7 +18,8 @@ import '../button/button.js';
 import styles from './drawer.styles.js';
 
 /**
- * @summary Drawers slide in from a container to expose additional options and information.
+ * @summary Drawers slide in from the edge of a container to expose additional options and information without
+ *  navigating away. Useful for navigation menus, filters, and secondary content.
  * @documentation https://webawesome.com/docs/components/drawer
  * @status stable
  * @since 2.0
@@ -52,6 +53,7 @@ import styles from './drawer.styles.js';
  * @cssproperty --spacing - The amount of space around and between the drawer's content.
  * @cssproperty --size - The preferred size of the drawer. This will be applied to the drawer's width or height
  *   depending on its `placement`. Note that the drawer will shrink to accommodate smaller screens.
+ * @cssproperty [--backdrop-filter=none] - A filter to apply to the backdrop behind the drawer.
  * @cssproperty [--show-duration=200ms] - The animation duration when showing the drawer.
  * @cssproperty [--hide-duration=200ms] - The animation duration when hiding the drawer.
  *
@@ -93,6 +95,12 @@ export default class WaDrawer extends WebAwesomeElement {
 
   /** The ID of the element that describes the drawer dialog. */
   @property({ attribute: 'aria-describedby' }) ariaDescribedby?: string;
+
+  /**
+   * Only required for SSR. Set to `true` if you're slotting in a `footer` element so the server-rendered markup
+   * includes the footer before the component hydrates on the client.
+   */
+  @property({ attribute: 'with-footer', type: Boolean }) withFooter = false;
 
   firstUpdated() {
     if (isServer) {
@@ -233,7 +241,7 @@ export default class WaDrawer extends WebAwesomeElement {
 
   render() {
     const hasHeader = !this.withoutHeader;
-    const hasFooter = this.hasSlotController.test('footer');
+    const hasFooter = this.hasUpdated ? this.hasSlotController.test('footer') : this.withFooter;
 
     return html`
       <dialog
@@ -317,8 +325,12 @@ if (!isServer) {
     }
   });
 
+  //
   // Ugly, but it fixes light dismiss in Safari: https://bugs.webkit.org/show_bug.cgi?id=267688
-  document.body.addEventListener('pointerdown', () => {
+  //
+  // [Mar 27, 2026] - This bug was fixed in Safari 18.3 beta so this can be removed in a year or so.
+  //
+  document.addEventListener('pointerdown', () => {
     /* empty */
   });
 }

@@ -34,7 +34,8 @@ export type IconAnimation =
   | 'spin-reverse';
 
 /**
- * @summary Icons are symbols that can be used to represent various options within an application.
+ * @summary Icons are scalable vector symbols that represent actions, content, or status throughout your application.
+ *  They support Font Awesome and custom icon libraries with animation presets.
  * @documentation https://webawesome.com/docs/components/icon
  * @status stable
  * @since 2.0
@@ -145,15 +146,18 @@ export default class WaIcon extends WebAwesomeElement {
     unwatchIcon(this);
   }
 
-  private getIconSource(): IconSource {
+  private async getIconSource(): Promise<IconSource> {
     const library = getIconLibrary(this.library);
     const family = this.family || getDefaultIconFamily();
 
     if (this.name && library) {
-      return {
-        url: library.resolver(this.name, family, this.variant, this.autoWidth),
-        fromLibrary: true,
-      };
+      let url: string | undefined;
+      try {
+        url = await library.resolver(this.name, family, this.variant, this.autoWidth);
+      } catch {
+        url = undefined;
+      }
+      return { url, fromLibrary: true };
     }
 
     return {
@@ -234,7 +238,7 @@ export default class WaIcon extends WebAwesomeElement {
 
   @watch(['family', 'name', 'library', 'variant', 'src', 'autoWidth', 'swapOpacity'], { waitUntilFirstUpdate: true })
   async setIcon() {
-    const { url, fromLibrary } = this.getIconSource();
+    const { url, fromLibrary } = await this.getIconSource();
     const library = fromLibrary ? getIconLibrary(this.library) : undefined;
 
     if (!url) {
@@ -254,7 +258,8 @@ export default class WaIcon extends WebAwesomeElement {
       iconCache.delete(url);
     }
 
-    if (url !== this.getIconSource().url) {
+    const sourceAfterFetch = await this.getIconSource();
+    if (url !== sourceAfterFetch.url) {
       // If the url has changed while fetching the icon, ignore this request
       return;
     }

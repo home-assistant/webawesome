@@ -4,6 +4,7 @@ import { customElement, property, query } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
+import { warnDeprecatedSize } from '../../internal/size.js';
 import { HasSlotController } from '../../internal/slot.js';
 import { MirrorValidator } from '../../internal/validators/mirror-validator.js';
 import { watch } from '../../internal/watch.js';
@@ -14,7 +15,8 @@ import { LocalizeController } from '../../utilities/localize.js';
 import styles from './switch.styles.js';
 
 /**
- * @summary Switches allow the user to toggle an option on or off.
+ * @summary Switches toggle a single setting on or off and apply the change immediately, without requiring a form
+ *  submission.
  * @documentation https://webawesome.com/docs/components/switch
  * @status stable
  * @since 2.0
@@ -71,7 +73,12 @@ export default class WaSwitch extends WebAwesomeFormAssociatedElement {
   }
 
   /** The switch's size. */
-  @property({ reflect: true }) size: 'small' | 'medium' | 'large' = 'medium';
+  @property({ reflect: true }) size: 'xs' | 's' | 'm' | 'l' | 'xl' | 'small' | 'medium' | 'large' = 'm';
+
+  @watch('size')
+  handleSizeChange() {
+    warnDeprecatedSize(this.localName, this.size);
+  }
 
   /** Disables the switch. */
   @property({ type: Boolean }) disabled = false;
@@ -104,15 +111,10 @@ export default class WaSwitch extends WebAwesomeFormAssociatedElement {
   @property({ attribute: 'hint' }) hint = '';
 
   /**
-   * Used for SSR. If you slot in hint, make sure to add `with-hint` to your component to get it to properly render with SSR.
+   * Only required for SSR. Set to `true` if you're slotting in a `hint` element so the server-rendered markup
+   * includes the hint before the component hydrates on the client.
    */
   @property({ attribute: 'with-hint', type: Boolean }) withHint = false;
-
-  firstUpdated(changedProperties: PropertyValues<typeof this>) {
-    super.firstUpdated(changedProperties);
-
-    this.handleValueOrCheckedChange();
-  }
 
   private handleClick() {
     this.hasInteracted = true;
@@ -252,6 +254,12 @@ export default class WaSwitch extends WebAwesomeFormAssociatedElement {
     `;
   }
 }
+
+// The change-in-update warning is required for this component because the form-associated base class calls
+// updateValidity() in firstUpdated(), which triggers requestUpdate('validity') to sync the validation state after the
+// first render when the validation target is available. Additionally, HasSlotController triggers requestUpdate() on
+// initial slotchange events. See https://lit.dev/docs/tools/development/#development-build-runtime-warnings
+WaSwitch.disableWarning?.('change-in-update');
 
 declare global {
   interface HTMLElementTagNameMap {

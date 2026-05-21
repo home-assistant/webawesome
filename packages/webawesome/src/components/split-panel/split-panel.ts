@@ -1,4 +1,4 @@
-import { html } from 'lit';
+import { html, isServer } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { WaRepositionEvent } from '../../events/reposition.js';
@@ -10,7 +10,8 @@ import { LocalizeController } from '../../utilities/localize.js';
 import styles from './split-panel.styles.js';
 
 /**
- * @summary Split panels display two adjacent panels, allowing the user to reposition them.
+ * @summary Split panels display two adjacent panels separated by a draggable divider, letting users resize each side to
+ *  suit their workflow.
  * @documentation https://webawesome.com/docs/components/split-panel
  * @status stable
  * @since 2.0
@@ -78,11 +79,15 @@ export default class WaSplitPanel extends WebAwesomeElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.resizeObserver = new ResizeObserver(entries => this.handleResize(entries));
-    this.updateComplete.then(() => this.resizeObserver.observe(this));
 
-    this.detectSize();
-    this.cachedPositionInPixels = this.percentageToPixels(this.position);
+    // SSR guard: ResizeObserver is not available during server-side rendering
+    if (!isServer) {
+      this.resizeObserver = new ResizeObserver(entries => this.handleResize(entries));
+      this.updateComplete.then(() => this.resizeObserver.observe(this));
+
+      this.detectSize();
+      this.cachedPositionInPixels = this.percentageToPixels(this.position);
+    }
   }
 
   disconnectedCallback() {

@@ -1,13 +1,25 @@
 ---
 title: Rating
-description: Ratings give users a way to quickly view and provide feedback.
 layout: component
 category: Form Controls
+synonyms:
+  - stars
+  - star rating
+  - review
+use-cases:
+  - feedback
+  - score
+  - 5 stars
+  - thumbs up
 ---
 
 ```html {.example}
 <wa-rating label="Rating"></wa-rating>
 ```
+
+:::info
+This component works with standard `<form>` elements. Please refer to the section on [form controls](/docs/form-controls) to learn more about form submission and client-side validation.
+:::
 
 ## Examples
 
@@ -40,9 +52,11 @@ Use the `precision` attribute to let users select fractional ratings.
 Use the `size` attribute to adjust the size of the rating.
 
 ```html {.example}
-<wa-rating label="Rating" size="small"></wa-rating><br />
-<wa-rating label="Rating" size="medium"></wa-rating><br />
-<wa-rating label="Rating" size="large"></wa-rating>
+<wa-rating label="Rating" size="xs"></wa-rating><br />
+<wa-rating label="Rating" size="s"></wa-rating><br />
+<wa-rating label="Rating" size="m"></wa-rating><br />
+<wa-rating label="Rating" size="l"></wa-rating><br />
+<wa-rating label="Rating" size="xl"></wa-rating>
 ```
 
 For more granular sizing, you can use the `font-size` property.
@@ -147,4 +161,81 @@ You can also use the `getSymbol` property to render different icons based on val
     return `<wa-icon name="${icons[value - 1]}"></wa-icon>`;
   };
 </script>
+```
+
+### Required
+
+Use the `required` attribute to make the rating mandatory. The form will not submit if the user hasn't selected a value.
+
+```html {.example}
+<form class="rating-required">
+  <wa-rating label="Rating" required></wa-rating>
+  <br /><br />
+  <wa-button appearance="filled" type="submit">Submit</wa-button>
+</form>
+
+<script type="module">
+  const form = document.querySelector('.rating-required');
+
+  await Promise.all([
+    customElements.whenDefined('wa-button'),
+    customElements.whenDefined('wa-rating'),
+  ]).then(() => {
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      alert('All fields are valid!');
+    });
+  });
+</script>
+```
+
+### Custom Validity
+
+Use the `setCustomValidity()` method to set a custom validation message. This will prevent the form from submitting and make the browser display the error message you provide. To clear the error, call this function with an empty string.
+
+```html {.example}
+<form class="rating-custom-validity">
+  <wa-rating label="Rating"></wa-rating>
+  <br /><br />
+  <wa-button appearance="filled" type="submit">Submit</wa-button>
+</form>
+
+<script type="module">
+  const form = document.querySelector('.rating-custom-validity');
+  const rating = form.querySelector('wa-rating');
+  const errorMessage = 'Please rate at least 3 stars!';
+
+  customElements.whenDefined('wa-rating').then(async () => {
+    await rating.updateComplete;
+    rating.setCustomValidity(errorMessage);
+  });
+
+  rating.addEventListener('change', () => {
+    rating.setCustomValidity(rating.value >= 3 ? '' : errorMessage);
+  });
+
+  await Promise.all([
+    customElements.whenDefined('wa-button'),
+    customElements.whenDefined('wa-rating'),
+  ]).then(() => {
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      alert('All fields are valid!');
+    });
+  });
+</script>
+```
+
+### Form Submission
+
+Ratings can be used in forms just like native form controls. The rating's `name` and `value` will be included in the form data when submitted.
+
+```html {.example}
+<form class="rating-form-submission" action="about:blank" method="get" target="_blank">
+  <label style="display: block; margin-bottom: 0.5rem;">How would you rate your experience?</label>
+  <wa-rating name="rating" label="Rating" required></wa-rating>
+  <br /><br />
+  <wa-button type="submit">Submit</wa-button>
+  <wa-button appearance="filled" type="reset" variant="neutral">Reset</wa-button>
+</form>
 ```

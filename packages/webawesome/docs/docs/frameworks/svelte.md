@@ -4,6 +4,12 @@ description: Tips for using Web Awesome in your Svelte app.
 layout: page-outline
 ---
 
+<wa-breadcrumb class="page-breadcrumbs">
+  <wa-icon slot="separator" name="angle-right" variant="regular"></wa-icon>
+  <wa-breadcrumb-item href="/docs/frameworks">Frameworks</wa-breadcrumb-item>
+  <wa-breadcrumb-item>{{ title }}</wa-breadcrumb-item>
+</wa-breadcrumb>
+
 Svelte [plays nice](https://custom-elements-everywhere.com/#svelte) with custom elements, so you can use Web Awesome in your Svelte apps with ease.
 
 ## Installation
@@ -14,34 +20,28 @@ To add Web Awesome to your Svelte app, install the package from npm.
 npm install @awesome.me/webawesome
 ```
 
+## Usage
+
 Next, import the Web Awesome stylesheet, import the components you need, and then start using Web Awesome!
 
 ```jsx
-// main.js or main.ts
-import '@awesome.me/webawesome/dist/styles/webawesome.css';
-import '@awesome.me/webawesome/dist/components/button/button.js';
-```
-
-## Usage
-
-### QR code generator example
-
-```jsx
-<h1>Live editing</h1>
-
-<wa-input label="Message" value={message} oninput={event => message = event.target.value}></wa-input>
-
-<wa-alert open>
-  <wa-icon slot="icon" name="info-circle"></wa-icon>
-  {message}
-</wa-alert>
-
+<!-- app.html -->
 <script>
-  import '@awesome.me/webawesome/dist/components/alert/alert.js'
+  import '@awesome.me/webawesome/dist/styles/webawesome.css';
+  import '@awesome.me/webawesome/dist/components/callout/callout.js'
   import '@awesome.me/webawesome/dist/components/input/input.js';
 
   let message = $state('')
 </script>
+
+<h1>Live editing</h1>
+
+<wa-input label="Message" value={message} oninput={event => message = event.target.value}></wa-input>
+
+<wa-callout>
+  <wa-icon slot="icon" name="info-circle"></wa-icon>
+  {message}
+</wa-callout>
 ```
 
 ### Two-way Binding

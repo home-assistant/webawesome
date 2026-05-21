@@ -16,7 +16,8 @@ import '../icon/icon.js';
 import styles from './details.styles.js';
 
 /**
- * @summary Details show a brief summary and expand to show additional content.
+ * @summary Details display a brief summary and expand to reveal additional content. Use them to progressively disclose
+ *  information, group related FAQs, or hide advanced options.
  * @documentation https://webawesome.com/docs/components/details
  * @status stable
  * @since 2.0
@@ -57,6 +58,8 @@ export default class WaDetails extends WebAwesomeElement {
   @query('summary') header: HTMLElement;
   @query('.body') body: HTMLElement;
   @query('.expand-icon-slot') expandIconSlot: HTMLSlotElement;
+
+  private animationGeneration = 0;
 
   @state() isAnimating = false;
 
@@ -188,6 +191,9 @@ export default class WaDetails extends WebAwesomeElement {
 
   @watch('open', { waitUntilFirstUpdate: true })
   async handleOpenChange() {
+    this.animationGeneration++;
+    const generation = this.animationGeneration;
+
     if (this.open) {
       this.details.open = true;
       // Show
@@ -216,6 +222,12 @@ export default class WaDetails extends WebAwesomeElement {
           easing: 'linear',
         },
       );
+
+      // If a newer animation has started, handle the final state
+      if (this.animationGeneration !== generation) {
+        return;
+      }
+
       this.body.style.height = 'auto';
       this.isAnimating = false;
 
@@ -241,7 +253,13 @@ export default class WaDetails extends WebAwesomeElement {
         ],
         { duration, easing: 'linear' },
       );
-      this.body.style.height = 'auto';
+
+      // If a newer animation has started, handle the final state
+      if (this.animationGeneration !== generation) {
+        return;
+      }
+
+      this.body.style.height = '0';
       this.isAnimating = false;
       this.details.open = false;
       this.dispatchEvent(new WaAfterHideEvent());

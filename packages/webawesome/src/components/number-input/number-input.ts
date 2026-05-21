@@ -3,6 +3,7 @@ import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
+import { warnDeprecatedSize } from '../../internal/size.js';
 import { HasSlotController } from '../../internal/slot.js';
 import { submitOnEnter } from '../../internal/submit-on-enter.js';
 import { MirrorValidator } from '../../internal/validators/mirror-validator.js';
@@ -15,9 +16,10 @@ import '../icon/icon.js';
 import styles from './number-input.styles.js';
 
 /**
- * @summary Number inputs allow users to enter and edit numeric values with optional stepper buttons.
+ * @summary Number inputs let users enter and edit numeric values, with optional stepper buttons for incrementing and
+ *  decrementing. Use them for quantities, measurements, and other numeric form fields.
  * @documentation https://webawesome.com/docs/components/number-input
- * @status experimental
+ * @status stable
  * @since 3.2
  *
  * @dependency wa-icon
@@ -33,6 +35,8 @@ import styles from './number-input.styles.js';
  * @event change - Emitted when an alteration to the control's value is committed by the user.
  * @event focus - Emitted when the control gains focus.
  * @event input - Emitted when the control receives input.
+ * @event beforeinput - Emitted before the value changes. Can be cancelled with `event.preventDefault()` to prevent the
+ *  value from changing.
  * @event wa-invalid - Emitted when the form control has been checked for validity and its constraints aren't satisfied.
  *
  * @csspart label - The label element.
@@ -92,7 +96,12 @@ export default class WaNumberInput extends WebAwesomeFormAssociatedElement {
   @property({ attribute: 'value', reflect: true }) defaultValue: string | null = this.getAttribute('value') || null;
 
   /** The input's size. */
-  @property({ reflect: true }) size: 'small' | 'medium' | 'large' = 'medium';
+  @property({ reflect: true }) size: 'xs' | 's' | 'm' | 'l' | 'xl' | 'small' | 'medium' | 'large' = 'm';
+
+  @watch('size')
+  handleSizeChange() {
+    warnDeprecatedSize(this.localName, this.size);
+  }
 
   /** The input's visual appearance. */
   @property({ reflect: true }) appearance: 'filled' | 'outlined' | 'filled-outlined' = 'outlined';
@@ -149,12 +158,14 @@ export default class WaNumberInput extends WebAwesomeFormAssociatedElement {
   @property() inputmode: 'numeric' | 'decimal' = 'numeric';
 
   /**
-   * Used for SSR. Will determine if the SSRed component will have the label slot rendered on initial paint.
+   * Only required for SSR. Set to `true` if you're slotting in a `label` element so the server-rendered markup
+   * includes the label before the component hydrates on the client.
    */
   @property({ attribute: 'with-label', type: Boolean }) withLabel = false;
 
   /**
-   * Used for SSR. Will determine if the SSRed component will have the hint slot rendered on initial paint.
+   * Only required for SSR. Set to `true` if you're slotting in a `hint` element so the server-rendered markup
+   * includes the hint before the component hydrates on the client.
    */
   @property({ attribute: 'with-hint', type: Boolean }) withHint = false;
 
@@ -195,8 +206,12 @@ export default class WaNumberInput extends WebAwesomeFormAssociatedElement {
     }
   }
 
-  private handleStepperClick(direction: 'up' | 'down') {
+  private handleStepperPointerUp(direction: 'up' | 'down', event: PointerEvent) {
     if (this.disabled || this.readonly) return;
+
+    const beforeInputEvent = new InputEvent('beforeinput', { bubbles: true, cancelable: true, composed: true });
+    this.dispatchEvent(beforeInputEvent);
+    if (beforeInputEvent.defaultPrevented) return;
 
     if (direction === 'up') {
       this.input.stepUp();
@@ -211,10 +226,16 @@ export default class WaNumberInput extends WebAwesomeFormAssociatedElement {
     this.dispatchEvent(new InputEvent('input', { bubbles: true, composed: true }));
     this.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
 
-    this.input.focus();
+    // Avoid focusing the input on touch to prevent the virtual keyboard from showing
+    if (event.pointerType !== 'touch') {
+      this.input.focus();
+    }
   }
 
-  private maintainFocusOnPointerDown(event: PointerEvent) {
+  private handleStepperPointerDown(event: PointerEvent) {
+    // Avoid focusing the input on touch to prevent the virtual keyboard from showing
+    if (event.pointerType === 'touch') return;
+
     event.preventDefault();
     this.input.focus();
   }
@@ -222,7 +243,13 @@ export default class WaNumberInput extends WebAwesomeFormAssociatedElement {
   updated(changedProperties: PropertyValues<this>) {
     super.updated(changedProperties);
 
-    if (changedProperties.has('value')) {
+    if (changedProperties.has('value') || changedProperties.has('defaultValue')) {
+      // The browser sanitizes invalid numeric input to an empty string. Mirror that behavior so `value` stays
+      // consistent with the native input (e.g. setting `"abc"` resolves to `""`).
+      if (this.input && this.value && this.input.value !== this.value) {
+        this._value = this.input.value;
+      }
+
       this.customStates.set('blank', !this.value);
     }
   }
@@ -301,8 +328,8 @@ export default class WaNumberInput extends WebAwesomeFormAssociatedElement {
                 tabindex="-1"
                 aria-label=${this.localize.term('decrement')}
                 ?disabled=${this.disabled || this.readonly || this.isAtMin}
-                @pointerdown=${this.maintainFocusOnPointerDown}
-                @click=${() => this.handleStepperClick('down')}
+                @pointerdown=${this.handleStepperPointerDown}
+                @pointerup=${(event: PointerEvent) => this.handleStepperPointerUp('down', event)}
               >
                 <slot name="decrement-icon">
                   <wa-icon name="minus" library="system"></wa-icon>
@@ -349,8 +376,8 @@ export default class WaNumberInput extends WebAwesomeFormAssociatedElement {
                 tabindex="-1"
                 aria-label=${this.localize.term('increment')}
                 ?disabled=${this.disabled || this.readonly || this.isAtMax}
-                @pointerdown=${this.maintainFocusOnPointerDown}
-                @click=${() => this.handleStepperClick('up')}
+                @pointerdown=${this.handleStepperPointerDown}
+                @pointerup=${(event: PointerEvent) => this.handleStepperPointerUp('up', event)}
               >
                 <slot name="increment-icon">
                   <wa-icon name="plus" library="system"></wa-icon>
@@ -373,6 +400,12 @@ export default class WaNumberInput extends WebAwesomeFormAssociatedElement {
     `;
   }
 }
+
+// The change-in-update warning is required for this component because the form-associated base class calls
+// updateValidity() in firstUpdated(), which triggers requestUpdate('validity') to sync the validation state after the
+// first render when the validation target is available. Additionally, HasSlotController triggers requestUpdate() on
+// initial slotchange events. See https://lit.dev/docs/tools/development/#development-build-runtime-warnings
+WaNumberInput.disableWarning?.('change-in-update');
 
 declare global {
   interface HTMLElementTagNameMap {

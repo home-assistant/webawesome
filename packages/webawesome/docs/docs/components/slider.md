@@ -1,8 +1,17 @@
 ---
 title: Slider
-description: Ranges allow the user to select a single value within a given range using a slider.
 layout: component
 category: Form Controls
+synonyms:
+  - range
+  - range slider
+  - range input
+  - scrubber
+use-cases:
+  - volume control
+  - price range
+  - filter range
+  - seek bar
 ---
 
 ```html {.example}
@@ -243,12 +252,14 @@ Range sliders can also be vertical.
 
 ### Size
 
-Control the slider's size using the `size` attribute. Valid options include `small`, `medium`, and `large`.
+Control the slider's size using the `size` attribute. Valid options include `xs`, `s`, `m`, `l`, and `xl`.
 
 ```html {.example}
-<wa-slider size="small" value="50" label="Small"></wa-slider><br />
-<wa-slider size="medium" value="50" label="Medium"></wa-slider><br />
-<wa-slider size="large" value="50" label="Large"></wa-slider>
+<wa-slider size="xs" value="50" label="Extra Small"></wa-slider><br />
+<wa-slider size="s" value="50" label="Small"></wa-slider><br />
+<wa-slider size="m" value="50" label="Medium"></wa-slider><br />
+<wa-slider size="l" value="50" label="Large"></wa-slider><br />
+<wa-slider size="xl" value="50" label="Extra Large"></wa-slider>
 ```
 
 ### Indicator Offset
@@ -281,14 +292,3 @@ Use the `disabled` attribute to disable a slider.
 <wa-slider label="Disabled" value="50" disabled></wa-slider>
 ```
 
-### Required
-
-Mark a slider as required using the `required` attribute. Users must interact with required sliders before the form can be submitted.
-
-```html {.example}
-<form action="about:blank" target="_blank" method="get">
-  <wa-slider name="slide" label="Required slider" min="0" max="10" required></wa-slider>
-  <br />
-  <button type="submit">Submit</button>
-</form>
-```
