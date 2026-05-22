@@ -3,6 +3,7 @@ import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { html, literal } from 'lit/static-html.js';
 import { WaInvalidEvent } from '../../events/invalid.js';
+import { warnDeprecatedSize } from '../../internal/size.js';
 import { HasSlotController } from '../../internal/slot.js';
 import { MirrorValidator } from '../../internal/validators/mirror-validator.js';
 import { watch } from '../../internal/watch.js';
@@ -16,7 +17,8 @@ import '../spinner/spinner.js';
 import styles from './button.styles.js';
 
 /**
- * @summary Buttons represent actions that are available to the user.
+ * @summary Buttons represent actions the user can take, such as submitting a form, opening a dialog, or navigating to
+ *  another page.
  * @documentation https://webawesome.com/docs/components/button
  * @status stable
  * @since 2.0
@@ -38,6 +40,11 @@ import styles from './button.styles.js';
  * @csspart end - The container that wraps the `end` slot.
  * @csspart caret - The button's caret icon, a `<wa-icon>` element.
  * @csspart spinner - The spinner that shows when the button is in the loading state.
+ *
+ * @cssstate disabled - Applied when the button is disabled.
+ * @cssstate icon-button - Applied when the button contains only a `<wa-icon>` with no other content.
+ * @cssstate link - Applied when the button is rendered as a link (i.e. `href` is set).
+ * @cssstate loading - Applied when the button is in the loading state.
  */
 @customElement('wa-button')
 export default class WaButton extends WebAwesomeFormAssociatedElement {
@@ -70,10 +77,27 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
   @property({ reflect: true }) appearance: 'accent' | 'filled' | 'outlined' | 'filled-outlined' | 'plain' = 'accent';
 
   /** The button's size. */
-  @property({ reflect: true }) size: 'small' | 'medium' | 'large' = 'medium';
+  @property({ reflect: true }) size: 'xs' | 's' | 'm' | 'l' | 'xl' | 'small' | 'medium' | 'large' = 'm';
+
+  @watch('size')
+  handleSizeChange() {
+    warnDeprecatedSize(this.localName, this.size);
+  }
 
   /** Draws the button with a caret. Used to indicate that the button triggers a dropdown menu or similar behavior. */
   @property({ attribute: 'with-caret', type: Boolean, reflect: true }) withCaret = false;
+
+  /**
+   * Only required for SSR. Set to `true` if you're slotting in a `start` element so the server-rendered markup
+   * includes the start slot before the component hydrates on the client.
+   */
+  @property({ attribute: 'with-start', type: Boolean }) withStart = false;
+
+  /**
+   * Only required for SSR. Set to `true` if you're slotting in an `end` element so the server-rendered markup
+   * includes the end slot before the component hydrates on the client.
+   */
+  @property({ attribute: 'with-end', type: Boolean }) withEnd = false;
 
   /** Disables the button. */
   @property({ type: Boolean }) disabled = false;
@@ -229,6 +253,7 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
 
     // It's only an icon button if there's an icon and nothing else
     this.isIconButton = hasIcon && !hasText && !hasOtherElements;
+    this.customStates.set('icon-button', this.isIconButton);
 
     if (this.isIconButton && !hasIconLabel) {
       console.warn(
@@ -248,7 +273,18 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
 
   @watch('disabled', { waitUntilFirstUpdate: true })
   handleDisabledChange() {
+    this.customStates.set('disabled', this.disabled);
     this.updateValidity();
+  }
+
+  @watch('href')
+  handleHrefChange() {
+    this.customStates.set('link', this.isLink());
+  }
+
+  @watch('loading', { waitUntilFirstUpdate: true })
+  handleLoadingChange() {
+    this.customStates.set('loading', this.loading);
   }
 
   // eslint-disable-next-line
@@ -288,8 +324,8 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
           loading: this.loading,
           rtl: this.localize.dir() === 'rtl',
           'has-label': this.hasSlotController.test('[default]'),
-          'has-start': this.hasSlotController.test('start'),
-          'has-end': this.hasSlotController.test('end'),
+          'has-start': this.hasUpdated ? this.hasSlotController.test('start') : this.withStart,
+          'has-end': this.hasUpdated ? this.hasSlotController.test('end') : this.withEnd,
           'is-icon-button': this.isIconButton,
         })}
         ?disabled=${ifDefined(isLink ? undefined : this.disabled)}
@@ -323,6 +359,14 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
     `;
   }
 }
+
+// The change-in-update warning is required for this component because the form-associated base class calls
+// updateValidity() in firstUpdated(), which triggers requestUpdate('validity') to sync the validation state after the
+// first render when the validation target is available. Additionally, HasSlotController triggers requestUpdate() on
+// initial slotchange events, and the label slot's slotchange handler sets the isIconButton state property to detect
+// icon-only buttons after slot content is available. See https://lit.dev/docs/tools/development/#development-build-runtime-warnings
+WaButton.disableWarning?.('change-in-update');
+
 declare global {
   interface HTMLElementTagNameMap {
     'wa-button': WaButton;

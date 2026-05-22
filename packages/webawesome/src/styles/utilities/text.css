@@ -26,6 +26,14 @@
     line-height: var(--wa-line-height-normal);
   }
 
+  .wa-font-size-3xs,
+  .wa-body-3xs,
+  .wa-heading-3xs,
+  .wa-caption-3xs,
+  .wa-longform-3xs {
+    font-size: var(--wa-font-size-3xs);
+  }
+
   .wa-font-size-2xs,
   .wa-body-2xs,
   .wa-heading-2xs,
@@ -98,6 +106,14 @@
     font-size: var(--wa-font-size-4xl);
   }
 
+  .wa-font-size-5xl,
+  .wa-body-5xl,
+  .wa-heading-5xl,
+  .wa-caption-5xl,
+  .wa-longform-5xl {
+    font-size: var(--wa-font-size-5xl);
+  }
+
   .wa-font-weight-light {
     font-weight: var(--wa-font-weight-light);
   }
@@ -130,6 +146,20 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .wa-text-wrap-nowrap {
+    text-wrap: nowrap;
+  }
+
+  .wa-text-wrap-balance {
+    text-wrap: balance;
+  }
+
+  @supports (text-wrap: pretty) {
+    .wa-text-wrap-pretty {
+      text-wrap: pretty;
+    }
   }
   /* #endregion */
 

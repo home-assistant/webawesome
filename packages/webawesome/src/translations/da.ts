@@ -7,7 +7,9 @@ const translation: Translation = {
   $dir: 'ltr',
 
   carousel: 'Karrusel',
+  captions: 'Undertekster',
   clearEntry: 'Ryd indtastning',
+  createOption: value => `Opret "${value}"`,
   close: 'Luk',
   copied: 'Kopieret',
   copy: 'Kopier',
@@ -16,19 +18,38 @@ const translation: Translation = {
   dropFileHere: 'Drop file here or click to browse',
   dropFilesHere: 'Drop files here or click to browse',
   error: 'Fejl',
+  enterFullscreen: 'Gå til fuldskærm',
+  exitFullscreen: 'Afslut fuldskærm',
   goToSlide: (slide, count) => `Gå til dias ${slide} af ${count}`,
   hidePassword: 'Skjul adgangskode',
   increment: 'Forøg',
   loading: 'Indlæser',
+  moreOptions: 'Flere muligheder',
+  mute: 'Slå lyd fra',
   nextSlide: 'Næste slide',
+  nextVideo: 'Næste video',
+  numCharacters: num => {
+    if (num === 1) return '1 tegn';
+    return `${num} tegn`;
+  },
+  numCharactersRemaining: num => {
+    if (num === 1) return '1 tegn tilbage';
+    return `${num} tegn tilbage`;
+  },
   numOptionsSelected: (num: number) => {
     if (num === 0) return 'Ingen valgt';
     if (num === 1) return '1 valgt';
     return `${num} valgt`;
   },
+  pause: 'Sæt på pause',
   pauseAnimation: 'Pause animation',
+  pictureInPicture: 'Billede i billede',
+  play: 'Afspil',
+  playbackSpeed: 'Afspilningshastighed',
+  playlist: 'Afspilningsliste',
   playAnimation: 'Afspil animation',
   previousSlide: 'Forrige dias',
+  previousVideo: 'Forrige video',
   progress: 'Status',
   remove: 'Fjern',
   resize: 'Tilpas størrelse',
@@ -39,6 +60,12 @@ const translation: Translation = {
   showPassword: 'Vis adgangskode',
   slideNum: slide => `Slide ${slide}`,
   toggleColorFormat: 'Skift farveformat',
+  seek: 'Søg',
+  seekProgress: (current, duration) => `${current} af ${duration}`,
+  currentlyPlaying: 'afspilles nu',
+  unmute: 'Slå lyd til',
+  videoPlayer: 'Videoafspiller',
+  volume: 'Lydstyrke',
   zoomIn: 'Zoom ind',
   zoomOut: 'Zoom ud',
 };

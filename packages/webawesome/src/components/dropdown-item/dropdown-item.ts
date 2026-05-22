@@ -2,15 +2,18 @@ import type { PropertyValues } from 'lit';
 import { html } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { animateWithClass } from '../../internal/animate.js';
+import { warnDeprecatedSize } from '../../internal/size.js';
 import { HasSlotController } from '../../internal/slot.js';
+import { watch } from '../../internal/watch.js';
 import WebAwesomeElement from '../../internal/webawesome-element.js';
 import '../icon/icon.js';
 import styles from './dropdown-item.styles.js';
 
 /**
- * @summary Represents an individual item within a dropdown menu, supporting standard items, checkboxes, and submenus.
+ * @summary Dropdown items represent selectable entries within a dropdown menu, including standard actions, checkable
+ *  items, and submenu triggers.
  * @documentation https://webawesome.com/docs/components/dropdown-item
- * @status experimental
+ * @status stable
  * @since 3.0
  *
  * @dependency wa-icon
@@ -48,7 +51,12 @@ export default class WaDropdownItem extends WebAwesomeElement {
   /**
    * @internal The dropdown item's size.
    */
-  @property({ reflect: true }) size: 'small' | 'medium' | 'large' = 'medium';
+  @property({ reflect: true }) size: 'xs' | 's' | 'm' | 'l' | 'xl' | 'small' | 'medium' | 'large' = 'm';
+
+  @watch('size')
+  handleSizeChange() {
+    warnDeprecatedSize(this.localName, this.size);
+  }
 
   /**
    * @internal The controller will set this property to true when at least one checkbox exists in the dropdown. This
@@ -85,6 +93,7 @@ export default class WaDropdownItem extends WebAwesomeElement {
 
   connectedCallback() {
     super.connectedCallback();
+    this.addEventListener('click', this.handleHostClick);
     this.addEventListener('mouseenter', this.handleMouseEnter.bind(this));
     this.shadowRoot!.addEventListener('click', this.handleClick, { capture: true });
     this.shadowRoot!.addEventListener('slotchange', this.handleSlotChange);
@@ -93,6 +102,7 @@ export default class WaDropdownItem extends WebAwesomeElement {
   disconnectedCallback() {
     super.disconnectedCallback();
     this.closeSubmenu();
+    this.removeEventListener('click', this.handleHostClick);
     this.removeEventListener('mouseenter', this.handleMouseEnter);
     this.shadowRoot!.removeEventListener('click', this.handleClick, { capture: true });
     this.shadowRoot!.removeEventListener('slotchange', this.handleSlotChange);
@@ -111,7 +121,11 @@ export default class WaDropdownItem extends WebAwesomeElement {
     }
 
     if (changedProperties.has('checked')) {
-      this.setAttribute('aria-checked', this.checked ? 'true' : 'false');
+      if (this.type === 'checkbox') {
+        this.setAttribute('aria-checked', this.checked ? 'true' : 'false');
+      } else {
+        this.removeAttribute('aria-checked');
+      }
       this.customStates.set('checked', this.checked);
     }
 
@@ -124,8 +138,10 @@ export default class WaDropdownItem extends WebAwesomeElement {
     if (changedProperties.has('type')) {
       if (this.type === 'checkbox') {
         this.setAttribute('role', 'menuitemcheckbox');
+        this.setAttribute('aria-checked', this.checked ? 'true' : 'false');
       } else {
         this.setAttribute('role', 'menuitem');
+        this.removeAttribute('aria-checked');
       }
     }
 
@@ -239,6 +255,14 @@ export default class WaDropdownItem extends WebAwesomeElement {
         el.localName === 'wa-dropdown-item' && el.getAttribute('slot') === 'submenu' && !el.hasAttribute('disabled'),
     ) as WaDropdownItem[];
   }
+
+  /** Prevents click events from firing on the host when the item is disabled (e.g. programmatic .click() calls). */
+  private handleHostClick = (event: MouseEvent) => {
+    if (this.disabled) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  };
 
   /** Prevents click events from firing when the item is disabled. */
   private handleClick = (event: MouseEvent) => {

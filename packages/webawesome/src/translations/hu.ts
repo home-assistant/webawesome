@@ -7,7 +7,9 @@ const translation: Translation = {
   $dir: 'ltr',
 
   carousel: 'Körhinta',
+  captions: 'Feliratok',
   clearEntry: 'Bejegyzés törlése',
+  createOption: value => `„${value}" létrehozása`,
   close: 'Bezárás',
   copied: 'Másolva',
   copy: 'Másolás',
@@ -16,19 +18,38 @@ const translation: Translation = {
   dropFileHere: 'Drop file here or click to browse',
   dropFilesHere: 'Drop files here or click to browse',
   error: 'Hiba',
+  enterFullscreen: 'Teljes képernyő',
+  exitFullscreen: 'Kilépés a teljes képernyőből',
   goToSlide: (slide, count) => `Ugrás a ${count}/${slide}. diára`,
   hidePassword: 'Jelszó elrejtése',
   increment: 'Növelés',
   loading: 'Betöltés',
+  moreOptions: 'További lehetőségek',
+  mute: 'Elnémítás',
   nextSlide: 'Következő dia',
+  nextVideo: 'Következő videó',
+  numCharacters: num => {
+    if (num === 1) return '1 karakter';
+    return `${num} karakter`;
+  },
+  numCharactersRemaining: num => {
+    if (num === 1) return '1 karakter maradt';
+    return `${num} karakter maradt`;
+  },
   numOptionsSelected: num => {
     if (num === 0) return 'Nincsenek kiválasztva opciók';
     if (num === 1) return '1 lehetőség kiválasztva';
     return `${num} lehetőség kiválasztva`;
   },
+  pause: 'Szünet',
   pauseAnimation: 'Animáció szüneteltetése',
+  pictureInPicture: 'Kép a képben',
+  play: 'Lejátszás',
+  playbackSpeed: 'Lejátszási sebesség',
+  playlist: 'Lejátszási lista',
   playAnimation: 'Animáció lejátszása',
   previousSlide: 'Előző dia',
+  previousVideo: 'Előző videó',
   progress: 'Folyamat',
   remove: 'Eltávolítás',
   resize: 'Átméretezés',
@@ -39,6 +60,12 @@ const translation: Translation = {
   showPassword: 'Jelszó megjelenítése',
   slideNum: slide => `${slide}. dia`,
   toggleColorFormat: 'Színformátum változtatása',
+  seek: 'Keresés',
+  seekProgress: (current, duration) => `${current} / ${duration}`,
+  currentlyPlaying: 'éppen játszik',
+  unmute: 'Elnémítás feloldása',
+  videoPlayer: 'Videólejátszó',
+  volume: 'Hangerő',
   zoomIn: 'Nagyítás',
   zoomOut: 'Kicsinyítés',
 };

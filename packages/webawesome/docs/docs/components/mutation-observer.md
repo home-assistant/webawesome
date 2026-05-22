@@ -1,8 +1,15 @@
 ---
 title: Mutation Observer
-description: The Mutation Observer component offers a thin, declarative interface to the MutationObserver API.
 layout: component
 category: Utilities
+synonyms:
+  - dom watcher
+  - dom observer
+  - change detector
+use-cases:
+  - dom changes
+  - attribute watcher
+  - child list observer
 ---
 
 The mutation observer will report changes to the content it wraps through the `wa-mutation` event. When emitted, a collection of [MutationRecord](https://developer.mozilla.org/en-US/docs/Web/API/MutationRecord) objects will be attached to `event.detail` that contains information about how it changed.
@@ -10,7 +17,7 @@ The mutation observer will report changes to the content it wraps through the `w
 ```html {.example}
 <div class="mutation-overview">
   <wa-mutation-observer attr="variant">
-    <wa-button variant="brand">Click to mutate</wa-button>
+    <wa-button appearance="filled" variant="brand">Click to mutate</wa-button>
   </wa-mutation-observer>
 
   <br />
@@ -57,7 +64,7 @@ Use the `child-list` attribute to watch for new child elements that are added or
 <div class="mutation-child-list">
   <wa-mutation-observer child-list>
     <div class="buttons">
-      <wa-button variant="brand">Add button</wa-button>
+      <wa-button appearance="filled" variant="brand">Add button</wa-button>
     </div>
   </wa-mutation-observer>
 

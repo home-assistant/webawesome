@@ -7,7 +7,9 @@ const translation: Translation = {
   $dir: 'ltr',
 
   carousel: 'Vrtuljak',
+  captions: 'Titlovi',
   clearEntry: 'Očisti unos',
+  createOption: value => `Stvori "${value}"`,
   close: 'Zatvori',
   copied: 'Kopirano',
   copy: 'Kopiraj',
@@ -16,19 +18,44 @@ const translation: Translation = {
   dropFileHere: 'Drop file here or click to browse',
   dropFilesHere: 'Drop files here or click to browse',
   error: 'Greška',
+  enterFullscreen: 'Uđi u cijeli zaslon',
+  exitFullscreen: 'Izađi iz cijelog zaslona',
   goToSlide: (slide, count) => `Idi na slajd ${slide} od ${count}`,
   hidePassword: 'Sakrij lozinku',
   increment: 'Povećaj',
   loading: 'Učitavanje',
+  moreOptions: 'Više opcija',
+  mute: 'Utišaj',
   nextSlide: 'Sljedeći slajd',
+  nextVideo: 'Sljedeći video',
+  numCharacters: num => {
+    if (num === 1) return '1 znak';
+    const mod10 = num % 10;
+    const mod100 = num % 100;
+    if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) return `${num} znaka`;
+    return `${num} znakova`;
+  },
+  numCharactersRemaining: num => {
+    if (num === 1) return '1 preostali znak';
+    const mod10 = num % 10;
+    const mod100 = num % 100;
+    if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) return `${num} preostala znaka`;
+    return `${num} preostalih znakova`;
+  },
   numOptionsSelected: num => {
     if (num === 0) return 'Nije odabrana nijedna opcija';
     if (num === 1) return '1 opcija je odabrana';
     return `${num} odabranih opcija`;
   },
+  pause: 'Pauziraj',
   pauseAnimation: 'Pauziraj animaciju',
+  pictureInPicture: 'Slika u slici',
+  play: 'Reproduciraj',
+  playbackSpeed: 'Brzina reprodukcije',
+  playlist: 'Popis za reprodukciju',
   playAnimation: 'Reproduciraj animaciju',
   previousSlide: 'Prethodni slajd',
+  previousVideo: 'Prethodni video',
   progress: 'Napredak',
   remove: 'Makni',
   resize: 'Promijeni veličinu',
@@ -39,6 +66,12 @@ const translation: Translation = {
   showPassword: 'Pokaži lozinku',
   slideNum: slide => `Slajd ${slide}`,
   toggleColorFormat: 'Zamijeni format boje',
+  seek: 'Traži',
+  seekProgress: (current, duration) => `${current} od ${duration}`,
+  currentlyPlaying: 'trenutno se reproducira',
+  unmute: 'Uključi zvuk',
+  videoPlayer: 'Video player',
+  volume: 'Glasnoća',
   zoomIn: 'Povećaj',
   zoomOut: 'Smanji',
 };

@@ -4,8 +4,10 @@ import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { uniqueId } from '../../internal/math.js';
+import { warnDeprecatedSize } from '../../internal/size.js';
 import { HasSlotController } from '../../internal/slot.js';
 import { RequiredValidator } from '../../internal/validators/required-validator.js';
+import { watch } from '../../internal/watch.js';
 import { WebAwesomeFormAssociatedElement } from '../../internal/webawesome-form-associated-element.js';
 import formControlStyles from '../../styles/component/form-control.styles.js';
 import sizeStyles from '../../styles/component/size.styles.js';
@@ -14,7 +16,8 @@ import type WaRadio from '../radio/radio.js';
 import styles from './radio-group.styles.js';
 
 /**
- * @summary Radio groups are used to group multiple [radios](/docs/components/radio) so they function as a single form control.
+ * @summary Radio groups wrap a set of radios so they function as a single form control with one shared value. They
+ *  handle keyboard navigation, labeling, and validation for the group as a whole.
  * @documentation https://webawesome.com/docs/components/radio-group
  * @status stable
  * @since 2.0
@@ -100,18 +103,25 @@ export default class WaRadioGroup extends WebAwesomeFormAssociatedElement {
   @property({ attribute: 'value', reflect: true }) defaultValue: string | null = this.getAttribute('value') || null;
 
   /** The radio group's size. When present, this size will be applied to all `<wa-radio>` items inside. */
-  @property({ reflect: true }) size: 'small' | 'medium' | 'large';
+  @property({ reflect: true }) size: 'xs' | 's' | 'm' | 'l' | 'xl' | 'small' | 'medium' | 'large';
+
+  @watch('size')
+  handleSizeChange() {
+    warnDeprecatedSize(this.localName, this.size);
+  }
 
   /** Ensures a child radio is checked before allowing the containing form to submit. */
   @property({ type: Boolean, reflect: true }) required = false;
 
   /**
-   * Used for SSR. if true, will show slotted label on initial render.
+   * Only required for SSR. Set to `true` if you're slotting in a `label` element so the server-rendered markup
+   * includes the label before the component hydrates on the client.
    */
   @property({ type: Boolean, attribute: 'with-label' }) withLabel = false;
 
   /**
-   * Used for SSR. if true, will show slotted hint on initial render.
+   * Only required for SSR. Set to `true` if you're slotting in a `hint` element so the server-rendered markup
+   * includes the hint before the component hydrates on the client.
    */
   @property({ type: Boolean, attribute: 'with-hint' }) withHint = false;
 
@@ -391,6 +401,12 @@ export default class WaRadioGroup extends WebAwesomeFormAssociatedElement {
     `;
   }
 }
+
+// The change-in-update warning is required for this component because HasSlotController calls requestUpdate() in
+// response to slotchange events after first render, and the form validation system calls requestUpdate('validity')
+// during firstUpdated() to initialize constraint validation state. Both are essential for correct behavior.
+// See https://lit.dev/docs/tools/development/#development-build-runtime-warnings
+WaRadioGroup.disableWarning?.('change-in-update');
 
 declare global {
   interface HTMLElementTagNameMap {

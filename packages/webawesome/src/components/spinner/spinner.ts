@@ -5,7 +5,8 @@ import { LocalizeController } from '../../utilities/localize.js';
 import styles from './spinner.styles.js';
 
 /**
- * @summary Spinners are used to show the progress of an indeterminate operation.
+ * @summary Spinners indicate that an operation is in progress when the duration is unknown. Use them for loading states
+ *  where a determinate progress bar isn't practical.
  * @documentation https://webawesome.com/docs/components/spinner
  * @status stable
  * @since 2.0
@@ -30,11 +31,10 @@ export default class WaSpinner extends WebAwesomeElement {
         role="progressbar"
         aria-label=${this.localize.term('loading')}
         fill="none"
-        viewBox="0 0 50 50"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <circle class="track" cx="25" cy="25" r="20" fill="none" stroke-width="5" />
-        <circle class="indicator" cx="25" cy="25" r="20" fill="none" stroke-width="5" />
+        <circle class="track" />
+        <circle class="indicator" />
       </svg>
     `;
   }

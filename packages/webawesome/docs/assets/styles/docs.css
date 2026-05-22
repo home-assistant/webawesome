@@ -8,9 +8,6 @@
 @import 'utils.css';
 
 :root {
-  --wa-brand-orange: #f36944;
-  --wa-brand-grey: #30323b;
-
   /* layout-based example style aspects */
   --layout-example-border: var(--wa-border-width-s) dashed var(--wa-color-neutral-border-normal);
   --layout-example-border-radius: var(--wa-border-radius-l);
@@ -18,6 +15,29 @@
   --layout-example-element-background: var(--wa-color-indigo-60);
   --layout-example-element-color: var(--wa-color-indigo-05);
   --layout-example-element-border-radius: var(--wa-border-radius-m);
+}
+
+/* "Browse\ ___" / "Back to ___" link with an arrow that nudges on hover */
+.browse-all-link wa-icon,
+.back-link wa-icon {
+  vertical-align: -0.1em;
+  transition: transform var(--wa-transition-normal) var(--wa-transition-easing);
+}
+
+.browse-all-link wa-icon {
+  margin-inline-start: 0.25em;
+}
+
+.back-link wa-icon {
+  margin-inline-end: 0.25em;
+}
+
+.browse-all-link:hover wa-icon {
+  transform: translateX(0.25em);
+}
+
+.back-link:hover wa-icon {
+  transform: translateX(-0.25em);
 }
 
 .wa-dark .only-light,
@@ -35,232 +55,13 @@ body.theme-transitioning {
   transition: opacity 200ms ease-out;
 }
 
-/* banner */
-wa-page > [slot='banner'] {
-  padding: var(--wa-space-0);
-
-  .banner-content {
-    /* match docs header padding-inline by default */
-    padding-inline: var(--wa-space-xl);
-    padding-block: var(--wa-space-m);
-  }
-
-  &.banner-wa-launch {
-    /* custom brand colors carried over from theme-site for the banner */
-    --wa-color-brand-95: #fef0ec;
-    --wa-color-brand-90: #fce0d8;
-    --wa-color-brand-80: #f8bcac;
-    --wa-color-brand-70: #fa9378;
-    --wa-color-brand-60: #f46a45;
-    --wa-color-brand-50: #cb4b27;
-    --wa-color-brand-40: #9d371a;
-    --wa-color-brand-30: #7c2a13;
-    --wa-color-brand-20: #5d1d0b;
-    --wa-color-brand-10: #3b0f05;
-    --wa-color-brand-05: #270802;
-    --wa-color-brand: var(--wa-color-brand-60);
-    --wa-color-brand-on: var(--wa-color-brand-10);
-
-    .banner-icon {
-      color: var(--wa-color-brand-fill-loud);
-      font-size: var(--wa-font-size-xl);
-    }
-
-    .appearance-underlined.variant-drawn {
-      --underline-color: var(--wa-color-brand);
-    }
-  }
-}
-
-/* Site-Wide Dialog */
-#dialog-site {
-  /* custom brand colors carrried over from theme-site for the banner */
-  --wa-color-brand-95: #fef0ec;
-  --wa-color-brand-90: #fce0d8;
-  --wa-color-brand-80: #f8bcac;
-  --wa-color-brand-70: #fa9378;
-  --wa-color-brand-60: #f46a45;
-  --wa-color-brand-50: #cb4b27;
-  --wa-color-brand-40: #9d371a;
-  --wa-color-brand-30: #7c2a13;
-  --wa-color-brand-20: #5d1d0b;
-  --wa-color-brand-10: #3b0f05;
-  --wa-color-brand-05: #270802;
-  --wa-color-brand: var(--wa-color-brand-60);
-  --wa-color-brand-on: var(--wa-color-brand-10);
-}
-
 /* Header */
 wa-page::part(body) {
-  padding-top: 0px;
+  padding-block-start: 0;
 }
 
 wa-page::part(header-actions) {
   align-self: center;
-}
-
-wa-page > [slot='header'] {
-  .wrapper-nav-products {
-    padding-inline: var(--content-padding-inline);
-  }
-
-  #docs-header {
-    background-color: var(--wa-color-surface-default);
-    border-bottom: var(--wa-border-style) var(--wa-panel-border-width) var(--wa-color-surface-border);
-    padding: var(--wa-space-s) var(--content-padding-inline);
-  }
-
-  /* icon-based logo */
-  .logo-web-awesome {
-    font-size: var(--wa-font-size-xl);
-  }
-
-  .brand-logo {
-    color: var(--wa-color-text-normal);
-    line-height: 1;
-  }
-
-  .brand-logo svg {
-    width: auto;
-    height: 1.75rem;
-  }
-
-  wa-button[data-toggle-nav] {
-    --text-color: currentColor;
-  }
-}
-
-#sidebar,
-#outline {
-  h2 {
-    font-size: var(--wa-font-size-s);
-    margin: 0;
-  }
-
-  h2:not(:first-child) {
-    margin-block-start: var(--wa-space-xs);
-  }
-
-  /* visually align icon with child list's border-start */
-  h2:has(wa-icon) {
-    position: relative;
-    inset-inline-start: calc(var(--wa-space-xs) * -1);
-  }
-
-  wa-details {
-    --spacing: 0;
-
-    &::part(header) {
-      padding: 0;
-      padding-block-start: var(--wa-space-xs);
-    }
-
-    &::part(content) {
-      padding-block-start: var(--wa-space-m);
-    }
-
-    &::part(base) {
-      border: none;
-      background: none;
-      padding: 0;
-    }
-  }
-
-  ul {
-    border-inline-start: var(--wa-border-width-s) solid var(--wa-color-surface-border);
-    font-size: var(--wa-font-size-s);
-    line-height: var(--wa-line-height-condensed);
-    padding-inline-start: var(--wa-space-m);
-    margin: 0;
-  }
-
-  ul ul {
-    margin-block-start: var(--wa-space-m);
-  }
-
-  ul:empty {
-    display: none;
-  }
-
-  li {
-    list-style: none;
-    margin: 0;
-
-    + li {
-      margin-block-start: var(--wa-space-m);
-    }
-  }
-
-  li a {
-    color: var(--wa-color-text-normal);
-    text-decoration: none;
-
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-
-  li wa-badge::part(base) {
-    font-size: var(--wa-font-size-2xs);
-    font-weight: var(--wa-font-weight-bold);
-  }
-
-  li wa-icon {
-    color: var(--wa-color-text-quiet);
-  }
-}
-
-#outline-standard h2 {
-  margin-block-end: var(--wa-space-m);
-}
-
-#sidebar {
-  h2 a {
-    --wa-color-text-link: var(--wa-color-text-normal);
-  }
-
-  wa-button.delete {
-    margin-inline-start: var(--wa-space-xs);
-
-    &:hover wa-icon {
-      color: var(--wa-color-danger-on-quiet);
-    }
-
-    &:not(li:hover > *, :focus) {
-      opacity: 0;
-    }
-  }
-
-  li wa-badge {
-    /* adding 1 scale below --wa-font-size-2xs to handle badge proportions in sidebar nav */
-    --font-size-3xs: round(calc(var(--wa-font-size-2xs) / 1.125), 1px); /* 10px */
-    font-size: var(--font-size-3xs);
-  }
-
-  wa-details {
-    --show-duration: 0;
-    --hide-duration: 0;
-  }
-
-  .the-socials {
-    /* nudge those linkies left */
-    margin-inline-start: calc(var(--wa-space-xs) * -1);
-
-    a[target='_blank'] {
-      color: var(--wa-color-text-quiet);
-      padding-inline: var(--wa-space-xs);
-
-      &:hover {
-        color: var(--wa-color-text-normal);
-      }
-    }
-  }
-
-  #version-icon-info {
-    --secondary-opacity: 1;
-    --secondary-color: var(--wa-brand-orange);
-    padding-inline: var(--wa-space-xs);
-  }
 }
 
 wa-button.delete {
@@ -274,66 +75,81 @@ wa-button.delete {
   }
 }
 
-[slot='navigation-header'] {
-  wa-select::part(listbox) {
-    font-weight: var(--wa-font-weight-normal);
-  }
-}
-
-/* planned sidebar item */
-.is-planned {
-  color: var(--wa-color-text-quiet);
-}
-
-#sidebar-close-button {
-  display: none;
-}
-
-@media screen and (max-width: 768px) {
-  #sidebar-close-button {
-    display: inline-block;
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-  }
-}
-
-#sidebar nav {
-  padding-bottom: 1rem;
-}
-
-wa-page::part(drawer__dialog),
-wa-page::part(menu) {
-  overflow: clip;
-}
-
-/* smaller viewports-based navigation */
-wa-page > [slot='navigation-header'] {
-  padding: 0;
-
-  .brand-logo svg {
-    height: 1.25rem;
-  }
-
-  /* resetting font-weight of dropdown items in .title */
-  wa-dropdown {
-    font-weight: var(--wa-font-weight-normal);
-  }
-}
-
-wa-page[view='mobile'] :is([slot='navigation-header'], [slot='navigation']) {
-  padding: 0;
-
-  & wa-details::part(icon) {
-    padding-inline: var(--wa-space-xs); /* aligns details icons with drawer close icon */
-  }
-}
-
 /* Main content */
 wa-page > main {
-  max-width: var(--content-width-s);
+  max-inline-size: var(--content-width-s);
   padding: var(--wa-space-xl);
   margin-inline: auto;
+}
+
+/* increase max-inline-size for index pages */
+wa-page > main:has(.modern-card-list) {
+  max-inline-size: var(--content-width-m);
+}
+
+/* Prose rhythm — replaces the wa-native layer's uniform `--wa-content-spacing`
+   between block siblings with hierarchical, asymmetric margins. Unlayered so
+   it wins via cascade order; re-check if this file ever joins a layer. */
+#content {
+  /* Headings hug what they introduce: generous above, tight below. */
+
+  * + h2 {
+    margin-block-start: var(--wa-space-2xl);
+  }
+  h2:has(+ *) {
+    margin-block-end: var(--wa-space-s);
+  }
+
+  * + h3 {
+    margin-block-start: var(--wa-space-xl);
+  }
+  h3:has(+ *) {
+    margin-block-end: var(--wa-space-s);
+  }
+
+  :is(h4, h5, h6):has(+ *) {
+    margin-block-end: var(--wa-space-xs);
+  }
+
+  /* Prevents stacked top + bottom margins on back-to-back headings. */
+  h2 + :is(h3, h4),
+  h3 + h4 {
+    margin-block-start: var(--wa-space-m);
+  }
+
+  :is(ul, ol) > li:has(+ li) {
+    margin-block-end: var(--wa-space-2xs);
+  }
+
+  /* Slight optical tracking; only the larger sizes need it. */
+  :is(h1, h2) {
+    letter-spacing: -0.01em;
+  }
+
+  /* `<hr>` marks a topic shift. Its own margin defines the gap; the heading
+     or paragraph that follows shouldn't double-stack on top. */
+  hr {
+    margin-block: var(--wa-space-3xl);
+  }
+  hr + :is(h1, h2, h3, h4, h5, h6) {
+    margin-block-start: 0;
+  }
+
+  /* Major non-text blocks get more breathing room than running prose, but
+     headings still hug — so the top-margin rule only applies after non-heading
+     siblings. */
+  :is(pre, figure, table, blockquote, wa-callout, .code-example):has(+ *) {
+    margin-block-end: var(--wa-space-xl);
+  }
+
+  :not(h1, h2, h3, h4, h5, h6) + :is(pre, figure, table, blockquote, wa-callout, .code-example) {
+    margin-block-start: var(--wa-space-xl);
+  }
+
+  /* Visually heavy blocks still deserve a minimum breath after a heading. */
+  :is(h1, h2, h3, h4, h5, h6) + :is(pre, figure, table, blockquote, wa-callout, .code-example) {
+    margin-block-start: var(--wa-space-m);
+  }
 }
 
 h1.title {
@@ -353,72 +169,27 @@ h1.title {
   code {
     line-height: var(--wa-line-height-condensed);
   }
-}
 
-/* Current link */
-#sidebar,
-#outline {
-  .current {
-    font-weight: var(--wa-font-weight-bold);
-    text-decoration-style: solid;
+  .component-tag {
+    background-color: transparent;
+    color: var(--wa-color-text-quiet);
+    font-size: var(--wa-font-size-l);
   }
 }
 
-/* Callouts */
-.callout {
-  display: flex;
-  gap: 1rem;
-  border: var(--wa-border-style) var(--wa-border-width-s);
-  border-radius: var(--wa-border-radius-l);
-  padding: 1rem;
-  margin-block-end: var(--wa-content-spacing);
-
-  :first-child {
-    margin-block-start: 0;
-  }
-
-  :last-child {
-    margin-block-end: 0;
-  }
+.component-summary {
+  font-weight: var(--wa-font-weight-semibold);
+  font-size: var(--wa-font-size-l);
 }
 
-.callout-icon {
-  flex: 0 0 auto;
-  font-size: 1.5rem;
-}
-
-.callout-content {
-  flex: 1 1 auto;
-}
-
-.callout-info {
-  background-color: var(--wa-color-brand-fill-quiet);
-  border-color: var(--wa-color-brand-border-quiet);
-
-  .callout-icon {
-    color: var(--wa-color-brand-on-normal);
-  }
-
-  code {
-    background-color: var(--wa-color-brand-fill-normal);
-  }
-}
-
-.callout-warning {
-  background-color: var(--wa-color-warning-fill-quiet);
-  border-color: var(--wa-color-warning-border-quiet);
-
-  .callout-icon {
-    color: var(--wa-color-warning-on-normal);
-  }
-
-  code {
-    background-color: var(--wa-color-warning-fill-normal);
+/* Callouts in content */
+#content > wa-callout {
+  &[variant='brand'] code {
+    background-color: color-mix(in oklab, var(--wa-color-brand-fill-soft), black 2.5%);
   }
 }
 
 /* Images & Figures */
-
 figure.signpost {
   display: flex;
   flex-direction: column;
@@ -440,7 +211,7 @@ figure.signpost {
 
 /* Search list pages */
 wa-page > main:has(> .search-list) {
-  max-width: var(--content-width-l);
+  max-inline-size: var(--content-width-l);
   margin-inline: auto;
 }
 
@@ -456,22 +227,22 @@ wa-page > main:has(> .search-list) {
     gap: var(--wa-space-2xl);
     margin-block-end: var(--wa-space-3xl);
 
-    @container (width < 768px) {
+    @container (inline-size < 48rem) {
       grid-template-columns: repeat(3, 1fr);
     }
 
-    @container (width < 576px) {
+    @container (inline-size < 36rem) {
       grid-template-columns: repeat(2, 1fr);
     }
 
-    @container (width < 384px) {
+    @container (inline-size < 24rem) {
       grid-template-columns: repeat(1, 1fr);
     }
 
     &.large {
       grid-template-columns: repeat(2, 1fr);
 
-      @container (width < 640px) {
+      @container (inline-size < 40rem) {
         grid-template-columns: repeat(1, 1fr);
       }
     }
@@ -483,7 +254,6 @@ wa-page > main:has(> .search-list) {
 
     wa-card {
       --spacing: var(--wa-space-m);
-      box-shadow: none;
 
       [slot='header'] {
         display: flex;
@@ -511,146 +281,142 @@ wa-card .page-name {
   font-weight: var(--wa-font-weight-action);
 }
 
-/* Swatches */
+/* Restore full-size rendering of platform symbols (⌘, ⌥, ⇧, etc.) inside <kbd>,
+   which uses a code font that tends to render these glyphs undersized. */
+.kbd-symbol {
+  font-family: var(--wa-font-family-body);
+}
+
+/* Card-based, name-first listing layout used by component/pattern/utility browse pages */
+.component-list,
+.modern-card-list {
+  container-type: inline-size;
+
+  .search-list-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--wa-space-m);
+    margin-block-end: var(--wa-space-l);
+
+    @container (inline-size < 56rem) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @container (inline-size < 35rem) {
+      grid-template-columns: 1fr;
+    }
+
+    a {
+      color: var(--wa-color-text-normal);
+      text-decoration: none;
+    }
+
+    wa-card {
+      --spacing: var(--wa-space-m);
+      block-size: 100%;
+    }
+
+    wa-card:defined {
+      transition:
+        border-color var(--wa-transition-normal),
+        box-shadow var(--wa-transition-normal);
+    }
+
+    wa-card::part(body) {
+      display: flex;
+      flex-direction: column;
+      block-size: 100%;
+    }
+
+    a:hover wa-card,
+    a:focus-visible wa-card {
+      border-color: var(--wa-color-brand-border-loud);
+      box-shadow: 0 0 0 0.0625rem var(--wa-color-brand-border-loud);
+    }
+
+    .page-name {
+      display: block;
+      font-size: var(--wa-font-size-l);
+      font-weight: var(--wa-font-weight-heading);
+      line-height: var(--wa-line-height-condensed);
+      margin-block-end: var(--wa-space-xs);
+    }
+
+    .component-list-summary,
+    .modern-card-summary {
+      color: var(--wa-color-text-quiet);
+      font-size: var(--wa-font-size-s);
+      line-height: var(--wa-line-height-normal);
+      margin: 0 0 var(--wa-space-m);
+    }
+
+    .component-list-badges {
+      font-size: var(--wa-font-size-s);
+      margin-block-start: auto;
+    }
+  }
+}
+
+/* Component list: centered search input (anchors a hero-style browse page) */
+.component-list {
+  .search-list-input {
+    display: block;
+    max-inline-size: 32rem;
+    margin-inline: auto;
+    margin-block: var(--wa-space-m) var(--wa-space-s);
+  }
+
+  .search-list-shortcut {
+    text-align: center;
+    color: var(--wa-color-text-quiet);
+    font-size: var(--wa-font-size-s);
+    margin-block: 0 var(--wa-space-2xl);
+  }
+}
+
+/* Modern card list: left-aligned "Browse X" heading + search input (used by utilities, tokens, patterns) */
+.modern-card-list-heading {
+  margin-block: 0 var(--wa-space-xl);
+}
+
+.modern-card-list {
+  .search-list-input {
+    display: block;
+    max-inline-size: 32rem;
+    margin-block: 0 var(--wa-space-2xl);
+  }
+
+  .modern-card-list-category {
+    margin-block: var(--wa-space-2xl) var(--wa-space-m);
+    font-size: var(--wa-font-size-xl);
+
+    &:first-of-type {
+      margin-block-start: 0;
+    }
+  }
+}
+
+/* Design Tokens Swatches */
 .swatch {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: transparent;
-  border-color: var(--wa-color-neutral-border-normal);
+  border-color: transparent;
   border-style: var(--wa-border-style);
   border-width: var(--wa-border-width-s);
   border-radius: var(--wa-border-radius-m);
   box-sizing: border-box;
-  min-height: 2.5em;
+  min-block-size: 3rem;
+  min-inline-size: 3rem;
   padding: var(--wa-space-xs);
   font-weight: var(--wa-font-weight-semibold);
   line-height: var(--wa-line-height-condensed);
-
-  &.color {
-    border-color: transparent;
-    transition: background var(--wa-transition-slow);
-    background: linear-gradient(var(--color-2, transparent) 0% 100%) no-repeat border-box var(--color,);
-    background-position: var(--color-2-position, bottom);
-    background-size: var(--color-2-width, 100%) var(--color-2-height, 50%);
-
-    &.contrast-fail {
-      outline: 1px dashed var(--wa-color-red);
-      outline-offset: calc(-1 * var(--wa-space-2xs));
-    }
-  }
-
-  > wa-copy-button {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: block;
-    font-family: var(--wa-font-family-code);
-
-    &::part(button) {
-      display: block;
-      height: 100%;
-      width: 100%;
-    }
-
-    &::part(button):hover {
-      background-color: transparent;
-      cursor: copy;
-    }
-
-    &::part(copy-icon),
-    &::part(success-icon),
-    &::part(error-icon) {
-      opacity: 0 !important;
-    }
-  }
 }
 
-table.colors {
-  thead {
-    th {
-      text-align: center;
-      padding-block: 0;
-    }
-  }
-
-  tbody {
-    tr {
-      border: none;
-      @media (hover: hover) {
-        &:hover {
-          background: transparent;
-        }
-      }
-    }
-
-    th {
-      width: 0;
-      vertical-align: middle;
-      text-align: right;
-    }
-
-    td {
-      padding-inline: var(--wa-space-3xs);
-      padding-block: var(--wa-space-s);
-    }
-  }
-
-  .core-column {
-    padding-inline-end: var(--wa-space-xl);
-  }
-}
-
-.value-up,
-.value-down {
-  position: relative;
-
-  &::after {
-    content: ' ' var(--icon);
-    position: absolute;
-    margin-inline-start: 3em;
-    scale: 1 0.6;
-    color: color-mix(in oklch, oklch(from var(--icon-color) none c h) 0%, oklch(from currentColor l none none));
-    font-size: 90%;
-  }
-}
-
-.value-down {
-  --icon: '▼';
-  --icon-color: var(--wa-color-danger-fill-quiet);
-
-  &::after {
-    margin-block-end: -0.2em;
-  }
-}
-
-.value-up {
-  --icon: '▲';
-  --icon-color: var(--wa-color-success-fill-quiet);
-}
-
-/* Layout Examples */
-.layout-example-boundary {
-  border: var(--wa-border-width-s) dashed var(--wa-color-neutral-border-normal);
-  border-radius: var(--wa-border-radius-l);
-  padding: var(--wa-space-s);
-}
-
-.layout-example-block {
-  background-color: var(--wa-color-indigo-60);
-  border-radius: var(--wa-border-radius-m);
-  min-block-size: 4rem;
-  min-inline-size: 4rem;
-}
-
-.layout-example-mixed-sizing .layout-example-block:nth-child(3n) {
-  min-inline-size: 6rem;
-}
-.layout-example-mixed-sizing .layout-example-block:nth-child(3n + 2) {
-  min-inline-size: 8rem;
+.token-name {
+  white-space: nowrap;
 }
 
 /* Component API tables */
@@ -659,13 +425,15 @@ wa-scroller:has(.component-table) {
 }
 
 .component-table {
+  font-variant-numeric: tabular-nums;
+
   .table-name {
     white-space: nowrap;
   }
 
   .table-arguments,
   .table-description {
-    min-width: var(--line-length-xs);
+    min-inline-size: var(--line-length-xs);
   }
 
   .table-selector .wa-cluster {
@@ -683,7 +451,7 @@ wa-scroller:has(.component-table) {
 
 .component-help {
   display: flex;
-  width: 100%;
+  inline-size: 100%;
   gap: var(--wa-space-m);
   flex-wrap: wrap;
   align-items: center;
@@ -697,20 +465,7 @@ wa-scroller:has(.component-table) {
 }
 
 /** desktop */
-@media screen and not (max-width: 1180px) {
-  /* Navigation sidebar */
-  wa-page::part(navigation) {
-    border-right: var(--wa-border-style) var(--wa-panel-border-width) var(--wa-color-surface-border);
-  }
-
-  wa-page > #sidebar {
-    overflow: auto;
-    max-height: 100%;
-    min-width: 300px;
-    padding: var(--wa-space-xl);
-    max-width: 300px;
-  }
-
+@media screen and (min-width: 73.75rem) {
   wa-page > main {
     padding: var(--wa-space-3xl);
   }
@@ -718,19 +473,10 @@ wa-scroller:has(.component-table) {
 
 .page-wide {
   wa-page > main {
-    max-width: var(--content-width-l);
+    max-inline-size: var(--content-width-l);
 
     .max-line-length {
-      max-width: var(--line-length-l);
+      max-inline-size: var(--line-length-l);
     }
-  }
-}
-
-.layout-theme {
-  iframe {
-    width: 100%;
-    min-height: 16lh;
-    height: 65vh;
-    max-height: 21lh;
   }
 }

@@ -1,8 +1,18 @@
 ---
 title: Carousel
-description: Carousels display an arbitrary number of content slides along a horizontal or vertical axis.
 layout: component
 category: Imagery
+synonyms:
+  - slider
+  - slideshow
+  - image gallery
+  - rotator
+  - swiper
+use-cases:
+  - image carousel
+  - testimonial slider
+  - hero slider
+  - product gallery
 ---
 
 ```html {.example}
@@ -282,8 +292,8 @@ The content of the carousel can be changed by adding or removing carousel items.
 </wa-carousel>
 
 <div class="carousel-options">
-  <wa-button id="dynamic-add">Add slide</wa-button>
-  <wa-button id="dynamic-remove">Remove slide</wa-button>
+  <wa-button appearance="filled" id="dynamic-add">Add slide</wa-button>
+  <wa-button appearance="filled" id="dynamic-remove">Remove slide</wa-button>
 </div>
 
 <style>

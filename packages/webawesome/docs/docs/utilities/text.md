@@ -3,6 +3,15 @@ title: Text
 description: Text utility classes use custom properties from your Web Awesome theme and other standard CSS properties to style text elements on the fly.
 layout: docs
 tags: styleUtilities
+synonyms:
+  - typography
+  - font
+  - text style
+use-cases:
+  - text size
+  - text align
+  - text weight
+  - truncate
 ---
 
 <style>
@@ -11,16 +20,23 @@ tags: styleUtilities
   }
 </style>
 
-{{ description }} 
+{{ description }}
+
+The classes on this page cover the most common needs: picking a size and weight for body copy, styling headings, aligning paragraphs, truncating overflow, and changing font color. Every class is built on your theme's typography tokens, so switching themes or tweaking your type scale updates the whole site at once.
 
 ## Body
 
 Use `wa-body-*` classes to style the main content of your pages. Each class specifies a `font-size` that corresponds to a [font size token](/docs/tokens/typography/#font-size) from your theme.
 
+:::info
+`3xs` and `2xs` fall below typical legibility. It's best to keep their use to non-essential UI only (e.g. labels, metadata) to maintain accessibility.
+:::
+
 Alternatively, use `wa-body` to apply the same styling without an explicit font size.
 
 | Class Name    | Preview                                            |
 | ------------- | -------------------------------------------------- |
+| `wa-body-3xs` | <div class="wa-body-3xs">Five boxing wizards</div> |
 | `wa-body-2xs` | <div class="wa-body-2xs">Five boxing wizards</div> |
 | `wa-body-xs`  | <div class="wa-body-xs">Five boxing wizards</div>  |
 | `wa-body-s`   | <div class="wa-body-s">Five boxing wizards</div>   |
@@ -30,6 +46,7 @@ Alternatively, use `wa-body` to apply the same styling without an explicit font 
 | `wa-body-2xl` | <div class="wa-body-2xl">Five boxing wizards</div> |
 | `wa-body-3xl` | <div class="wa-body-3xl">Five boxing wizards</div> |
 | `wa-body-4xl` | <div class="wa-body-4xl">Five boxing wizards</div> |
+| `wa-body-5xl` | <div class="wa-body-5xl">Five boxing wizards</div> |
 
 ## Headings
 
@@ -39,6 +56,7 @@ Alternatively, use `wa-heading` to apply the same styling without an explicit fo
 
 | Class Name       | Preview                                               |
 | ---------------- | ----------------------------------------------------- |
+| `wa-heading-3xs` | <div class="wa-heading-3xs">Five boxing wizards</div> |
 | `wa-heading-2xs` | <div class="wa-heading-2xs">Five boxing wizards</div> |
 | `wa-heading-xs`  | <div class="wa-heading-xs">Five boxing wizards</div>  |
 | `wa-heading-s`   | <div class="wa-heading-s">Five boxing wizards</div>   |
@@ -48,6 +66,7 @@ Alternatively, use `wa-heading` to apply the same styling without an explicit fo
 | `wa-heading-2xl` | <div class="wa-heading-2xl">Five boxing wizards</div> |
 | `wa-heading-3xl` | <div class="wa-heading-3xl">Five boxing wizards</div> |
 | `wa-heading-4xl` | <div class="wa-heading-4xl">Five boxing wizards</div> |
+| `wa-heading-5xl` | <div class="wa-heading-5xl">Five boxing wizards</div> |
 
 ## Captions
 
@@ -57,6 +76,7 @@ Alternatively, use `wa-caption` to apply the same styling without an explicit fo
 
 | Class Name       | Preview                                               |
 | ---------------- | ----------------------------------------------------- |
+| `wa-caption-3xs` | <div class="wa-caption-3xs">Five boxing wizards</div> |
 | `wa-caption-2xs` | <div class="wa-caption-2xs">Five boxing wizards</div> |
 | `wa-caption-xs`  | <div class="wa-caption-xs">Five boxing wizards</div>  |
 | `wa-caption-s`   | <div class="wa-caption-s">Five boxing wizards</div>   |
@@ -66,6 +86,7 @@ Alternatively, use `wa-caption` to apply the same styling without an explicit fo
 | `wa-caption-2xl` | <div class="wa-caption-2xl">Five boxing wizards</div> |
 | `wa-caption-3xl` | <div class="wa-caption-3xl">Five boxing wizards</div> |
 | `wa-caption-4xl` | <div class="wa-caption-4xl">Five boxing wizards</div> |
+| `wa-caption-5xl` | <div class="wa-caption-5xl">Five boxing wizards</div> |
 
 ## Longform
 
@@ -75,6 +96,7 @@ Alternatively, use `wa-longform` to apply the same styling without an explicit f
 
 | Class Name        | Preview                                                |
 | ----------------- | ------------------------------------------------------ |
+| `wa-longform-3xs` | <div class="wa-longform-3xs">Five boxing wizards</div> |
 | `wa-longform-2xs` | <div class="wa-longform-2xs">Five boxing wizards</div> |
 | `wa-longform-xs`  | <div class="wa-longform-xs">Five boxing wizards</div>  |
 | `wa-longform-s`   | <div class="wa-longform-s">Five boxing wizards</div>   |
@@ -84,6 +106,7 @@ Alternatively, use `wa-longform` to apply the same styling without an explicit f
 | `wa-longform-2xl` | <div class="wa-longform-2xl">Five boxing wizards</div> |
 | `wa-longform-3xl` | <div class="wa-longform-3xl">Five boxing wizards</div> |
 | `wa-longform-4xl` | <div class="wa-longform-4xl">Five boxing wizards</div> |
+| `wa-longform-5xl` | <div class="wa-longform-5xl">Five boxing wizards</div> |
 
 ## Links
 
@@ -119,6 +142,7 @@ Use single-purpose `wa-font-size-*` classes to apply a given [font size](/docs/t
 
 | Class Name         | Preview                                                 |
 | ------------------ | ------------------------------------------------------- |
+| `wa-font-size-3xs` | <div class="wa-font-size-3xs">Five boxing wizards</div> |
 | `wa-font-size-2xs` | <div class="wa-font-size-2xs">Five boxing wizards</div> |
 | `wa-font-size-xs`  | <div class="wa-font-size-xs">Five boxing wizards</div>  |
 | `wa-font-size-s`   | <div class="wa-font-size-s">Five boxing wizards</div>   |
@@ -128,6 +152,7 @@ Use single-purpose `wa-font-size-*` classes to apply a given [font size](/docs/t
 | `wa-font-size-2xl` | <div class="wa-font-size-2xl">Five boxing wizards</div> |
 | `wa-font-size-3xl` | <div class="wa-font-size-3xl">Five boxing wizards</div> |
 | `wa-font-size-4xl` | <div class="wa-font-size-4xl">Five boxing wizards</div> |
+| `wa-font-size-5xl` | <div class="wa-font-size-5xl">Five boxing wizards</div> |
 
 ## Font Weight
 
@@ -150,10 +175,24 @@ Use single-purpose `wa-color-text-*` classes to apply a given [text color](/docs
 | `wa-color-text-normal` | <div class="wa-color-text-normal">Five boxing wizards</div> |
 | `wa-color-text-link`   | <div class="wa-color-text-link">Five boxing wizards</div>   |
 
+## Wrapping
+
+Use `wa-text-wrap-*` classes to control how text wraps across lines. These utilities apply standard CSS [`text-wrap`](https://developer.mozilla.org/docs/Web/CSS/text-wrap) values.
+
+| Class Name             | Preview                                                                                                                                                                               |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wa-text-wrap-nowrap`  | <div class="wa-text-wrap-nowrap" style="max-width: 40ch; overflow: hidden;">The five boxing wizards jump quickly. How quickly daft jumping zebras vex!</div> |
+| `wa-text-wrap-balance` | <div class="wa-text-wrap-balance" style="max-width: 40ch;">The five boxing wizards jump quickly. How quickly daft jumping zebras vex!</div>                                           |
+| `wa-text-wrap-pretty`  | <div class="wa-text-wrap-pretty" style="max-width: 40ch;">The five boxing wizards jump quickly. How quickly daft jumping zebras vex!</div>                                            |
+
+:::info
+`wa-text-wrap-pretty` is wrapped in an `@supports` rule because Firefox does not yet support `text-wrap: pretty`. In unsupported browsers, the class has no effect and text wraps normally.
+:::
+
 ## Truncation
 
 Use the `wa-text-truncate` class to truncate text with an ellipsis instead of letting it overflow or wrap.
 
-| Class Name         | Preview                                                     |
-| ------------------ | ----------------------------------------------------------- |
-| `wa-text-truncate` | <div class="wa-text-truncate" style="max-width: 40ch;">The five boxing wizards jump quickly. How quickly daft jumping zebras vex!</div>  |
+| Class Name         | Preview                                                                                                                                 |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `wa-text-truncate` | <div class="wa-text-truncate" style="max-width: 40ch;">The five boxing wizards jump quickly. How quickly daft jumping zebras vex!</div> |

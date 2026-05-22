@@ -1,13 +1,13 @@
 import type { PropertyValues } from 'lit';
 import { html } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
-import { classMap } from 'lit/directives/class-map.js';
 import WebAwesomeElement from '../../internal/webawesome-element.js';
 import type WaButton from '../button/button.js';
 import styles from './button-group.styles.js';
 
 /**
- * @summary Button groups can be used to group related buttons into sections.
+ * @summary Button groups combine related buttons into a single visual unit. Use them for toolbars, segmented controls,
+ *  or any set of actions that belong together.
  * @documentation https://webawesome.com/docs/components/button-group
  * @status stable
  * @since 2.0
@@ -34,9 +34,6 @@ export default class WaButtonGroup extends WebAwesomeElement {
   /** The button group's orientation. */
   @property({ reflect: true }) orientation: 'horizontal' | 'vertical' = 'horizontal';
 
-  /** The button group's theme variant. Defaults to `neutral` if not within another element with a variant. */
-  @property({ reflect: true }) variant: 'neutral' | 'brand' | 'success' | 'warning' | 'danger' = 'neutral';
-
   /** The selector for child elements within the button group. This is used to set custom css classes to the children. A child should be like a wa-button or wa-radio-button */
   @property() childSelector = 'wa-button, wa-radio-button';
 
@@ -45,7 +42,6 @@ export default class WaButtonGroup extends WebAwesomeElement {
 
     if (changedProperties.has('orientation')) {
       this.setAttribute('aria-orientation', this.orientation);
-      this.updateClassNames();
     }
   }
 
@@ -69,39 +65,11 @@ export default class WaButtonGroup extends WebAwesomeElement {
     button?.classList.remove('button-hover');
   }
 
-  private handleSlotChange() {
-    this.updateClassNames();
-  }
-
-  private updateClassNames() {
-    const slottedElements = [...this.defaultSlot.assignedElements({ flatten: true })] as HTMLElement[];
-    this.hasOutlined = false;
-
-    slottedElements.forEach(el => {
-      const index = slottedElements.indexOf(el);
-      const button = findButton(el, this.childSelector);
-
-      if (button) {
-        if ((button as WaButton).appearance === 'outlined') this.hasOutlined = true;
-        button.classList.add('wa-button-group__button');
-        button.classList.toggle('wa-button-group__horizontal', this.orientation === 'horizontal');
-        button.classList.toggle('wa-button-group__vertical', this.orientation === 'vertical');
-        button.classList.toggle('wa-button-group__button-first', index === 0);
-        button.classList.toggle('wa-button-group__button-inner', index > 0 && index < slottedElements.length - 1);
-        button.classList.toggle('wa-button-group__button-last', index === slottedElements.length - 1);
-        button.classList.toggle('wa-button-group__button-radio', button.tagName.toLowerCase() === 'wa-radio-button');
-      }
-    });
-  }
-
   render() {
     return html`
       <slot
         part="base"
-        class=${classMap({
-          'button-group': true,
-          'has-outlined': this.hasOutlined,
-        })}
+        class="button-group"
         role="${this.disableRole ? 'presentation' : 'group'}"
         aria-label=${this.label}
         aria-orientation=${this.orientation}
@@ -109,7 +77,6 @@ export default class WaButtonGroup extends WebAwesomeElement {
         @focusin=${this.handleFocus}
         @mouseover=${this.handleMouseOver}
         @mouseout=${this.handleMouseOut}
-        @slotchange=${this.handleSlotChange}
       ></slot>
     `;
   }

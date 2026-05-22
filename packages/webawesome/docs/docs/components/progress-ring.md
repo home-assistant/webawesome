@@ -1,8 +1,15 @@
 ---
 title: Progress Ring
-description: Progress rings are used to show the progress of a determinate operation in a circular fashion.
 layout: component
 category: Feedback & Status
+synonyms:
+  - circular progress
+  - donut chart
+  - radial progress
+use-cases:
+  - loading spinner
+  - circular loader
+  - completion ring
 ---
 
 ```html {.example}
@@ -51,8 +58,8 @@ Use the default slot to show a label inside the progress ring.
 
 <br />
 
-<wa-button circle><wa-icon name="minus" variant="solid" label="Decrease"></wa-icon></wa-button>
-<wa-button circle><wa-icon name="plus" variant="solid" label="Increase"></wa-icon></wa-button>
+<wa-button appearance="filled" circle><wa-icon name="minus" variant="solid" label="Decrease"></wa-icon></wa-button>
+<wa-button appearance="filled" circle><wa-icon name="plus" variant="solid" label="Increase"></wa-icon></wa-button>
 
 <script>
   const progressRing = document.querySelector('.progress-ring-values');
