@@ -78,7 +78,8 @@ export default css`
     }
 
     input,
-    textarea {
+    textarea,
+    ::slotted(input[slot='input']) {
       /*
       Fixes an alignment issue with placeholders.
       https://github.com/shoelace-style/webawesome/issues/342
@@ -106,7 +107,8 @@ export default css`
     }
   }
 
-  input {
+  input,
+  ::slotted(input[slot='input']) {
     flex: 1 1 auto;
     min-width: 0;
     height: 100%;

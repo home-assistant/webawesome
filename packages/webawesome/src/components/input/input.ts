@@ -1,5 +1,5 @@
 import { html, isServer, type PropertyValues } from 'lit';
-import { customElement, property, query, state } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
@@ -65,7 +65,40 @@ export default class WaInput extends WebAwesomeFormAssociatedElement {
   private readonly hasSlotController = new HasSlotController(this, 'hint', 'label');
   private readonly localize = new LocalizeController(this);
 
-  @query('input') input: HTMLInputElement;
+  // Password manager compatibility
+  //  + ugly hacks to keep form validation working.
+  @property({ attribute: 'light-dom-input', type: Boolean, reflect: true })
+  lightDomInput = false;
+
+  // Replaces @query(input) but now we have to deal with the two cases everywhere.
+  declare input: HTMLInputElement;
+
+  override firstUpdated(props: PropertyValues<this>) {
+    super.firstUpdated(props);
+    if (!this.lightDomInput) {
+      this.input = this.renderRoot.querySelector('input')!;
+    }
+  }
+
+  override get validationTarget(): HTMLElement | undefined {
+    return this.lightDomInput
+      ? ((this.renderRoot.querySelector('[part="base"]') as HTMLElement | null) ?? undefined)
+      : this.input;
+  }
+
+  private _forwardFocusEvent = (event: FocusEvent) => this.dispatchEvent(new FocusEvent(event.type));
+
+  private _handleControlSlotChange = (event: Event) => {
+    const input = (event.target as HTMLSlotElement)
+      .assignedElements({ flatten: true })
+      .find((el): el is HTMLInputElement => el.tagName === 'INPUT');
+    if (input === this.input) return;
+    for (const type of ['focus', 'blur'] as const) {
+      this.input?.removeEventListener(type, this._forwardFocusEvent);
+      input?.addEventListener(type, this._forwardFocusEvent);
+    }
+    this.input = input as HTMLInputElement;
+  };
 
   @property() title = ''; // make reactive to pass through
 
@@ -391,40 +424,40 @@ export default class WaInput extends WebAwesomeFormAssociatedElement {
         <slot name="label">${this.label}</slot>
       </label>
 
-      <div part="base" class="text-field">
+      <div part="base" class="text-field" @change=${this.handleChange} @input=${this.handleInput}>
         <slot name="start" part="start" class="start"></slot>
 
-        <input
-          part="input"
-          id="input"
-          class="control"
-          type=${this.type === 'password' && this.passwordVisible ? 'text' : this.type}
-          title=${this.title /* An empty title prevents browser validation tooltips from appearing on hover */}
-          name=${ifDefined(this.name)}
-          ?disabled=${this.disabled}
-          ?readonly=${this.readonly}
-          ?required=${this.required}
-          placeholder=${ifDefined(this.placeholder)}
-          minlength=${ifDefined(this.minlength)}
-          maxlength=${ifDefined(this.maxlength)}
-          min=${ifDefined(this.min)}
-          max=${ifDefined(this.max)}
-          step=${ifDefined(this.step as number)}
-          .value=${live(this.value ?? '')}
-          autocapitalize=${ifDefined(this.autocapitalize)}
-          autocomplete=${ifDefined(this.autocomplete)}
-          autocorrect=${this.autocorrect ? 'on' : 'off'}
-          ?autofocus=${this.autofocus}
-          spellcheck=${this.spellcheck}
-          pattern=${ifDefined(this.pattern)}
-          enterkeyhint=${ifDefined(this.enterkeyhint)}
-          inputmode=${ifDefined(this.inputmode)}
-          aria-describedby="hint"
-          @change=${this.handleChange}
-          @input=${this.handleInput}
-          @keydown=${this.handleKeyDown}
-        />
-
+        ${this.lightDomInput
+          ? // #51620, password manager compatibility : outside of the shadow DOM if lightDomInput is set.
+            html`<slot name="input" @slotchange=${this._handleControlSlotChange}></slot>`
+          : html`<input
+              part="input"
+              id="input"
+              class="control"
+              type=${this.type === 'password' && this.passwordVisible ? 'text' : this.type}
+              title=${this.title /* An empty title prevents browser validation tooltips from appearing on hover */}
+              name=${ifDefined(this.name)}
+              ?disabled=${this.disabled}
+              ?readonly=${this.readonly}
+              ?required=${this.required}
+              placeholder=${ifDefined(this.placeholder)}
+              minlength=${ifDefined(this.minlength)}
+              maxlength=${ifDefined(this.maxlength)}
+              min=${ifDefined(this.min)}
+              max=${ifDefined(this.max)}
+              step=${ifDefined(this.step as number)}
+              .value=${live(this.value ?? '')}
+              autocapitalize=${ifDefined(this.autocapitalize)}
+              autocomplete=${ifDefined(this.autocomplete)}
+              autocorrect=${this.autocorrect ? 'on' : 'off'}
+              ?autofocus=${this.autofocus}
+              spellcheck=${this.spellcheck}
+              pattern=${ifDefined(this.pattern)}
+              enterkeyhint=${ifDefined(this.enterkeyhint)}
+              inputmode=${ifDefined(this.inputmode)}
+              aria-describedby="hint"
+              @keydown=${this.handleKeyDown}
+            />`}
         ${isClearIconVisible
           ? html`
               <slot name="clear-button">
