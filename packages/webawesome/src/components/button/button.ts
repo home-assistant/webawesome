@@ -340,6 +340,7 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
         role=${ifDefined(isLink ? undefined : 'button')}
         aria-disabled=${ifDefined(isLink && this.disabled ? 'true' : undefined)}
         aria-label=${ifDefined(this.ariaLabel ?? undefined)}
+        aria-busy=${this.loading ? 'true' : 'false'}
         tabindex=${this.disabled ? '-1' : '0'}
         @invalid=${this.isButton() ? this.handleInvalid : null}
         @click=${this.handleClick}
