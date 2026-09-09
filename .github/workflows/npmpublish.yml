@@ -16,8 +16,6 @@ jobs:
         with:
           node-version-file: ".nvmrc"
           registry-url: https://registry.npmjs.org/
-      - name: Update npm to latest
-        run: npm install -g npm@latest
       - run: npm install
       - run: npm install
         working-directory: packages/webawesome
