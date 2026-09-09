@@ -228,6 +228,12 @@ export default class WaInput extends WebAwesomeFormAssociatedElement {
    */
   @property({ attribute: 'with-hint', type: Boolean }) withHint = false;
 
+  /**
+   * Sets the native input's `id` and the associated label `for`. Defaults to `"input"`. Use a unique value when
+   * multiple inputs are present so consumers such as password managers can tell them apart.
+   */
+  @property({ attribute: 'input-id' }) inputId = 'input';
+
   private handleChange(event: Event) {
     this.value = this.input.value;
 
@@ -385,7 +391,7 @@ export default class WaInput extends WebAwesomeFormAssociatedElement {
           label: true,
           'has-label': hasLabel,
         })}
-        for="input"
+        for=${this.inputId || 'input'}
         aria-hidden=${hasLabel ? 'false' : 'true'}
       >
         <slot name="label">${this.label}</slot>
@@ -396,7 +402,7 @@ export default class WaInput extends WebAwesomeFormAssociatedElement {
 
         <input
           part="input"
-          id="input"
+          id=${this.inputId || 'input'}
           class="control"
           type=${this.type === 'password' && this.passwordVisible ? 'text' : this.type}
           title=${this.title /* An empty title prevents browser validation tooltips from appearing on hover */}

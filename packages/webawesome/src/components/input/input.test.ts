@@ -79,6 +79,24 @@ describe('<wa-input>', () => {
           const input = el.shadowRoot!.querySelector<HTMLInputElement>('input')!;
           expect(input.placeholder).to.equal('Enter text');
         });
+
+        it('should use "input" as the default native input id and label for', async () => {
+          const el = await fixture<WaInput>(html`<wa-input label="Name"></wa-input>`);
+          const input = el.shadowRoot!.querySelector<HTMLInputElement>('input')!;
+          const label = el.shadowRoot!.querySelector<HTMLLabelElement>('[part~="form-control-label"]')!;
+          expect(el.inputId).to.equal('input');
+          expect(input.id).to.equal('input');
+          expect(label.htmlFor).to.equal('input');
+        });
+
+        it('should set the native input id and label for from input-id', async () => {
+          const el = await fixture<WaInput>(html`<wa-input input-id="username" label="Username"></wa-input>`);
+          const input = el.shadowRoot!.querySelector<HTMLInputElement>('input')!;
+          const label = el.shadowRoot!.querySelector<HTMLLabelElement>('[part~="form-control-label"]')!;
+          expect(el.inputId).to.equal('username');
+          expect(input.id).to.equal('username');
+          expect(label.htmlFor).to.equal('username');
+        });
       });
 
       describe('slots', () => {
