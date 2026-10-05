@@ -85,7 +85,7 @@ export default class WaDialog extends WebAwesomeElement {
   @property({ attribute: 'light-dismiss', type: Boolean }) lightDismiss = false;
 
   /** The ID of the element that labels the dialog.
-   *  Overrides the default `aria-labelledby="title"`. */
+   *  Overrides the default labelling derived from the header's title. */
   @property({ attribute: 'aria-labelledby' }) ariaLabelledby?: string;
 
   /** The ID of the element that describes the dialog. */
@@ -275,11 +275,10 @@ export default class WaDialog extends WebAwesomeElement {
 
     return html`
       <dialog
-        aria-labelledby=${this.ariaLabelledby ?? 'title'}
-        aria-describedby=${ifDefined(this.ariaDescribedby)}
         part="dialog"
-        aria-labelledby=${ifDefined(hasHeader && hasLabel ? 'title' : undefined)}
-        aria-label=${ifDefined(!hasHeader && this.label ? this.label : undefined)}
+        aria-labelledby=${ifDefined(this.ariaLabelledby ?? (hasHeader && hasLabel ? 'title' : undefined))}
+        aria-label=${ifDefined(!this.ariaLabelledby && !hasHeader && this.label ? this.label : undefined)}
+        aria-describedby=${ifDefined(this.ariaDescribedby)}
         class=${classMap({
           dialog: true,
           open: this.open,

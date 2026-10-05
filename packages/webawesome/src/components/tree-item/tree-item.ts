@@ -133,9 +133,12 @@ export default class WaTreeItem extends WebAwesomeElement {
       }
     }
 
-    if (this._parentTreeContext) {
-      this._treeItemContext = { depth: this._parentTreeContext.depth + 1, expanded: this.expanded };
-    }
+    // Always rebuild the provided context. The initial value is captured at construction, before attributes and
+    // properties are applied, so a root item would otherwise report `expanded: false` and collapse its nested items.
+    this._treeItemContext = {
+      depth: this._parentTreeContext ? this._parentTreeContext.depth + 1 : 0,
+      expanded: this.expanded,
+    };
 
     this.updateIndentation();
   }
@@ -261,6 +264,8 @@ export default class WaTreeItem extends WebAwesomeElement {
   @watch('expanded')
   handleExpandedState() {
     this.customStates.set('expanded', this.expanded);
+    // Keep the provided context in sync so items connected later see the current expanded state
+    this._treeItemContext = { ...this._treeItemContext, expanded: this.expanded };
   }
 
   @watch('indeterminate')

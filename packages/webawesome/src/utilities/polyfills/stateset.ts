@@ -76,11 +76,14 @@ export class StateSet extends Set<string> {
 /**
  * Monkey-patch CSSStyleSheet.prototype.replaceSync to transform :state() selectors
  * into a :where() selector that supports multiple fallback syntaxes for better compatibility.
+ * Skipped where CSSStyleSheet doesn't exist, e.g. during SSR.
  */
-const replaceSync = CSSStyleSheet.prototype.replaceSync;
-Object.defineProperty(CSSStyleSheet.prototype, 'replaceSync', {
-  value: function (text: string) {
-    text = text.replace(/:state\(([^)]+)\)/g, ':where(:state($1), :--$1, [state-$1])');
-    replaceSync.call(this, text);
-  },
-});
+if (typeof CSSStyleSheet !== 'undefined') {
+  const replaceSync = CSSStyleSheet.prototype.replaceSync;
+  Object.defineProperty(CSSStyleSheet.prototype, 'replaceSync', {
+    value: function (text: string) {
+      text = text.replace(/:state\(([^)]+)\)/g, ':where(:state($1), :--$1, [state-$1])');
+      replaceSync.call(this, text);
+    },
+  });
+}
