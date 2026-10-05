@@ -56,12 +56,23 @@ function fixDSD(e) {
   (function attachShadowRoots(root) {
     root.querySelectorAll('template[shadowrootmode]').forEach(template => {
       const mode = template.getAttribute('shadowrootmode');
-      const shadowRoot = template.parentNode.attachShadow({ mode });
+      const parent = template.parentNode;
+
+      // IF shadow root already attach, ignore it and remove template.
+      if (parent.shadowRoot) {
+        template.remove();
+        attachShadowRoots(parent.shadowRoot);
+        return;
+      }
+
+      const shadowRoot = parent.attachShadow({ mode });
       shadowRoot.appendChild(template.content);
       template.remove();
       attachShadowRoots(shadowRoot);
     });
   })(newElement);
+
+  e.detail.resume();
 }
 
 // Fixes an issue with DSD keeping the `<template>` elements hanging around in the lightdom.

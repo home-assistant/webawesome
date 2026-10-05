@@ -1,7 +1,8 @@
 ---
 title: Dialog
 layout: component
-category: Organization
+category: Layout
+hasAnatomy: false
 synonyms:
   - modal
   - popup
@@ -19,7 +20,7 @@ use-cases:
 ```html {.example}
 <wa-dialog label="Dialog" id="dialog-overview">
   This is a standard dialog. You can put any content you want in here!
-  <wa-button appearance="filled" slot="footer" variant="brand" data-dialog="close">Close</wa-button>
+  <wa-button slot="footer" variant="brand" data-dialog="close">Close</wa-button>
 </wa-dialog>
 
 <wa-button appearance="filled">Open Dialog</wa-button>
@@ -34,7 +35,7 @@ use-cases:
 
 ## Examples
 
-### Dialog without Header
+### Without a Header
 
 Headers are enabled by default. To render a dialog without a header, add the `without-header` attribute.
 
@@ -54,7 +55,7 @@ Headers are enabled by default. To render a dialog without a header, add the `wi
 </script>
 ```
 
-### Dialog with Footer
+### Footer
 
 Footers can be used to display titles and more. Use the `footer` slot to add a footer to the dialog.
 
@@ -74,7 +75,7 @@ Footers can be used to display titles and more. Use the `footer` slot to add a f
 </script>
 ```
 
-### Opening and Closing Dialogs Declaratively
+### Opening & Closing Declaratively
 
 You can open and close dialogs with JavaScript by toggling the `open` attribute, but you can also do it declaratively. Add the `data-dialog="open id"` to any button on the page, where `id` is the ID of the dialog you want to open.
 
@@ -98,14 +99,14 @@ Similarly, you can add `data-dialog="close"` to a button _inside_ of a dialog to
 <wa-button appearance="filled" data-dialog="open dialog-dismiss">Open Dialog</wa-button>
 ```
 
-### Custom Width
+### Width
 
-Just use the `--width` custom property to set the dialog's width.
+Use the `--width` custom property to set the dialog's width.
 
 ```html {.example}
 <wa-dialog label="Dialog" class="dialog-width" style="--width: 50vw;">
   This dialog is wider than the default — handy when you need more room for content.
-  <wa-button appearance="filled" slot="footer" variant="brand" data-dialog="close">Close</wa-button>
+  <wa-button slot="footer" variant="brand" data-dialog="close">Close</wa-button>
 </wa-dialog>
 
 <wa-button appearance="filled">Open Dialog</wa-button>
@@ -217,7 +218,7 @@ You can use `event.detail.source` to determine which element triggered the reque
 </script>
 ```
 
-### Setting Initial Focus
+### Initial Focus
 
 To give focus to a specific element when the dialog opens, use the `autofocus` attribute.
 

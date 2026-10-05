@@ -70,6 +70,11 @@ export default css`
     padding-inline-end: 1.75em;
   }
 
+  /* The link only exists to be clicked programmatically. */
+  #link {
+    display: none;
+  }
+
   #check {
     visibility: hidden;
     margin-inline-start: -1.5em;
@@ -149,11 +154,11 @@ export default css`
     }
 
     &.show {
-      animation: submenu-show var(--show-duration, 50ms) ease;
+      animation: submenu-show var(--show-duration, var(--wa-transition-fast)) ease;
     }
 
     &.hide {
-      animation: submenu-show var(--show-duration, 50ms) ease reverse;
+      animation: submenu-show var(--show-duration, var(--wa-transition-fast)) ease reverse;
     }
 
     /* Submenu placement transform origins */

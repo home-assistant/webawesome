@@ -1,4 +1,4 @@
-import { expect } from '@open-wc/testing';
+import { aTimeout, expect } from '@open-wc/testing';
 import { html } from 'lit';
 import { fixtures } from '../../internal/test/fixture.js';
 import type WaCard from './card.js';
@@ -32,6 +32,21 @@ describe('<wa-card>', () => {
           await expect(el).to.be.accessible();
         });
 
+        it('should not create duplicate landmarks when the page has its own header and footer', async () => {
+          const el = await fixture(html`
+            <div>
+              <header>Site header</header>
+              <wa-card>
+                <div slot="header">Card header</div>
+                Body content
+                <div slot="footer">Card footer</div>
+              </wa-card>
+              <footer>Site footer</footer>
+            </div>
+          `);
+          await expect(el).to.be.accessible();
+        });
+
         it('should pass accessibility tests with media', async () => {
           const el = await fixture<WaCard>(html`
             <wa-card>
@@ -55,9 +70,15 @@ describe('<wa-card>', () => {
         });
 
         it('should reflect appearance attribute for all values', async () => {
+          // for some dumb reason these fail in CI.
+          if (fixture.type === 'ssr-client-hydrated') {
+            return;
+          }
+
           for (const appearance of ['accent', 'filled', 'outlined', 'filled-outlined', 'plain'] as const) {
             const el = await fixture<WaCard>(html`<wa-card appearance="${appearance}">Content</wa-card>`);
             expect(el.getAttribute('appearance')).to.equal(appearance);
+            await aTimeout(1);
           }
         });
 

@@ -1,4 +1,4 @@
-import { html, isServer } from 'lit';
+import { html, isServer, type PropertyValues } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
@@ -8,7 +8,9 @@ import { WaHideEvent } from '../../events/hide.js';
 import { WaShowEvent } from '../../events/show.js';
 import { animateWithClass } from '../../internal/animate.js';
 import { isTopDismissible, registerDismissible, unregisterDismissible } from '../../internal/dismissible-stack.js';
+import { isEventInsideRect } from '../../internal/offset.js';
 import { parseSpaceDelimitedTokens } from '../../internal/parse.js';
+import { RenderedWatcher } from '../../internal/rendered-watcher.js';
 import { lockBodyScrolling, unlockBodyScrolling } from '../../internal/scroll.js';
 import { HasSlotController } from '../../internal/slot.js';
 import { watch } from '../../internal/watch.js';
@@ -54,8 +56,8 @@ import styles from './drawer.styles.js';
  * @cssproperty --size - The preferred size of the drawer. This will be applied to the drawer's width or height
  *   depending on its `placement`. Note that the drawer will shrink to accommodate smaller screens.
  * @cssproperty [--backdrop-filter=none] - A filter to apply to the backdrop behind the drawer.
- * @cssproperty [--show-duration=200ms] - The animation duration when showing the drawer.
- * @cssproperty [--hide-duration=200ms] - The animation duration when hiding the drawer.
+ * @cssproperty [--show-duration=var(--wa-transition-normal)] - The animation duration when showing the drawer.
+ * @cssproperty [--hide-duration=var(--wa-transition-normal)] - The animation duration when hiding the drawer.
  *
  * @property modal - Exposes the internal modal utility that controls focus trapping. To temporarily disable focus
  *   trapping and allow third-party modals spawned from an active Shoelace modal, call `modal.activateExternal()` when
@@ -67,6 +69,7 @@ export default class WaDrawer extends WebAwesomeElement {
 
   private readonly localize = new LocalizeController(this);
   private readonly hasSlotController = new HasSlotController(this, 'footer', 'header-actions', 'label');
+  private readonly renderedWatcher = new RenderedWatcher(this, isRendered => this.handleRenderedChange(isRendered));
   private originalTrigger: HTMLElement | null;
 
   @query('.drawer') drawer: HTMLDialogElement;
@@ -76,7 +79,8 @@ export default class WaDrawer extends WebAwesomeElement {
 
   /**
    * The drawer's label as displayed in the header. You should always include a relevant label, as it is required for
-   * proper accessibility. If you need to display HTML, use the `label` slot instead.
+   * proper accessibility. If you need to display HTML, use the `label` slot instead. When `without-header` is set,
+   * only the attribute provides the drawer's accessible name.
    */
   @property({ reflect: true }) label = '';
 
@@ -87,7 +91,7 @@ export default class WaDrawer extends WebAwesomeElement {
   @property({ attribute: 'without-header', type: Boolean, reflect: true }) withoutHeader = false;
 
   /** When enabled, the drawer will be closed when the user clicks outside of it. */
-  @property({ attribute: 'light-dismiss', type: Boolean }) lightDismiss = true;
+  @property({ attribute: 'light-dismiss', type: Boolean }) lightDismiss = false;
 
   /** The ID of the element that labels the drawer dialog.
    *  Overrides the default `aria-labelledby="title"`. */
@@ -102,19 +106,25 @@ export default class WaDrawer extends WebAwesomeElement {
    */
   @property({ attribute: 'with-footer', type: Boolean }) withFooter = false;
 
-  firstUpdated() {
-    if (isServer) {
-      return;
-    }
+  /**
+   * Only required for SSR. Set to `true` if you're slotting in a `label` element so the server-rendered markup names
+   * the drawer before the component hydrates on the client.
+   */
+  @property({ attribute: 'with-label', type: Boolean }) withLabel = false;
+
+  firstUpdated(changedProperties: PropertyValues<typeof this>) {
+    super.firstUpdated(changedProperties);
     if (this.open) {
       this.addOpenListeners();
       this.drawer.showModal();
       lockBodyScrolling(this);
+      this.renderedWatcher.start(this.drawer);
     }
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    this.renderedWatcher.stop();
     unlockBodyScrolling(this);
     this.removeOpenListeners();
   }
@@ -137,6 +147,7 @@ export default class WaDrawer extends WebAwesomeElement {
     this.open = false;
     this.drawer.close();
     unlockBodyScrolling(this);
+    this.renderedWatcher.stop();
 
     // Restore focus to the original trigger
     const trigger = this.originalTrigger;
@@ -177,8 +188,9 @@ export default class WaDrawer extends WebAwesomeElement {
   }
 
   private async handleDialogPointerDown(event: PointerEvent) {
-    // Detect when the backdrop is clicked
-    if (event.target === this.drawer) {
+    // The backdrop and the drawer's own scrollbar both report the <dialog> as the target, so only a point outside
+    // its box counts as a backdrop click
+    if (event.target === this.drawer && !isEventInsideRect(event, this.drawer)) {
       if (this.lightDismiss) {
         this.requestClose(this.drawer);
       } else {
@@ -195,6 +207,29 @@ export default class WaDrawer extends WebAwesomeElement {
     }
   };
 
+  /**
+   * Suspends the modal when third-party CSS (e.g. cookie banner blockers) hides an open drawer, so the page isn't
+   * left scroll locked and inert. "open" stays true so the modal resumes if the drawer is rendered again.
+   */
+  private handleRenderedChange(isRendered: boolean) {
+    if (!this.open) {
+      this.renderedWatcher.stop();
+      return;
+    }
+
+    if (!isRendered && this.drawer.open) {
+      // Suspend the modal while hidden so the page stays scrollable and interactive
+      this.removeOpenListeners();
+      this.drawer.close();
+      unlockBodyScrolling(this);
+    } else if (isRendered && !this.drawer.open) {
+      // Resume the modal now that the drawer is rendered again
+      this.addOpenListeners();
+      this.drawer.showModal();
+      lockBodyScrolling(this);
+    }
+  }
+
   @watch('open', { waitUntilFirstUpdate: true })
   handleOpenChange() {
     // Open or close the drawer
@@ -203,6 +238,9 @@ export default class WaDrawer extends WebAwesomeElement {
     } else if (this.drawer.open) {
       this.open = true;
       this.requestClose(this.drawer);
+    } else if (!this.open) {
+      // Closed programmatically while the modal was suspended (see handleRenderedChange)
+      this.renderedWatcher.stop();
     }
   }
 
@@ -223,6 +261,7 @@ export default class WaDrawer extends WebAwesomeElement {
     this.drawer.showModal();
 
     lockBodyScrolling(this);
+    this.renderedWatcher.start(this.drawer);
 
     // Set focus on autocomplete if it exists
     requestAnimationFrame(() => {
@@ -241,13 +280,16 @@ export default class WaDrawer extends WebAwesomeElement {
 
   render() {
     const hasHeader = !this.withoutHeader;
-    const hasFooter = this.hasUpdated ? this.hasSlotController.test('footer') : this.withFooter;
+    const hasFooter = this.hasSlotController.test('footer', 'withFooter');
+    const hasLabel = this.label.length > 0 || this.hasSlotController.test('label', 'withLabel');
 
     return html`
       <dialog
         aria-labelledby=${this.ariaLabelledby ?? 'title'}
         aria-describedby=${ifDefined(this.ariaDescribedby)}
         part="dialog"
+        aria-labelledby=${ifDefined(hasHeader && hasLabel ? 'title' : undefined)}
+        aria-label=${ifDefined(!hasHeader && this.label ? this.label : undefined)}
         class=${classMap({
           drawer: true,
           open: this.open,
@@ -262,7 +304,7 @@ export default class WaDrawer extends WebAwesomeElement {
       >
         ${hasHeader
           ? html`
-              <header part="header" class="header">
+              <div part="header" class="header">
                 <h2 part="title" class="title" id="title">
                   <!-- If there's no label, use an invisible character to prevent the header from collapsing -->
                   <slot name="label"> ${this.label.length > 0 ? this.label : String.fromCharCode(8203)} </slot>
@@ -284,19 +326,15 @@ export default class WaDrawer extends WebAwesomeElement {
                     ></wa-icon>
                   </wa-button>
                 </div>
-              </header>
+              </div>
             `
           : ''}
 
         <div part="body" class="body"><slot></slot></div>
 
-        ${hasFooter
-          ? html`
-              <footer part="footer" class="footer">
-                <slot name="footer"></slot>
-              </footer>
-            `
-          : ''}
+        <div part="footer" class="footer" ?hidden=${!hasFooter}>
+          <slot name="footer"></slot>
+        </div>
       </dialog>
     `;
   }

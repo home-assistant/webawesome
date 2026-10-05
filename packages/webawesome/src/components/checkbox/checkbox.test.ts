@@ -1,3 +1,4 @@
+import { html as serverHTML } from '@lit-labs/ssr';
 import { aTimeout, expect, oneEvent, waitUntil } from '@open-wc/testing';
 import { sendKeys } from '@web/test-runner-commands';
 import { html } from 'lit';
@@ -6,7 +7,7 @@ import { expectEvent } from '../../internal/test/expect-event.js';
 import { fixtures } from '../../internal/test/fixture.js';
 import { runFormControlBaseTests } from '../../internal/test/form-control-base-tests.js';
 import { clickOnElement } from '../../internal/test/pointer-utilities.js';
-import type WaCheckbox from './checkbox.js';
+import WaCheckbox from './checkbox.js';
 
 describe('<wa-checkbox>', () => {
   runFormControlBaseTests('wa-checkbox');
@@ -52,12 +53,20 @@ describe('<wa-checkbox>', () => {
 
           expect(el.checked).to.be.true;
           expect(el.value).to.equal('myvalue');
+          expect(el.shadowRoot?.querySelector('input')?.checked).to.equal(true);
 
           el.checked = false;
           await el.updateComplete;
 
           expect(el.checked).to.be.false;
           expect(el.value).to.equal('myvalue');
+          expect(el.shadowRoot?.querySelector('input')?.checked).to.equal(false);
+
+          // let's recheck setting `el.checked = true`
+          // https://github.com/shoelace-style/webawesome/issues/2478
+          el.checked = true;
+          await el.updateComplete;
+          expect(el.shadowRoot?.querySelector('input')?.checked).to.equal(true);
         });
 
         it('should have title on the internal input if title attribute is set', async () => {
@@ -322,7 +331,7 @@ describe('<wa-checkbox>', () => {
       describe('CSS parts and states', () => {
         it('should expose CSS parts', async () => {
           const el = await fixture<WaCheckbox>(html`<wa-checkbox hint="Help">Checkbox</wa-checkbox>`);
-          expect(el.shadowRoot!.querySelector('[part="base"]')).to.exist;
+          expect(el.shadowRoot!.querySelector('[part~="base"]')).to.exist;
           expect(el.shadowRoot!.querySelector('[part="control"]')).to.exist;
           expect(el.shadowRoot!.querySelector('[part="label"]')).to.exist;
           expect(el.shadowRoot!.querySelector('[part="hint"]')).to.exist;
@@ -417,7 +426,7 @@ describe('<wa-checkbox>', () => {
 
         it('should show check icon instead of indeterminate icon when checked', async () => {
           const el = await fixture<WaCheckbox>(html`<wa-checkbox checked></wa-checkbox>`);
-          expect(el.shadowRoot!.querySelector('[part~="check-icon"]')).to.exist;
+          expect(el.shadowRoot!.querySelector('[part~="checked-icon"]')).to.exist;
           expect(el.shadowRoot!.querySelector('[part~="indeterminate-icon"]')).to.be.null;
         });
       });
@@ -481,10 +490,18 @@ describe('<wa-checkbox>', () => {
         it('should not jump the page when focusing a checkbox at the bottom of an overflow container', async () => {
           // https://github.com/shoelace-style/shoelace/issues/1169
           const el = await fixture<HTMLDivElement>(html`
-            <div style="display: flex; flex-direction: column; overflow: auto; max-height: 400px; gap: 8px;">
-              ${Array.from({ length: 33 }, () => html`<wa-checkbox>Checkbox</wa-checkbox>`)}
-            </div>
+            <div style="display: flex; flex-direction: column; overflow: auto; max-height: 400px; gap: 8px;"></div>
           `);
+
+          for (let i = 0; i < 33; i++) {
+            el.append(
+              Object.assign(document.createElement('wa-checkbox'), {
+                textContent: 'Checkbox',
+              }),
+            );
+          }
+
+          await aTimeout(1);
 
           const checkboxes = el.querySelectorAll<WaCheckbox>('wa-checkbox');
           const lastCheckbox = checkboxes[checkboxes.length - 1];
@@ -494,6 +511,53 @@ describe('<wa-checkbox>', () => {
           lastCheckbox.focus();
           await aTimeout(10);
           expect(window.scrollY).to.equal(0);
+        });
+
+        // https://github.com/shoelace-style/webawesome/issues/2602
+        it('Should properly set value when moving from `disabled` -> `not disabled` -> `disabled`', async () => {
+          const form = await fixture<HTMLFormElement>(html`
+            <form id="f"><wa-checkbox name="x" value="1"></wa-checkbox></form>
+          `);
+
+          const checkbox = form.querySelector<WaCheckbox>('wa-checkbox')!;
+          const fd = () => new FormData(form);
+
+          expect(checkbox.checked).to.equal(false);
+          expect(fd().get('x')).to.be.null;
+
+          checkbox.disabled = true;
+          await checkbox.updateComplete;
+          checkbox.disabled = false;
+          await checkbox.updateComplete;
+
+          expect(checkbox.checked).to.equal(false);
+          expect(fd().get('x')).to.be.null;
+        });
+
+        // https://github.com/shoelace-style/webawesome/issues/2602
+        it('Should properly set value when moving from `disabled` -> `not disabled` -> `disabled` when in a `<fieldset>`', async () => {
+          const form = await fixture<HTMLFormElement>(html`
+            <form id="f">
+              <fieldset>
+                <wa-checkbox name="x" value="1"></wa-checkbox>
+              </fieldset>
+            </form>
+          `);
+
+          const checkbox = form.querySelector<WaCheckbox>('wa-checkbox')!;
+          const fieldset = form.querySelector<HTMLFieldSetElement>('fieldset')!;
+          const fd = () => new FormData(form);
+
+          expect(checkbox.checked).to.equal(false);
+          expect(fd().get('x')).to.be.null;
+
+          fieldset.disabled = true;
+          await checkbox.updateComplete;
+          fieldset.disabled = false;
+          await checkbox.updateComplete;
+
+          expect(checkbox.checked).to.equal(false);
+          expect(fd().get('x')).to.be.null;
         });
       });
     });

@@ -4,8 +4,31 @@
 {% if hasThemeSelector == undefined %}{% set hasThemeSelector = true %}{% endif %}
 {% if hasSiteDialog == undefined %}{% set hasSiteDialog = true %}{% endif %}
 {% if hasGeneratedTitle == undefined %}{% set hasGeneratedTitle = true %}{% endif %}
-<html lang="en" data-fa-kit-code="38c11e3f20" data-version="{{ package.version }}" class="wa-cloak" {% if
-  hasAnchors == false %} data-no-anchor{% endif %}>
+{% if hasLinkify == undefined %}{% set hasLinkify = true %}{% endif %}
+{% set bareLayout = layout | stripExtension %}
+{% set pageType = pageClass or page.fileSlug or 'home' %}
+<html
+  lang="en"
+  data-fa-kit-code="38c11e3f20"
+  data-version="{{ package.version }}"
+  class="
+    {% raw %}
+      {% if not ssr %}
+        wa-cloak
+      {% endif %}
+    {% endraw %}
+    {% if bareLayout === 'site' or pageType === 'home' %}
+      wa-brand-orange wa-palette-default wa-theme-site
+    {% else %}
+      {% raw %}
+        wa-brand-{{ req.cookies.webawesome_brand }}
+        wa-palette-{{ req.cookies.webawesome_palette }}
+        wa-theme-{{ req.cookies.webawesome_theme }}
+      {% endraw %}
+    {% endif %}
+  "
+  {% if hasAnchors == false %} data-no-anchor{% endif %}
+  {% if hasLinkify == false %} data-no-linkify{% endif %}>
 <head>
   {% include 'head.njk' %}
   <meta name="theme-color" content="#f36944">
@@ -13,12 +36,15 @@
   <script type="module" src="/assets/scripts/code-examples.js"></script>
   <script type="module" src="/assets/scripts/scroll.js"></script>
   <script type="module" src="/assets/scripts/turbo.js"></script>
-  <script type="module" src="/assets/scripts/search.js"></script>
-  <script type="module" src="/assets/scripts/search-list.js"></script>
+  {% if hasSearch != false %}
+    <script type="module" src="/assets/scripts/search.js"></script>
+    <script type="module" src="/assets/scripts/search-list.js"></script>
+  {% endif %}
   <script type="module" src="/assets/scripts/outline.js"></script>
   <script type="module" src="/assets/scripts/color-scheme.js"></script>
   <script type="module" src="/assets/scripts/theme.js"></script>
   <script type="module" src="/assets/scripts/install-tabs.js"></script>
+  <script type="module" src="/assets/scripts/component-anatomy.js"></script>
 
   {% block head %}
   <link rel="stylesheet" href="/assets/styles/docs.css" />
@@ -32,13 +58,27 @@
 
     // Detect platform for keyboard shortcut hints
     document.documentElement.classList.toggle('is-mac', /Mac|iPhone|iPad/.test(navigator.platform));
+
+    function handleSSRChange (event) {
+      const el = event.target
+      if (!el) { return }
+
+      if (el.id !== "ssr-switch") { return }
+
+      el.checked ? setCookie({ name: "webawesome_ssr", value: "true" }) : removeCookie({ name: "webawesome_ssr" })
+      window.location.reload()
+    }
+    document.addEventListener("change", handleSSRChange)
   </script>
 </head>
+{# Full-bleed pages (hasFramedMain: false) own their typography, so a stray
+   hasProseContent inherited from the directory tree doesn't take effect. #}
+{% set isProseWrapped = hasFramedMain != false and hasProseContent %}
 <body
-  class="layout-{{ layout | stripExtension }} page-{{ pageClass or page.fileSlug or 'home' }}{{ ' page-wide' if wide }}">
+  class="layout-{{ layout | stripExtension }} page-{{ pageType }}{{ ' has-prose-content' if isProseWrapped }}{{ ' has-outline' if hasOutline }}">
 
   {% set defaultWaPageAttributes = defaultWaPageAttributes or { view: 'desktop', 'disable-navigation-toggle': true,
-  'mobile-breakpoint': 1180, 'disable-sticky': 'banner' } %}
+  'mobile-breakpoint': 960, 'disable-sticky': 'banner' } %}
   {% set waPageAttributes = waPageAttributes or {} %}
   {% set mergedWaPageAttributes = defaultWaPageAttributes | merge(waPageAttributes) %}
   <wa-page {% for key, value in mergedWaPageAttributes %} {% if value != null and value != false %} {{ key
@@ -86,21 +126,34 @@
     {# wa-page-based Main Header #}
     {% block pageMainHeader %}{% endblock %}
 
+    {# Even though the aside comes after "main" in the "flow", put it before because `<main>` is going to be large. #}
+    {# wa-page-based Aside #}
+    {% block pageAside %}
+    {# Outline #}
+    {% if hasOutline %}
+    {% include "slot-aside-outline.njk" %}
+    {% endif %}
+    {% endblock %}
+
+
     {# wa-page-based Main Content (default).
-     # Pages opt out of the default sizing/spacing by setting
-     # `hasFlushMain: true` in their front matter — <main> then
-     # renders without .content-container so the page can handle
-     # its own layout (used by full-bleed marketing pages, etc.). #}
-    <main id="content"{% if not hasFlushMain %} class="content-container"{% endif %}>
-      {# Expandable outline #}
+     # Pages opt out of the default frame by setting `hasFramedMain: false`
+     # in their front matter — <main> then renders without .content-container,
+     # letting the page own its own layout (full-bleed marketing pages,
+     # designer-tool views, etc.). Full-bleed pages also skip the wa-prose
+     # wrapper even if hasProseContent is inherited (see isProseWrapped above). #}
+    <main id="content"{% if hasFramedMain != false %} class="content-container"{% endif %}>
+      {# Expandable outline — navigation chrome, stays outside the prose wrapper. #}
       {% if hasOutline %}
-      <nav id="outline-expandable">
-        <details class="outline-links">
-          <summary>On this page</summary>
-        </details>
+      {% set outlineLabel = "On This Page..." %}
+      <nav id="outline-expandable" aria-label="{{ outlineLabel }}">
+        <wa-details class="outline-links">
+          <span class="wa-body-s wa-cluster wa-gap-xs" slot="summary"><wa-icon name="book-open" variant="regular"></wa-icon> {{ outlineLabel }}</span>
+        </wa-details>
       </nav>
       {% endif %}
 
+      {% if isProseWrapped %}<div class="wa-prose">{% endif %}
       {# Flashes #}
       {% block flashes %}
       <div id="flashes">{% server "flashes" %}</div>
@@ -131,23 +184,23 @@
       {% endblock %}
 
       {% block afterContent %}{% endblock %}
+      {% if isProseWrapped %}</div>{% endif %}
     </main>
 
     {# wa-page-based Main Footer #}
-    {% block pageMainFooter %}{% endblock %}
-
-    {# wa-page-based Aside #}
-    {% block pageAside %}
-    {# Outline #}
-    {% if hasOutline %}
-    {% include "slot-aside-outline.njk" %}
-    {% endif %}
+    {% block pageMainFooter %}
+    {% if hasMadeWith == undefined %}{% set hasMadeWith = false %}{% endif %}
+    <footer slot="main-footer" class="page-footer">
+      {% include "page-footer-content.njk" %}
+    </footer>
     {% endblock %}
 
     {# wa-page-based Footer #}
     {% block pageFooter %}{% endblock %}
 
-    {% include 'search.njk' %}
+    {% if hasSearch != false %}
+      {% include 'search.njk' %}
+    {% endif %}
 
     {#- Site-Wide Dialog -#}
     {% if hasSiteDialog %}

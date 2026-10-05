@@ -1,7 +1,7 @@
 ---
 title: Format Number
 layout: component
-category: Utilities
+category: Helpers
 synonyms:
   - number formatter
   - currency
@@ -12,12 +12,12 @@ use-cases:
   - currency display
 ---
 
-Localization is handled by the browser's [`Intl.NumberFormat` API](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/NumberFormat). No language packs are required.
-
 ```html {.example}
 <div class="format-number-overview">
   <wa-format-number value="1000"></wa-format-number>
-  <br /><br />
+
+  <wa-divider></wa-divider>
+
   <wa-input type="number" value="1000" label="Number to Format" style="max-width: 180px;"></wa-input>
 </div>
 
@@ -30,9 +30,11 @@ Localization is handled by the browser's [`Intl.NumberFormat` API](https://devel
 </script>
 ```
 
+Localization is handled by the browser's [`Intl.NumberFormat` API](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/NumberFormat). No language packs are required.
+
 ## Examples
 
-### Percentages
+### Percentage
 
 To get the value as a percent, set the `type` attribute to `percent`.
 
@@ -56,7 +58,7 @@ Russian: <wa-format-number value="2000" lang="ru" minimum-fraction-digits="2"></
 
 ### Currency
 
-To format a number as a monetary value, set the `type` attribute to `currency` and set the `currency` attribute to the desired ISO 4217 currency code. You should also specify `lang` to ensure the the number is formatted correctly for the target locale.
+To format a number as a monetary value, set the `type` attribute to `currency` and set the `currency` attribute to the desired ISO 4217 currency code. You should also specify `lang` to ensure the number is formatted correctly for the target locale.
 
 ```html {.example}
 <wa-format-number type="currency" currency="USD" value="2000" lang="en-US"></wa-format-number><br />

@@ -34,7 +34,8 @@ import styles from './button.styles.js';
  * @slot start - An element, such as `<wa-icon>`, placed before the label.
  * @slot end - An element, such as `<wa-icon>`, placed after the label.
  *
- * @csspart base - The component's base wrapper.
+ * @csspart base - Deprecated. Use the `button` part instead.
+ * @csspart button - The component's outer wrapper.
  * @csspart start - The container that wraps the `start` slot.
  * @csspart label - The button's label.
  * @csspart end - The container that wraps the `end` slot.
@@ -316,7 +317,7 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
     /* eslint-disable lit/binding-positions */
     return html`
       <${tag}
-        part="base"
+        part="base button"
         class=${classMap({
           button: true,
           caret: this.withCaret,
@@ -324,8 +325,8 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
           loading: this.loading,
           rtl: this.localize.dir() === 'rtl',
           'has-label': this.hasSlotController.test('[default]'),
-          'has-start': this.hasUpdated ? this.hasSlotController.test('start') : this.withStart,
-          'has-end': this.hasUpdated ? this.hasSlotController.test('end') : this.withEnd,
+          'has-start': this.hasSlotController.test('start', 'withStart'),
+          'has-end': this.hasSlotController.test('end', 'withEnd'),
           'is-icon-button': this.isIconButton,
         })}
         ?disabled=${ifDefined(isLink ? undefined : this.disabled)}

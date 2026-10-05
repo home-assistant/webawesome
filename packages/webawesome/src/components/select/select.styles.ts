@@ -3,8 +3,8 @@ import { css } from 'lit';
 export default css`
   :host {
     --tag-max-size: 10ch;
-    --show-duration: 100ms;
-    --hide-duration: 100ms;
+    --show-duration: var(--wa-transition-fast);
+    --hide-duration: var(--wa-transition-fast);
   }
 
   /* Add ellipses to multi select options */
@@ -169,12 +169,12 @@ export default css`
     flex-wrap: wrap;
     gap: 0.25em;
 
-    &::slotted(wa-tag) {
-      cursor: pointer !important;
+    /* Nested inside the box, so a step down from the box's radius */
+    & wa-tag:not([pill]) {
+      border-radius: var(--wa-border-radius-s);
     }
 
-    .disabled &,
-    .disabled &::slotted(wa-tag) {
+    .disabled & {
       cursor: not-allowed !important;
     }
   }
@@ -203,9 +203,12 @@ export default css`
 
   /* Clear button */
   [part~='clear-button'] {
+    flex: 0 0 auto;
     display: inline-flex;
+    align-self: stretch;
     align-items: center;
     justify-content: center;
+    inline-size: 1.5em;
     font-size: inherit;
     color: var(--wa-color-neutral-on-quiet);
     border: none;
@@ -213,7 +216,10 @@ export default css`
     padding: 0;
     transition: color var(--wa-transition-normal);
     cursor: pointer;
-    margin-inline-start: var(--wa-form-control-padding-inline);
+    /* The box is wider than the glyph, so overhang half that growth on each side. Keeps the glyph
+       on the same trailing axis as the segmented-field pickers' clear buttons. */
+    margin-inline-start: calc(var(--wa-form-control-padding-inline) - 0.125em);
+    margin-inline-end: -0.125em;
 
     &:focus {
       outline: none;
@@ -236,7 +242,7 @@ export default css`
     display: flex;
     align-items: center;
     color: var(--wa-color-neutral-on-quiet);
-    transition: rotate var(--wa-transition-slow) ease;
+    transition: rotate var(--wa-transition-slow) var(--wa-transition-easing);
     rotate: 0deg;
     margin-inline-start: var(--wa-form-control-padding-inline);
 
@@ -256,8 +262,7 @@ export default css`
     border-radius: var(--wa-border-radius-m);
     border-style: var(--wa-border-style);
     border-width: var(--wa-border-width-s);
-    padding-block: 0.5em;
-    padding-inline: 0;
+    padding: 0.25em;
     overflow: auto;
     overscroll-behavior: none;
 
@@ -268,6 +273,13 @@ export default css`
     &::slotted(wa-divider) {
       --spacing: 0.5em;
     }
+  }
+
+  /* Space options with half the listbox's padding */
+  .listbox slot:not([name]) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125em;
   }
 
   slot:not([name])::slotted(small) {

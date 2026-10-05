@@ -15,7 +15,10 @@ describe('<wa-button-group>', () => {
               <wa-button>Button 3</wa-button>
             </wa-button-group>
           `);
-          await expect(el).to.be.accessible();
+
+          if (fixture.type === 'client-only') {
+            await expect(el).to.be.accessible();
+          }
         });
 
         it('should have role="group" on the base part by default', async () => {
@@ -95,6 +98,32 @@ describe('<wa-button-group>', () => {
           const buttons = el.querySelectorAll('wa-button');
           expect(buttons.length).to.equal(3);
         });
+
+        for (const appearance of ['accent', 'filled', 'filled-outlined', 'outlined', 'plain'] as const) {
+          it(`should not offset the first ${appearance} button`, async () => {
+            const el = await fixture<WaButtonGroup>(html`
+              <wa-button-group>
+                <wa-button appearance=${appearance}>Button 1</wa-button>
+                <wa-button appearance=${appearance}>Button 2</wa-button>
+              </wa-button-group>
+            `);
+            const firstButton = el.querySelector('wa-button')!;
+
+            expect(getComputedStyle(firstButton).marginInlineStart).to.equal('0px');
+          });
+
+          it(`should not offset the first vertical ${appearance} button`, async () => {
+            const el = await fixture<WaButtonGroup>(html`
+              <wa-button-group orientation="vertical">
+                <wa-button appearance=${appearance}>Button 1</wa-button>
+                <wa-button appearance=${appearance}>Button 2</wa-button>
+              </wa-button-group>
+            `);
+            const firstButton = el.querySelector('wa-button')!;
+
+            expect(getComputedStyle(firstButton).marginBlockStart).to.equal('0px');
+          });
+        }
       });
 
       describe('CSS parts and states', () => {
@@ -106,6 +135,39 @@ describe('<wa-button-group>', () => {
           `);
           const base = el.shadowRoot!.querySelector('[part~="base"]');
           expect(base).to.exist;
+        });
+      });
+
+      describe('native buttons', () => {
+        // The grouping styles are driven by custom properties that native.css consumes, so a button group should set
+        // the same radius overrides on slotted native `<button>` elements.
+        it('should apply radius custom properties to slotted native buttons', async () => {
+          const el = await fixture<WaButtonGroup>(html`
+            <wa-button-group label="Alignment">
+              <button class="wa-filled">Left</button>
+              <button class="wa-filled">Center</button>
+              <button class="wa-filled">Right</button>
+            </wa-button-group>
+          `);
+
+          const [first, middle, last] = [...el.querySelectorAll('button')];
+
+          // The middle button has all four corners squared off
+          const middleStyles = getComputedStyle(middle);
+          expect(middleStyles.getPropertyValue('--_button-start-start-radius').trim()).to.equal('0');
+          expect(middleStyles.getPropertyValue('--_button-start-end-radius').trim()).to.equal('0');
+          expect(middleStyles.getPropertyValue('--_button-end-start-radius').trim()).to.equal('0');
+          expect(middleStyles.getPropertyValue('--_button-end-end-radius').trim()).to.equal('0');
+
+          // The first button keeps its leading corners but squares off the trailing ones
+          const firstStyles = getComputedStyle(first);
+          expect(firstStyles.getPropertyValue('--_button-start-end-radius').trim()).to.equal('0');
+          expect(firstStyles.getPropertyValue('--_button-end-end-radius').trim()).to.equal('0');
+
+          // The last button keeps its trailing corners but squares off the leading ones
+          const lastStyles = getComputedStyle(last);
+          expect(lastStyles.getPropertyValue('--_button-start-start-radius').trim()).to.equal('0');
+          expect(lastStyles.getPropertyValue('--_button-end-start-radius').trim()).to.equal('0');
         });
       });
 

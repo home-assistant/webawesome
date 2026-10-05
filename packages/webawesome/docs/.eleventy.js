@@ -2,27 +2,32 @@ import { nanoid } from 'nanoid';
 import { parse as HTMLParse } from 'node-html-parser';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { anchorHeadingsTransformer } from './_transformers/anchor-headings.js';
+import { anchorHeadingsTransformer, createId } from './_transformers/anchor-headings.js';
+import { changelogListIconsTransformer } from './_transformers/changelog-list-icons.js';
 import { codeExamplesTransformer } from './_transformers/code-examples.js';
 import { copyCodeTransformer } from './_transformers/copy-code.js';
 import { currentLinkTransformer } from './_transformers/current-link.js';
+import { dynamicSnippetsTransformer } from './_transformers/dynamic-snippets.js';
 import { highlightCodeTransformer } from './_transformers/highlight-code.js';
+import { linkifyComponentsTransformer } from './_transformers/linkify-components.js';
 import { outlineTransformer } from './_transformers/outline.js';
 import { getComponents } from './_utils/manifest.js';
 import { markdown } from './_utils/markdown.js';
 import { SimulateWebAwesomeApp } from './_utils/simulate-webawesome-app.js';
 // import { formatCodePlugin } from './_plugins/format-code.js';
-// import litPlugin from '@lit-labs/eleventy-plugin-lit';
+import { HtmlBasePlugin } from '@11ty/eleventy';
+import litPlugin from '@lit-labs/eleventy-plugin-lit';
 import { readFile } from 'fs/promises';
 import process from 'process';
 import * as url from 'url';
 import { generateAgentSkill } from '../scripts/agent-skill.js';
+import { generateDesignSkill } from '../scripts/design-skill.js';
 import { getSiteDir } from '../scripts/utils.js';
 import { replaceTextPlugin } from './_plugins/replace-text.js';
 import { searchPlugin } from './_plugins/search.js';
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 const isDev = process.argv.includes('--develop');
-const ignoreGit = process.env.ELEVENTY_IGNORE_GIT === 'true';
+
 const passThroughExtensions = ['js', 'css', 'png', 'svg', 'jpg', 'mp4'];
 
 async function getPackageData() {
@@ -61,22 +66,17 @@ export default async function (eleventyConfig) {
     if (updateComponentData) {
       allComponents = getComponents();
     }
-
-    // Invalidate last-modified cache for changed content files during watch
-    if (Array.isArray(changedFiles)) {
-      for (const file of changedFiles) {
-        if (/\.(md|njk|html)$/i.test(file)) {
-          lastModCache.delete(file);
-        }
-      }
-    }
   });
 
   /**
    * If you plan to add or remove any of these extensions, make sure to let either Konnor or Cory know as these
    * passthrough extensions will also need to be updated in the Web Awesome App.
    */
-  const passThrough = [...passThroughExtensions.map(ext => path.join(docsDir, '**/*.' + ext))];
+  const passThrough = [
+    path.join(docsDir, 'assets'),
+    path.join(docsDir, 'assets-pro'),
+    ...passThroughExtensions.map(ext => path.join(docsDir, '**/*.' + ext)),
+  ];
 
   /**
    * This is the guard we use for now to make sure our final built files don't need a 2nd pass by the server. This keeps
@@ -87,6 +87,7 @@ export default async function (eleventyConfig) {
   //
   // Set all global template data here
   //
+  eleventyConfig.addGlobalData('isDev', isDev || process.env.NODE_ENV === 'development');
   eleventyConfig.addGlobalData('package', packageData);
   eleventyConfig.addGlobalData('layout', 'page.njk');
   eleventyConfig.addGlobalData('server', {
@@ -101,6 +102,8 @@ export default async function (eleventyConfig) {
     name: 'Web Awesome',
     description: 'Build better with Web Awesome, the open source library of web components from Font Awesome.',
     image: 'https://webawesome.com/assets/images/open-graph/default.png',
+    imageWidth: 2400,
+    imageHeight: 1260,
   };
 
   // Title composition/stripping config - single source of truth
@@ -136,6 +139,29 @@ export default async function (eleventyConfig) {
   eleventyConfig.addFilter('stripExtension', string => path.parse(string + '').name);
   eleventyConfig.addFilter('stripPrefix', content => content.replace(/^wa-/, ''));
   eleventyConfig.addFilter('uniqueId', (_value, length = 8) => nanoid(length));
+  // Generates the same heading anchor id used by anchorHeadingsTransformer, so links can target headings reliably
+  eleventyConfig.addFilter('headingId', content => createId(String(content ?? '')));
+  // A silently dropped slug is the worst failure here: the page still builds, just missing the
+  // answer someone deliberately listed. Fail the build and name the slug instead.
+  eleventyConfig.addFilter('faqBySlugs', (entries, slugs, strict = true) =>
+    slugs
+      .map(slug => {
+        const entry = entries.find(entry => entry.page.fileSlug === slug);
+        if (!entry && !strict) return null;
+        if (!entry) {
+          throw new Error(
+            `No FAQ entry with slug "${slug}" — check docs/_faqs/*/${slug}.md exists and carries tag "faq".`,
+          );
+        }
+        return entry;
+      })
+      .filter(Boolean),
+  );
+
+  // Adds a input path relative to the 11ty input path. Essentially filePathStem + extension
+  eleventyConfig.addFilter('relativeInputPath', page => {
+    return eleventyConfig.directories.getInputPathRelativeToInputDirectory(page.inputPath);
+  });
 
   eleventyConfig.addGlobalData('eleventyComputed', {
     // Page title with smart + default site name formatting
@@ -144,10 +170,22 @@ export default async function (eleventyConfig) {
     ogTitle: data => composePageTitle(data.ogTitle || data.title),
     ogDescription: data => data.ogDescription || data.description,
     ogImage: data => data.ogImage || siteMetadata.image,
+    // Only emit dimensions when we know them: use the default if the page is using the
+    // default image, the explicit override if provided, otherwise null (suppresses emission).
+    // data.ogImage technically is always defined above. So instead of checking if data.ogImage == null, do an explicit check for if its equal to siteMetadata.image
+    ogImageWidth: data => data.ogImageWidth || (data.ogImage === siteMetadata.image ? siteMetadata.imageWidth : null),
+    ogImageHeight: data =>
+      data.ogImageHeight || (data.ogImage === siteMetadata.image ? siteMetadata.imageHeight : null),
     ogUrl: data => {
-      if (data.ogUrl) return data.ogUrl;
-      const url = data.page?.url || '';
-      return url ? `${siteMetadata.url}${url}` : siteMetadata.url;
+      // Strip template extensions: downstream consumers (e.g. webawesome-app) set
+      // `permalink: /foo.njk` for two-pass SSR, so page.url carries an `.njk` resolution
+      // artifact rather than the clean public URL — never what og:url or canonical should point at.
+      // Also always emit an absolute URL — front-matter overrides like `ogUrl: /signup` should
+      // resolve against siteMetadata.url so canonical/og:url consumers don't see relative hrefs.
+      const raw = (data.ogUrl || data.page?.url || '').replace(/\.njk$/, '');
+      if (!raw) return siteMetadata.url;
+      if (/^https?:\/\//.test(raw)) return raw;
+      return `${siteMetadata.url}${raw.startsWith('/') ? '' : '/'}${raw}`;
     },
     ogType: data => data.ogType || 'website',
   });
@@ -156,6 +194,56 @@ export default async function (eleventyConfig) {
   // With Prettier 3, this means a leading pipe will exist be present when the line wraps.
   eleventyConfig.addFilter('trimPipes', content => {
     return typeof content === 'string' ? content.replace(/^(\s|\|)/g, '').replace(/(\s|\|)$/g, '') : content;
+  });
+
+  // Sitemap collection: public, indexable URLs only.
+  // Filters out noindex pages, opted-out pages, and app-only paths (admin, workspaces,
+  // logged-in account pages, etc.). The template uses the htmlBaseUrl filter to absolutize.
+  const SITEMAP_EXCLUDE_PATTERNS = [
+    /^\/admin(\/|$)/,
+    /^\/workspaces(\/|$)/,
+    /^\/projects(\/|$)/,
+    /^\/purchase(\/|$)/,
+    /^\/invitations(\/|$)/,
+    /^\/patterns(\/|$)/,
+    /^\/dev-emails/,
+    /\.html$/i,
+  ];
+  // Per the SEO audit: of the public auth-gateway pages, only /signup belongs in the sitemap.
+  // /login, /claim, /account/reset-password, /account/update-password are returning-user or
+  // token-driven flows that don't need search indexing.
+  // Match on source file path so this holds even when ogUrl rewrites the public URL away
+  // from /account/* (e.g. signup.njk → /signup, login.njk → /login).
+  const isAccountSourceFile = inputPath => /[/\\]account[/\\]/.test(String(inputPath || ''));
+  const SITEMAP_ACCOUNT_FILE_ALLOW = new Set(['signup.njk']);
+  eleventyConfig.addCollection('sitemap', collection => {
+    return collection
+      .getAllSorted()
+      .map(item => {
+        // Strip .njk for pages that set `permalink: /foo.njk` — those pages emit
+        // page.url as the raw template path. Pages without a permalink override use
+        // 11ty's computed url like /foo/ and won't contain .njk in the first place.
+        const raw = String(item.data.ogUrl || item.url || '').replace(/\.njk$/, '');
+        const urlPath = raw.replace(/^https?:\/\/[^/]+/, '');
+        return { item, urlPath };
+      })
+      .filter(({ item, urlPath }) => {
+        if (!urlPath) return false;
+        if (item.data.noindex) return false;
+        if (item.data.eleventyExcludeFromCollections) return false;
+        if (SITEMAP_EXCLUDE_PATTERNS.some(re => re.test(urlPath))) return false;
+        if (isAccountSourceFile(item.inputPath)) {
+          const basename = String(item.inputPath || '')
+            .split(/[/\\]/)
+            .pop();
+          return SITEMAP_ACCOUNT_FILE_ALLOW.has(basename);
+        }
+        return true;
+      })
+      .map(({ item, urlPath }) => ({
+        path: urlPath,
+        lastmod: item.date ? item.date.toISOString().split('T')[0] : null,
+      }));
   });
 
   /**
@@ -204,6 +292,43 @@ export default async function (eleventyConfig) {
     });
   });
 
+  eleventyConfig.addCollection('faq', collection => {
+    const entries = collection.getFilteredByTag('faq');
+    if (entries.length === 0) {
+      throw new Error(
+        'The "faq" collection is empty. Every page that consumes it would render as blank chrome, so the build stops here — check that docs/_faqs/_faqs.11tydata.js is in place and still tags entries "faq".',
+      );
+    }
+
+    // /support builds its section ids straight from the topic slugs (see support.njk), and its
+    // page chrome owns the rest — an entry slug matching either would silently collide with
+    // that id and break deep links into it. Topics come from the data file so the two can't
+    // drift; the second list is the chrome ids, which live only in the template.
+    const topicSlugs = JSON.parse(fs.readFileSync(path.join(__dirname, '_data/faqTopics.json'), 'utf-8')).map(
+      topic => topic.slug,
+    );
+    const reservedIds = [...topicSlugs, 'get-help', 'github', 'discord', 'email'];
+    const seen = new Map(reservedIds.map(id => [id, 'reserved page id on /support']));
+    for (const entry of entries) {
+      const slug = entry.page.fileSlug;
+      // Only cross-directory collisions land here. The bundle merge copies free, then pro, then
+      // app over one another, so two entries at the identical path are last-copy-wins and only
+      // one of them ever reaches this loop.
+      if (seen.has(slug)) {
+        throw new Error(`Duplicate FAQ slug "${slug}": ${seen.get(slug)} and ${entry.inputPath}`);
+      }
+      // An entry with no question renders an accordion item with an empty label — a control
+      // nobody can name, read out, or click on purpose.
+      if (!entry.data.question) {
+        throw new Error(`FAQ entry ${entry.inputPath} is missing required front matter: question`);
+      }
+      seen.set(slug, entry.inputPath);
+    }
+    return entries.sort(
+      (a, b) => (a.data.order ?? 999) - (b.data.order ?? 999) || a.page.fileSlug.localeCompare(b.page.fileSlug),
+    );
+  });
+
   // Shortcodes - {% shortCode arg1, arg2 %}
   eleventyConfig.addShortcode('cdnUrl', location => {
     // We use WA (free) via the public CDN for CodePen examples
@@ -247,23 +372,40 @@ export default async function (eleventyConfig) {
 
   // Add anchors to headings
   eleventyConfig.addTransform('doc-transforms', function (content) {
+    // Several of these transformers key off `this.page.url`, which Eleventy sets to `false` for
+    // pages that don't emit output (e.g. `permalink: false`, like the FAQ collection entries).
+    // Skip transforming content nothing will ever write to disk.
+    if (this.page.outputPath === false) {
+      return content;
+    }
+
     let doc = HTMLParse(content, { blockTextElements: { code: true }, comment: true });
 
     const transformers = [
       anchorHeadingsTransformer({ container: '#content' }),
       outlineTransformer({
         container: '#content',
-        target: '.outline-links',
+        target: '#outline-standard',
         selector: 'h2, h3',
         ifEmpty: doc => {
           doc.querySelector('#outline')?.remove();
         },
       }),
+      outlineTransformer({
+        container: '#content',
+        target: '#outline-expandable wa-details',
+        selector: 'h2, h3',
+        listClass: 'wa-grid wa-gap-xs wa-list-plain',
+        linkIcon: 'hashtag',
+      }),
       // Add current link classes
       currentLinkTransformer(),
       codeExamplesTransformer(),
       highlightCodeTransformer(),
+      dynamicSnippetsTransformer(),
       copyCodeTransformer(),
+      changelogListIconsTransformer(),
+      linkifyComponentsTransformer(allComponents.map(c => c.tagName).filter(Boolean)),
     ];
 
     for (const transformer of transformers) {
@@ -279,23 +421,31 @@ export default async function (eleventyConfig) {
         replace: /\[version\]/gs,
         replaceWith: packageData.version,
       },
-      // Replace [issue:1234] with a link to the issue on GitHub
+      // Replace [pr:1234] with an outlined badge link to the pull request on GitHub
       {
         replace: /\[pr:([0-9]+)\]/gs,
-        replaceWith: '<a href="https://github.com/shoelace-style/webawesome/pull/$1" target="_blank">#$1</a>',
+        replaceWith:
+          '<a class="ref-link ref-pr" href="https://github.com/shoelace-style/webawesome/pull/$1" target="_blank"><wa-badge variant="neutral" appearance="outlined"><wa-icon slot="start" name="code-pull-request" variant="regular" aria-hidden="true"></wa-icon>#$1</wa-badge></a>',
       },
-      // Replace [pr:1234] with a link to the pull request on GitHub
+      // Replace [issue:1234] with an outlined badge link to the issue on GitHub
       {
         replace: /\[issue:([0-9]+)\]/gs,
-        replaceWith: '<a href="https://github.com/shoelace-style/webawesome/issues/$1" target="_blank">#$1</a>',
+        replaceWith:
+          '<a class="ref-link ref-issue" href="https://github.com/shoelace-style/webawesome/issues/$1" target="_blank"><wa-badge variant="neutral" appearance="outlined"><wa-icon slot="start" name="circle-dot" variant="regular" aria-hidden="true"></wa-icon>#$1</wa-badge></a>',
       },
-      // Replace [discuss:1234] with a link to the discussion on GitHub
+      // Replace [discuss:1234] with an outlined badge link to the discussion on GitHub
       {
         replace: /\[discuss:([0-9]+)\]/gs,
-        replaceWith: '<a href="https://github.com/shoelace-style/webawesome/discussions/$1" target="_blank">#$1</a>',
+        replaceWith:
+          '<a class="ref-link ref-discuss" href="https://github.com/shoelace-style/webawesome/discussions/$1" target="_blank"><wa-badge variant="neutral" appearance="outlined"><wa-icon slot="start" name="comments" variant="regular" aria-hidden="true"></wa-icon>#$1</wa-badge></a>',
       },
     ]),
   );
+
+  // Provides the htmlBaseUrl filter used by sitemap.xml.njk to absolutize URLs.
+  // Bundled with Eleventy 2.0+, no install required. Also future-proofs against
+  // a future deployment under a path prefix.
+  eleventyConfig.addPlugin(HtmlBasePlugin);
 
   // Build the search index
   eleventyConfig.addPlugin(
@@ -328,6 +478,7 @@ export default async function (eleventyConfig) {
     await generateAgentSkill({
       siteDir,
     });
+    await generateDesignSkill();
   });
 
   // This needs to happen in "eleventy.after" otherwise incremental builds never update.
@@ -345,9 +496,6 @@ export default async function (eleventyConfig) {
     eleventyConfig.addPassthroughCopy(glob);
   }
 
-  // Passthrough copy for manifest.json (PWA manifest file)
-  eleventyConfig.addPassthroughCopy('manifest.json');
-
   // // SSR plugin
   // if (!isDev) {
   //   //
@@ -357,24 +505,42 @@ export default async function (eleventyConfig) {
   //   //  - resize-observer (why SSR this?)
   //   //  - tooltip (why SSR this?)
   //   //
-  //   const omittedModules = [];
-  //   const componentModules = componentList
-  //     .filter(component => !omittedModules.includes(component.tagName.split(/wa-/)[1]))
-  //     .map(component => {
-  //       const name = component.tagName.split(/wa-/)[1];
-  //       const componentDirectory = process.env.UNBUNDLED_DIST_DIRECTORY || path.join('.', 'dist');
-  //       return path.join(componentDirectory, 'components', name, `${name}.js`);
-  //     });
-  //
-  //   eleventyConfig.addPlugin(litPlugin, {
-  //     mode: 'worker',
-  //     componentModules,
-  //   });
-  // }
+
+  // We only want to run SSR if we're not running the app shell around 11ty. If we run the SSR plugin here with the app shell also doing SSR, it breaks.
+  if (!isDev && !serverBuild && process.env.SSR === 'true') {
+    // @ts-expect-error Run connectedCallback in SSR to make it compatible with lit context.
+
+    const omittedModules = [];
+    const componentList = [];
+    allComponents.forEach(c => {
+      if (!c.tagName) {
+        return;
+      }
+      componentList.push(c);
+    });
+    const componentModules = componentList
+      .filter(component => !omittedModules.includes(component.tagName.split(/wa-/)[1]))
+      .map(component => {
+        const name = component.tagName.split(/wa-/)[1];
+        const componentDirectory = process.env.UNBUNDLED_DIST_DIRECTORY || path.join('.', 'dist');
+        return path.join(componentDirectory, 'components', name, `${name}.js`);
+      });
+
+    eleventyConfig.addPlugin(litPlugin, {
+      mode: 'worker',
+      componentModules,
+    });
+  }
 
   // For a server build, we expect a server to run the second transform.
   // For dev builds, we run the second transform in a middleware.
   if (!isDev && !serverBuild) {
+    const ssr = process.env.SSR === 'true';
+
+    if (ssr) {
+      globalThis.litSsrCallConnectedCallback = true;
+    }
+
     eleventyConfig.addTransform('simulate-webawesome-app', function (content) {
       // Only run the transform on files nunjucks would transform.
       if (!this.page.inputPath.match(/.(md|html|njk)$/)) {
@@ -382,7 +548,7 @@ export default async function (eleventyConfig) {
       }
 
       /** This largely mimics what an app would do and just stubs out what we don't care about. */
-      return SimulateWebAwesomeApp(content);
+      return SimulateWebAwesomeApp(content, { isDev: isDev, ssr });
     });
   }
 }

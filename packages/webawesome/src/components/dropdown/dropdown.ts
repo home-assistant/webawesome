@@ -45,7 +45,7 @@ const openDropdowns = new Set<WaDropdown>();
  * @slot - The dropdown's items, typically `<wa-dropdown-item>` elements.
  * @slot trigger - The element that triggers the dropdown, such as a `<wa-button>` or `<button>`.
  *
- * @csspart base - The component's host element.
+ * @csspart base - Deprecated. Style the host element instead.
  * @csspart menu - The dropdown menu container.
  *
  * @cssproperty --show-duration - The duration of the show animation.
@@ -121,11 +121,12 @@ export default class WaDropdown extends WebAwesomeElement {
     unregisterDismissible(this);
   }
 
-  firstUpdated() {
+  firstUpdated(changedProperties: PropertyValues<typeof this>) {
+    super.firstUpdated(changedProperties);
     this.syncAriaAttributes();
   }
 
-  async updated(changedProperties: PropertyValues) {
+  async updated(changedProperties: PropertyValues<typeof this>) {
     if (changedProperties.has('open')) {
       const previousOpen = changedProperties.get('open');
       // check if the previous value is the same
@@ -478,7 +479,7 @@ export default class WaDropdown extends WebAwesomeElement {
           }
         }, 0);
       } else {
-        this.makeSelection(activeItem);
+        this.makeSelection(activeItem, event);
       }
     }
   };
@@ -515,7 +516,7 @@ export default class WaDropdown extends WebAwesomeElement {
       return;
     }
 
-    this.makeSelection(item);
+    this.makeSelection(item, event);
   }
 
   /** Prepares dropdown items when they get added or removed */
@@ -529,6 +530,8 @@ export default class WaDropdown extends WebAwesomeElement {
     const hasSubmenu = items.some(item => item.hasSubmenu);
 
     items.forEach((item, index) => {
+      item.setAttribute('aria-posinset', String(index + 1));
+      item.setAttribute('aria-setsize', String(items.length));
       item.active = index === 0;
       item.checkboxAdjacent = hasCheckbox;
       item.submenuAdjacent = hasSubmenu;
@@ -631,6 +634,7 @@ export default class WaDropdown extends WebAwesomeElement {
         }),
         shift({
           padding: 8,
+          crossAxis: true,
         }),
       ],
     }).then(({ x, y, placement }) => {
@@ -709,7 +713,7 @@ export default class WaDropdown extends WebAwesomeElement {
   };
 
   /** Makes a selection, emits the wa-select event, and closes the dropdown. */
-  private makeSelection(item: WaDropdownItem) {
+  private makeSelection(item: WaDropdownItem, sourceEvent?: MouseEvent | KeyboardEvent) {
     const trigger = this.getTrigger();
 
     if (item.disabled) {
@@ -724,6 +728,10 @@ export default class WaDropdown extends WebAwesomeElement {
     this.dispatchEvent(selectEvent);
 
     if (!selectEvent.defaultPrevented) {
+      // Items with an href navigate by clicking a hidden link. The source event is passed along so modifier keys, such
+      // as Command or Control to open a new tab, are honored.
+      item.navigate(sourceEvent);
+
       this.open = false;
       trigger?.focus({ preventScroll: true });
     }
@@ -741,7 +749,7 @@ export default class WaDropdown extends WebAwesomeElement {
     if (trigger.localName === 'wa-button') {
       await customElements.whenDefined('wa-button');
       await (trigger as WaButton).updateComplete;
-      nativeButton = trigger.shadowRoot!.querySelector<HTMLButtonElement>('[part="base"]')!;
+      nativeButton = trigger.shadowRoot!.querySelector<HTMLButtonElement>('[part~="base"]')!;
     } else {
       nativeButton = trigger as HTMLButtonElement;
     }
@@ -758,7 +766,7 @@ export default class WaDropdown extends WebAwesomeElement {
 
   render() {
     // On initial render, we want to use this.open, for everything else, we sync off of this.popup.active to get animations working.
-    let active = this.hasUpdated ? this.popup?.active : this.open;
+    let active = this.didSSR && !this.hasUpdated ? this.open : this.popup?.active;
 
     return html`
       <wa-popup

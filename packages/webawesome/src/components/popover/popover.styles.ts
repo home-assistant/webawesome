@@ -4,8 +4,8 @@ export default css`
   :host {
     --arrow-size: 0.375rem;
     --max-width: 25rem;
-    --show-duration: 100ms;
-    --hide-duration: 100ms;
+    --show-duration: var(--wa-transition-fast);
+    --hide-duration: var(--wa-transition-fast);
 
     display: contents;
 
@@ -48,13 +48,12 @@ export default css`
 
     pointer-events: auto;
 
+    /* Inset box-shadow, not a border: Safari seams a clip-path edge that runs along a border. */
     &::part(arrow) {
       background-color: var(--wa-color-surface-default);
-      border-top: none;
-      border-left: none;
-      border-bottom: solid var(--wa-panel-border-width) var(--wa-color-surface-border);
-      border-right: solid var(--wa-panel-border-width) var(--wa-color-surface-border);
-      box-shadow: none;
+      border: none;
+      box-shadow: inset calc(-1 * var(--wa-panel-border-width)) calc(-1 * var(--wa-panel-border-width)) 0 0
+        var(--wa-color-surface-border);
     }
   }
 
@@ -87,20 +86,5 @@ export default css`
     border-style: var(--wa-panel-border-style);
     box-shadow: var(--wa-shadow-l);
     color: var(--wa-color-text-normal);
-    user-select: none;
-    -webkit-user-select: none;
-  }
-
-  /* Reserve a small visual gap between the popover and the viewport edge on the axis where the popup can shift. */
-  .popover[data-current-placement^='top'] .body,
-  .popover[data-current-placement^='bottom'] .body {
-    max-width: min(var(--max-width), 100vw - (var(--wa-space-m) * 2));
-    margin-inline: var(--wa-space-m);
-  }
-
-  .popover[data-current-placement^='left'] .body,
-  .popover[data-current-placement^='right'] .body {
-    max-height: calc(100vh - (var(--wa-space-m) * 2));
-    margin-block: var(--wa-space-m);
   }
 `;

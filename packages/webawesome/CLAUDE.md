@@ -47,6 +47,16 @@ Instantiate in the class body (not constructor):
 - `HasSlotController(this, 'slot-name')` — Tracks whether named slots have content. Used for conditional rendering.
 - `LocalizeController(this)` — i18n/l10n for component strings. Translations in `src/translations/`.
 
+## Code Conventions
+
+The published [contributing guide](docs/docs/resources/contributing.md) is the canonical convention doc (component structure, BEM class names, `with-*`/`without-*` boolean props, event naming). The rules below are the mechanical ones most often gotten wrong:
+
+- Event handler parameters are named `event`, not `e`. Read from it directly (`event.key`, `event.target`, `event.preventDefault()`).
+- Event handlers are named `handle<Subject>` (`handleInput`, `handleClearClick`), not `onX`.
+- Relative imports end in `.js` (NodeNext ESM), e.g. `import styles from './button.styles.js'`.
+- Custom events are one class per file in `src/events/`: `class Wa<Name>Event extends Event`, dispatched via `super('wa-<kebab>', { bubbles, cancelable, composed: true })`, augmenting `GlobalEventHandlersEventMap`. Fire them with `this.dispatchEvent(new Wa<Name>Event(...))`. There is no `emit()` helper.
+- Multi-word properties declare an explicit kebab `attribute:`. Lit lowercases attribute names, so `passwordToggle` needs `attribute: 'password-toggle'`.
+
 ## Style Conventions
 
 - Export default `css` tagged template literal from `component.styles.ts`.
@@ -111,5 +121,5 @@ Custom esbuild-based build (`scripts/build.js`). Generates:
 - **Add a CSS part**: Add `part="name"` to element in `render()`, add `@csspart name` JSDoc tag.
 - **Add a custom event**: Create event class in `src/events/`, dispatch with `this.dispatchEvent(new WaEventClass())`, add `@event wa-event-name` JSDoc tag.
 - **Add a test**: Import `{ fixtures }` from `src/internal/test/fixture.js`, loop `for (const fixture of fixtures)`, use `await fixture<Type>(html`...`)`.
-- **Doc page**: Create `docs/docs/components/name.md` with front matter (`title`, `description`, `layout: component`, `category`). Use `` ```html {.example} `` for live code blocks.
-- **Update the changelog**: Add entries to the "Unreleased" section in `docs/docs/resources/changelog.md`. Create the section if it doesn't exist.
+- **Doc page**: Create `docs/docs/components/name.md` with front matter (`title`, `description`, `layout: component`, `category`). Use ` ```html {.example} ` for live code blocks.
+- **Update the changelog**: Add entries to the "Unreleased" section in `docs/docs/resources/changelog.md`. Create the section if it doesn't exist. Group entries under `:::added`, `:::fixed`, `:::changed`, `:::deprecated`, `:::removed`, `:::breaking` containers in that order; omit any category with no entries. **Keep entries clear and succinct** — announce what changed at a glance, trim redundant prose, and nest closely related additions as sub-bullets so the parent reads as a topic and children carry the detail.

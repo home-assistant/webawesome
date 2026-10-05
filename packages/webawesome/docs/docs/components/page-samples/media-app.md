@@ -318,7 +318,7 @@ eleventyExcludeFromCollections: true
   wa-page[view='mobile'] [slot*='navigation'] {
     padding: 0;
   }
-  wa-page::part(base) {
+  wa-page::part(page) {
     background-color: var(--wa-color-surface-lowered);
   }
   [slot='header'] {
@@ -384,6 +384,9 @@ eleventyExcludeFromCollections: true
   main,
   [slot='main-header'] {
     background-color: var(--wa-color-surface-raised);
+  }
+  [slot='main-footer'] {
+    background-color: var(--wa-color-surface-default);
   }
   #play-controls wa-icon-button::part(base) {
     border: var(--wa-border-width-l) var(--wa-border-style) currentColor;

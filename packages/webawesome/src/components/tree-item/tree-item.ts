@@ -1,4 +1,5 @@
-import type { PropertyValueMap } from 'lit';
+import { consume, createContext, provide } from '@lit/context';
+import type { PropertyValueMap, PropertyValues } from 'lit';
 import { html } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
@@ -18,6 +19,9 @@ import '../checkbox/checkbox.js';
 import '../icon/icon.js';
 import '../spinner/spinner.js';
 import styles from './tree-item.styles.js';
+
+export type TreeItemContext = { depth: number; expanded: boolean };
+export const treeItemContext = createContext<TreeItemContext>('wa-tree-item');
 
 /**
  * @summary Tree items represent a single hierarchical node inside a tree, and can contain nested items that expand and
@@ -43,7 +47,8 @@ import styles from './tree-item.styles.js';
  * @slot expand-icon - The icon to show when the tree item is expanded.
  * @slot collapse-icon - The icon to show when the tree item is collapsed.
  *
- * @csspart base - The component's base wrapper.
+ * @csspart base - Deprecated. Use the `tree-item` part instead.
+ * @csspart tree-item - The component's outer wrapper.
  * @csspart item - The tree item's container. This element wraps everything except slotted tree item children.
  * @csspart indentation - The tree item's indentation container.
  * @csspart expand-button - The container that wraps the tree item's expand button and spinner.
@@ -58,8 +63,8 @@ import styles from './tree-item.styles.js';
  * @csspart checkbox__indeterminate-icon - The checkbox's exported `indeterminate-icon` part.
  * @csspart checkbox__label - The checkbox's exported `label` part.
  *
- * @cssproperty [--show-duration=200ms] - The animation duration when expanding tree items.
- * @cssproperty [--hide-duration=200ms] - The animation duration when collapsing tree items.
+ * @cssproperty [--show-duration=var(--wa-transition-normal)] - The animation duration when expanding tree items.
+ * @cssproperty [--hide-duration=var(--wa-transition-normal)] - The animation duration when collapsing tree items.
  *
  * @cssstate disabled - Applied when the tree item is disabled.
  * @cssstate expanded - Applied when the tree item is expanded.
@@ -71,7 +76,8 @@ export default class WaTreeItem extends WebAwesomeElement {
   static css = styles;
 
   static isTreeItem(node: Node) {
-    return node instanceof Element && node.getAttribute('role') === 'treeitem';
+    const el = node as Element;
+    return el && (el.role === 'treeitem' || el.getAttribute?.('role') === 'treeitem');
   }
 
   private readonly localize = new LocalizeController(this);
@@ -96,6 +102,12 @@ export default class WaTreeItem extends WebAwesomeElement {
   /** Enables lazy loading behavior. */
   @property({ type: Boolean, reflect: true }) lazy = false;
 
+  @provide({ context: treeItemContext })
+  _treeItemContext: TreeItemContext = { depth: 0, expanded: this.expanded };
+
+  @consume({ context: treeItemContext, subscribe: false })
+  _parentTreeContext: TreeItemContext | null = null;
+
   private animationGeneration = 0;
 
   @query('slot:not([name])') defaultSlot: HTMLSlotElement;
@@ -104,20 +116,32 @@ export default class WaTreeItem extends WebAwesomeElement {
   @query('.children') childrenContainer: HTMLDivElement;
   @query('.expand-button slot') expandButtonSlot: HTMLSlotElement;
 
+  @property({ reflect: true, type: Number, attribute: 'tabindex' }) tabIndex = -1;
+  @property({ reflect: true }) role = 'treeitem';
+
   connectedCallback() {
     super.connectedCallback();
 
     this.setAttribute('role', 'treeitem');
-    this.setAttribute('tabindex', '-1');
+    this.setAttribute('tabIndex', this.tabIndex.toString());
 
+    // TODO: Because the parent influences the child, we should be able to handle this in SSR with a custom renderer.
     if (this.isNestedItem()) {
-      this.slot = 'children';
+      this.setAttribute('slot', 'children');
+      if (!this._parentTreeContext?.expanded) {
+        this.expanded = false;
+      }
+    }
+
+    if (this._parentTreeContext) {
+      this._treeItemContext = { depth: this._parentTreeContext.depth + 1, expanded: this.expanded };
     }
 
     this.updateIndentation();
   }
 
-  firstUpdated() {
+  firstUpdated(changedProperties: PropertyValues<typeof this>) {
+    super.firstUpdated(changedProperties);
     this.childrenContainer.hidden = !this.expanded;
     this.childrenContainer.style.height = this.expanded ? 'auto' : '0';
 
@@ -151,12 +175,21 @@ export default class WaTreeItem extends WebAwesomeElement {
 
   // Checks whether the item is nested into an item
   private isNestedItem(): boolean {
+    if (this._parentTreeContext !== null) {
+      return true;
+    }
+
     const parent = this.parentElement;
     return !!parent && WaTreeItem.isTreeItem(parent);
   }
 
   /** Counts the nesting depth and sets the private --indent property on the host for indentation. */
   private updateIndentation() {
+    const depth = Math.max(this._treeItemContext?.depth || 0, this.getDepth());
+    this.setStyleProperty('--indent', `calc(${depth} * var(--indent-size, 2em))`);
+  }
+
+  private getDepth() {
     let depth = 0;
     let node = this.parentElement;
     while (node) {
@@ -165,7 +198,8 @@ export default class WaTreeItem extends WebAwesomeElement {
       }
       node = node.parentElement;
     }
-    this.style.setProperty('--indent', `calc(${depth} * var(--indent-size, 2em))`);
+
+    return depth;
   }
 
   private handleChildrenSlotChange() {
@@ -177,6 +211,8 @@ export default class WaTreeItem extends WebAwesomeElement {
     if (changedProperties.has('selected') && !changedProperties.has('indeterminate')) {
       this.indeterminate = false;
     }
+
+    super.willUpdate(changedProperties);
   }
 
   private async animateExpand(generation: number) {
@@ -284,7 +320,7 @@ export default class WaTreeItem extends WebAwesomeElement {
 
     return html`
       <div
-        part="base"
+        part="base tree-item"
         class="${classMap({
           'tree-item': true,
           'tree-item-expanded': this.expanded,
@@ -343,7 +379,7 @@ export default class WaTreeItem extends WebAwesomeElement {
           <slot class="label" part="label"></slot>
         </div>
 
-        <div class="children" part="children" role="group">
+        <div class="children" part="children" role="group" ?hidden=${!this.expanded && !this.isConnected}>
           <slot name="children" @slotchange="${this.handleChildrenSlotChange}"></slot>
         </div>
       </div>

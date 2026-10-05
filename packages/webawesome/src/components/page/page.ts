@@ -1,8 +1,11 @@
 import type { PropertyValues } from 'lit';
 import { html, isServer } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { when } from 'lit/directives/when.js';
+import { HasSlotController } from '../../internal/slot.js';
 import WebAwesomeElement from '../../internal/webawesome-element.js';
 import visuallyHidden from '../../styles/component/visually-hidden.styles.js';
 import '../button/button.js';
@@ -87,25 +90,27 @@ function toLength(px: number | string): string {
  * @slot skip-to-content - The "skip to content" slot. You can override this If you would like to override the `Skip to content` button and add additional "Skip to X", they can be inserted here.
  * @slot footer - The content to display in the footer. This is always displayed underneath the viewport so will always make the page "scrollable".
  *
- * @csspart base - The component's base wrapper.
+ * @csspart base - Deprecated. Use the `page` part instead.
+ * @csspart page - The component's outer wrapper.
  * @csspart banner - The banner to show above header.
  * @csspart header - The header, usually for top level navigation / branding.
  * @csspart subheader - Shown below the header, usually intended for things like breadcrumbs and other page level navigation.
  * @csspart body - The wrapper around menu, main, and aside.
  * @csspart menu - The left hand side of the page. Generally intended for navigation.
  * @csspart navigation - The `<nav>` that wraps the navigation slots on desktop viewports.
+ * @csspart navigation-desktop - The `<nav>` for navigation on desktop viewports.
  * @csspart navigation-header - The header for a navigation area. On mobile this will be the header for `<wa-drawer>`.
  * @csspart navigation-footer - The footer for a navigation area. On mobile this will be the footer for `<wa-drawer>`.
  * @csspart navigation-toggle - The default `<wa-button>` that will toggle the `<wa-drawer>` for mobile viewports.
  * @csspart navigation-toggle-icon - The default `<wa-icon>` displayed inside of the navigation-toggle button.
+ * @csspart drawer - The `<wa-drawer>` that contains the navigation on mobile viewports.
+ * @csspart main - The wrapper around the main header, content, and footer.
  * @csspart main-header - The header above main content.
  * @csspart main-content - The main content.
  * @csspart main-footer - The footer below main content.
  * @csspart aside - The right hand side of the page. Used for things like table of contents, ads, etc.
- * @csspart skip-links - Wrapper around skip-link
- * @csspart skip-link - The "skip to main content" link
+ * @csspart skip-to-content - The "skip to content" link that lets keyboard users bypass navigation.
  * @csspart footer - The footer of the page. This is always below the initial viewport size.
- * @csspart dialog-wrapper - A wrapper around elements such as dialogs or other modal-like elements.
  *
  * @cssproperty [--menu-width=auto] - The width of the page's "menu" section.
  * @cssproperty [--main-width=1fr] - The width of the page's "main" section.
@@ -118,19 +123,24 @@ function toLength(px: number | string): string {
 export default class WaPage extends WebAwesomeElement {
   static css = [visuallyHidden, styles];
 
+  private readonly hasSlotController = new HasSlotController(this, 'navigation-footer', 'mobile-navigation-footer');
+
   // SSR guard: ResizeObserver is not available during server-side rendering
   private headerResizeObserver = !isServer ? this.slotResizeObserver('header') : null;
   private subheaderResizeObserver = !isServer ? this.slotResizeObserver('subheader') : null;
   private bannerResizeObserver = !isServer ? this.slotResizeObserver('banner') : null;
   private footerResizeObserver = !isServer ? this.slotResizeObserver('footer') : null;
+  private hasExplicitNavigationToggleSetting = false;
   private slotResizeObserver(slot: string) {
     return new ResizeObserver(entries => {
-      for (const entry of entries) {
-        if (entry.contentBoxSize) {
-          const contentBoxSize = entry.borderBoxSize[0];
-          this.style.setProperty(`--${slot}-height`, `${contentBoxSize.blockSize}px`);
+      requestAnimationFrame(() => {
+        for (const entry of entries) {
+          if (entry.contentBoxSize) {
+            const contentBoxSize = entry.borderBoxSize[0];
+            this.style.setProperty(`--${slot}-height`, `${Math.round(contentBoxSize.blockSize)}px`);
+          }
         }
-      }
+      });
     });
   }
 
@@ -179,6 +189,11 @@ export default class WaPage extends WebAwesomeElement {
   @property({ attribute: 'view', reflect: true }) view: 'mobile' | 'desktop' = 'desktop';
 
   /**
+   * Sets a `nonce` for the injected `<style>` tag used for handling media queries. The style tag will use `window.litNonce` if `nonce` isn't defined on `<wa-page>`
+   */
+  @property({ reflect: true }) nonce: string | undefined;
+
+  /**
    * Whether or not the navigation drawer is open. Note, the navigation drawer is only "open" on mobile views.
    */
   @property({ attribute: 'nav-open', reflect: true, type: Boolean }) navOpen = false;
@@ -196,36 +211,38 @@ export default class WaPage extends WebAwesomeElement {
   @property({ attribute: 'navigation-placement', reflect: true }) navigationPlacement: 'start' | 'end' = 'start';
 
   /**
-   * Determines whether or not to hide the default hamburger button.
-   * This will automatically flip to "true" if you add an element with `data-toggle-nav` anywhere in the element light DOM.
-   * Generally this will be set for you and you don't need to do anything, unless you're using SSR, in which case you should set this manually for initial page loads.
+   * Determines whether or not to hide the default hamburger button. This will automatically flip to "true" if you add
+   * an element with `data-toggle-nav` anywhere in the element light DOM. Generally this will be set for you and you
+   * don't need to do anything, unless you're using SSR, in which case you should set this manually for initial page
+   * loads. If you set this yourself, automatic detection is skipped. This is useful when your toggle lives inside
+   * another component's shadow root, where it can't be detected.
    */
   @property({ attribute: 'disable-navigation-toggle', reflect: true, type: Boolean }) disableNavigationToggle: boolean =
     false;
 
-  pageResizeObserver = !isServer
-    ? new ResizeObserver(entries => {
-        for (const entry of entries) {
-          if (entry.contentBoxSize) {
-            const contentBoxSize = entry.borderBoxSize[0];
-            const pageWidth = contentBoxSize.inlineSize;
+  pageResizeObserver =
+    typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(entries => {
+          requestAnimationFrame(() => {
+            for (const entry of entries) {
+              if (entry.contentBoxSize) {
+                const contentBoxSize = entry.borderBoxSize[0];
+                const pageWidth = contentBoxSize.inlineSize;
 
-            const oldView = this.view;
+                const oldView = this.view;
 
-            if (pageWidth >= toPx(this.mobileBreakpoint)) {
-              this.view = 'desktop';
-            } else {
-              this.view = 'mobile';
+                if (pageWidth >= toPx(this.mobileBreakpoint)) {
+                  this.view = 'desktop';
+                } else {
+                  this.view = 'mobile';
+                }
+
+                this.requestUpdate('view', oldView);
+              }
             }
-
-            this.requestUpdate('view', oldView);
-          }
-        }
-        if (entries.length > 0) {
-          this.updateAsideAndMenuHeights();
-        }
-      })
-    : null;
+          });
+        })
+      : null;
 
   private updateNavigationToggleState = (e?: Event) => {
     if (e) {
@@ -233,7 +250,9 @@ export default class WaPage extends WebAwesomeElement {
       if (!['navigation', 'navigation-header', 'navigation-footer'].includes(slotName)) return;
     }
 
-    const hasCustomToggle = Boolean(this.querySelector(":not([slot='toggle-navigation']) [data-toggle-nav]"));
+    if (this.hasExplicitNavigationToggleSetting) return;
+
+    const hasCustomToggle = Boolean(this.querySelector(":not([slot='navigation-toggle']) [data-toggle-nav]"));
     const hasNavigationContent =
       Boolean(this.querySelector('[slot="navigation"]')) ||
       Boolean(this.querySelector('[slot="navigation-header"]')) ||
@@ -241,11 +260,11 @@ export default class WaPage extends WebAwesomeElement {
     this.disableNavigationToggle = hasCustomToggle || !hasNavigationContent;
   };
 
-  protected update(changedProperties: PropertyValues<this>): void {
+  protected updated(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has('view')) {
       this.hideNavigation();
     }
-    super.update(changedProperties);
+    super.updated(changedProperties);
   }
 
   constructor() {
@@ -261,24 +280,22 @@ export default class WaPage extends WebAwesomeElement {
 
     // SSR guard: browser APIs are not available during server-side rendering
     if (!isServer) {
-      this.pageResizeObserver?.observe(this);
-
-      document.addEventListener('scroll', this.updateAsideAndMenuHeights, { passive: true });
-      this.updateAsideAndMenuHeights();
-      setTimeout(this.updateAsideAndMenuHeights);
-
+      // setTimeout to wait for DOM to finish, then RAF to start observing.
       setTimeout(() => {
-        this.headerResizeObserver?.observe(this.header);
-        this.subheaderResizeObserver?.observe(this.subheader);
-        this.bannerResizeObserver?.observe(this.banner);
-        this.footerResizeObserver?.observe(this.footer);
+        requestAnimationFrame(() => {
+          this.pageResizeObserver?.observe(this);
+          this.headerResizeObserver?.observe(this.header);
+          this.subheaderResizeObserver?.observe(this.subheader);
+          this.bannerResizeObserver?.observe(this.banner);
+          this.footerResizeObserver?.observe(this.footer);
+        });
       });
     }
   }
 
   /**
    * https://stackoverflow.com/a/26831113
-   * This prevents awkward gaps when scrolling the page and the aside / menu dont "fill" the gaps.
+   * This prevents awkward gaps when scrolling the page and the aside / menu don't "fill" the gaps.
    */
   visiblePixelsInViewport(element: HTMLElement | null) {
     if (!element) {
@@ -286,22 +303,17 @@ export default class WaPage extends WebAwesomeElement {
     }
     const elementHeight = element.clientHeight;
     const windowHeight = window.innerHeight;
-    const { top, bottom } = element.getBoundingClientRect();
+    const rect = element.getBoundingClientRect?.();
+
+    if (!rect) {
+      return null;
+    }
+
+    const { top, bottom } = rect;
     return Math.max(0, top > 0 ? Math.min(elementHeight, windowHeight - top) : Math.min(bottom, windowHeight));
   }
 
-  updateAsideAndMenuHeights = () => {
-    const visiblePixels = this.visiblePixelsInViewport(this.main);
-
-    if (visiblePixels == null) {
-      return;
-    }
-
-    this.aside.style.setProperty('--main-height', `${visiblePixels}px`);
-    this.menu.style.setProperty('--main-height', `${visiblePixels}px`);
-  };
-
-  firstUpdated() {
+  firstUpdated(changedProperties: PropertyValues<typeof this>) {
     // If the user provides a #main-content id, it should be present in the default slot and the "skip to
     // content" link will point to it. If not, we'll prepend an empty element for them so things just work.
     if (!document.getElementById('main-content')) {
@@ -311,8 +323,11 @@ export default class WaPage extends WebAwesomeElement {
       this.prepend(div);
     }
 
+    // Capture before auto-detection runs so an explicit attribute/property wins
+    this.hasExplicitNavigationToggleSetting = this.disableNavigationToggle;
     this.shadowRoot!.addEventListener('slotchange', this.updateNavigationToggleState);
     this.updateNavigationToggleState();
+    super.firstUpdated(changedProperties);
   }
 
   disconnectedCallback() {
@@ -322,7 +337,6 @@ export default class WaPage extends WebAwesomeElement {
     this.subheaderResizeObserver?.unobserve(this.subheader);
     this.footerResizeObserver?.unobserve(this.footer);
     this.bannerResizeObserver?.unobserve(this.banner);
-    document.removeEventListener('scroll', this.updateAsideAndMenuHeights);
   }
 
   /**
@@ -347,6 +361,15 @@ export default class WaPage extends WebAwesomeElement {
   }
 
   render() {
+    const hasMobileNavigationFooter =
+      this.view === 'mobile' &&
+      (this.hasSlotController.test('navigation-footer') || this.hasSlotController.test('mobile-navigation-footer'));
+
+    // Hopefully there is a future with container queries where the `<style>` tag can go away and we can do sizing with proper container query variables. Until then...this is the best we got.
+    // Use the nonce on the element, if it doesn't exist, fallback to window.litNonce for strict CSPs.
+    // @ts-expect-error - error because globalThis.litNonce
+    let nonce = (this.nonce || globalThis.litNonce || null) as string | null;
+
     return html`
       <a href="#main-content" part="skip-to-content" class="wa-visually-hidden">
         <slot name="skip-to-content">Skip to content</slot>
@@ -354,12 +377,15 @@ export default class WaPage extends WebAwesomeElement {
 
       <!-- unsafeHTML needed for SSR until this is solved: https://github.com/lit/lit/issues/4696 -->
       ${unsafeHTML(`
-        <style id="mobile-styles">
+        <style
+          ${/* ifDefined not supported in unsafeHTML */ nonce ? `nonce="${nonce}"` : ''}
+          id="mobile-styles"
+        >
           ${mobileStyles(toLength(this.mobileBreakpoint))}
         </style>
       `)}
 
-      <div class="base" part="base">
+      <div class="base" part="base page">
         <div class="banner" part="banner">
           <slot name="banner"></slot>
         </div>
@@ -367,7 +393,12 @@ export default class WaPage extends WebAwesomeElement {
           <slot name="navigation-toggle">
             <wa-button part="navigation-toggle" size="s" appearance="plain" variant="neutral">
               <slot name="navigation-toggle-icon">
-                <wa-icon name="bars" part="navigation-toggle-icon" label="Toggle navigation drawer"></wa-icon>
+                <wa-icon
+                  library="system"
+                  name="bars"
+                  part="navigation-toggle-icon"
+                  label="Toggle navigation drawer"
+                ></wa-icon>
               </slot>
             </wa-button>
           </slot>
@@ -382,13 +413,25 @@ export default class WaPage extends WebAwesomeElement {
               <nav name="navigation" class="navigation" part="navigation navigation-desktop">
                 <!-- Add fallback divs so that CSS grid works properly. -->
                 <slot name="desktop-navigation-header">
-                  <slot name=${this.view === 'desktop' ? 'navigation-header' : '___'}><div></div></slot>
+                  ${when(
+                    this.view === 'desktop',
+                    () => html`<slot name="navigation-header"><div></div></slot>`,
+                    () => html`<div></div>`,
+                  )}
                 </slot>
                 <slot name="desktop-navigation">
-                  <slot name=${this.view === 'desktop' ? 'navigation' : '____'}><div></div></slot>
+                  ${when(
+                    this.view === 'desktop',
+                    () => html`<slot name="navigation"><div></div></slot>`,
+                    () => html`<div></div>`,
+                  )}
                 </slot>
                 <slot name="desktop-navigation-footer">
-                  <slot name=${this.view === 'desktop' ? 'navigation-footer' : '___'}><div></div></slot>
+                  ${when(
+                    this.view === 'desktop',
+                    () => html`<slot name="navigation-footer"><div></div></slot>`,
+                    () => html`<div></div>`,
+                  )}
                 </slot>
               </nav>
             </slot>
@@ -435,14 +478,30 @@ export default class WaPage extends WebAwesomeElement {
         class="navigation-drawer"
       >
         <slot slot="label" part="navigation-header" name="mobile-navigation-header">
-          <slot name=${this.view === 'mobile' ? 'navigation-header' : '___'}></slot>
+          ${when(
+            this.view === 'mobile',
+            () => html`<slot name="navigation-header"><div></div></slot>`,
+            () => html`<div></div>`,
+          )}
         </slot>
         <slot name="mobile-navigation">
-          <slot name=${this.view === 'mobile' ? 'navigation' : '____'}></slot>
+          ${when(
+            this.view === 'mobile',
+            () => html`<slot name="navigation"><div></div></slot>`,
+            () => html`<div></div>`,
+          )}
         </slot>
 
-        <slot slot="footer" name="mobile-navigation-footer">
-          <slot part="navigation-footer" name=${this.view === 'mobile' ? 'navigation-footer' : '___'}></slot>
+        <slot
+          slot=${ifDefined(hasMobileNavigationFooter ? 'footer' : undefined)}
+          name="mobile-navigation-footer"
+          ?hidden=${!hasMobileNavigationFooter}
+        >
+          ${when(
+            this.view === 'mobile',
+            () => html`<slot part="navigation-footer" name="navigation-footer"><div></div></slot>`,
+            () => html`<div></div>`,
+          )}
         </slot>
       </wa-drawer>
     `;
@@ -453,36 +512,4 @@ declare global {
   interface HTMLElementTagNameMap {
     'wa-page': WaPage;
   }
-}
-
-if (typeof CSSStyleSheet !== 'undefined' && typeof document !== 'undefined' && 'adoptedStyleSheets' in document) {
-  //
-  // Append a supporting light DOM styles for <wa-page>
-  //
-  const stylesheet = new CSSStyleSheet();
-
-  stylesheet.replaceSync(`
-  :is(html, body):has(wa-page) {
-    min-height: 100%;
-    padding: 0;
-    margin: 0;
-  }
-
-    /**
-    Because headers are sticky, this is needed to make sure page fragment anchors scroll down past the headers / subheaders and are visible.
-    IE: \`<a href="#id-for-h2">\` anchors.
-    */
-    wa-page :is(*, *:after, *:before) {
-    scroll-margin-top: var(--scroll-margin-top);
-    }
-
-    wa-page[view='desktop'] [data-toggle-nav] {
-    display: none;
-    }
-
-    wa-page[view='mobile'] .wa-desktop-only, wa-page[view='desktop'] .wa-mobile-only {
-    display: none !important;
-    }
-  `);
-  document.adoptedStyleSheets = [...document.adoptedStyleSheets, stylesheet];
 }

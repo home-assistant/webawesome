@@ -13,6 +13,8 @@ const connectedInstances = new Set<WaMarkdown>();
  * @documentation https://webawesome.com/docs/components/markdown
  * @status experimental
  * @since 3.4
+ *
+ * @ssr - `<wa-markdown>` parses the content of its children at runtime, which requires a DOM. It can't render during SSR — use it on the client only.
  */
 @customElement('wa-markdown')
 export default class WaMarkdown extends WebAwesomeElement {
@@ -187,6 +189,9 @@ export default class WaMarkdown extends WebAwesomeElement {
 
   private handleSlotChange() {
     if (this.suppressSlotChange) return;
+    if (this.didSSR && !this.hasUpdated) {
+      return;
+    }
     this.renderMarkdown();
   }
 

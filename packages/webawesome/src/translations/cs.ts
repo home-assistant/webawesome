@@ -6,28 +6,88 @@ const translation: Translation = {
   $name: 'Čeština',
   $dir: 'ltr',
 
-  carousel: 'Karusel',
+  allTagsRemoved: 'Všechny štítky odebrány',
+  am: 'dop.',
+  autosizeColumn: 'Přizpůsobit šířku obsahu',
   captions: 'Titulky',
+  carousel: 'Karusel',
+  chooseDate: 'Vyberte datum',
+  chooseDecade: 'Vyberte desetiletí',
+  chooseMonth: 'Vyberte měsíc',
+  chooseTime: 'Vyberte čas',
+  chooseYear: 'Vyberte rok',
   clearEntry: 'Smazat položku',
-  createOption: value => `Vytvořit "${value}"`,
+  clearFilter: 'Zrušit filtr',
+  clearSort: 'Zrušit řazení',
   close: 'Zavřít',
+  closeCalendar: 'Zavřít kalendář',
+  closeTimeInput: 'Zavřít výběr času',
+  collapseRow: 'Sbalit řádek',
+  columnMenu: 'Možnosti sloupce',
+  columnMovedToPosition: (label, position, total) => `${label} přesunut na pozici ${position} z ${total}`,
+  columns: 'Sloupce',
+  compactPageXOfY: (page, total) => `${page} z ${total}`,
+  completed: 'Dokončeno',
   copied: 'Zkopírováno',
   copy: 'Kopírovat',
+  createOption: value => `Vytvořit "${value}"`,
+  currentlyPlaying: 'právě se přehrává',
   currentValue: 'Současná hodnota',
+  date: 'Datum',
+  datePickerKeyboardHelp: 'Pomocí šipek změňte hodnoty; stisknutím Alt+Šipka dolů otevřete kalendář.',
+  day: 'Den',
+  dayPeriod: 'dop./odp.',
   decrement: 'Snížit',
+  deselectAllRows: 'Zrušit výběr všech řádků',
+  disabled: 'Zakázáno',
   dropFileHere: 'Drop file here or click to browse',
   dropFilesHere: 'Drop files here or click to browse',
-  error: 'Chyba',
+  empty: 'Prázdné',
+  endDate: 'Datum ukončení',
   enterFullscreen: 'Přejít na celou obrazovku',
+  error: 'Chyba',
   exitFullscreen: 'Ukončit celou obrazovku',
+  expandRow: 'Rozbalit řádek',
+  filterByColumn: label => `Filtrovat podle: ${label}`,
+  filterFrom: 'Od',
+  filterMax: 'Max',
+  filterMin: 'Min',
+  filterTo: 'Do',
+  firstPage: 'První stránka',
   goToSlide: (slide, count) => `Přejít na slide ${slide} z ${count}`,
+  hideColumn: 'Skrýt sloupec',
   hidePassword: 'Skrýt heslo',
+  hour: 'Hodina',
+  incompleteDate: 'Zadejte platné datum.',
   increment: 'Zvýšit',
+  jumpBackwardX: count => {
+    if (count === 1) return 'Přejít o 1 stránku zpět';
+    if (count >= 2 && count <= 4) return `Přejít o ${count} stránky zpět`;
+    return `Přejít o ${count} stránek zpět`;
+  },
+  jumpForwardX: count => {
+    if (count === 1) return 'Přejít o 1 stránku vpřed';
+    if (count >= 2 && count <= 4) return `Přejít o ${count} stránky vpřed`;
+    return `Přejít o ${count} stránek vpřed`;
+  },
+  lastPage: 'Poslední stránka',
   loading: 'Nahrává se',
+  locked: 'Uzamčeno',
+  minute: 'Minuta',
+  month: 'Měsíc',
   moreOptions: 'Další možnosti',
   mute: 'Ztlumit',
+  nextDecade: 'Další desetiletí',
+  nextMonth: 'Další měsíc',
+  nextPage: 'Další stránka',
   nextSlide: 'Další slide',
   nextVideo: 'Další video',
+  nextYear: 'Další rok',
+  noData: 'Žádná data',
+  noOptions: 'Žádné možnosti',
+  noResults: 'Žádné odpovídající výsledky',
+  notCompleted: 'Nedokončeno',
+  now: 'Nyní',
   numCharacters: num => {
     if (num === 1) return '1 znak';
     if (num >= 2 && num <= 4) return `${num} znaky`;
@@ -38,36 +98,113 @@ const translation: Translation = {
     if (num >= 2 && num <= 4) return `${num} zbývající znaky`;
     return `${num} zbývajících znaků`;
   },
+  numOptionsAvailable: num => {
+    if (num === 0) return 'Nejsou k dispozici žádné možnosti';
+    if (num === 1) return 'K dispozici je 1 možnost';
+    if (num >= 2 && num <= 4) return `K dispozici jsou ${num} možnosti`;
+    return `K dispozici je ${num} možností`;
+  },
   numOptionsSelected: num => {
     if (num === 0) return 'Nejsou vybrány žádné možnosti';
     if (num === 1) return 'Je vybrána jedna možnost';
     return `Počet vybraných možností: ${num}`;
   },
+  numRowsCopied: num => {
+    if (num === 1) return 'Byl zkopírován 1 řádek';
+    if (num >= 2 && num <= 4) return `Byly zkopírovány ${num} řádky`;
+    return `Bylo zkopírováno ${num} řádků`;
+  },
+  numRowsSelected: num => {
+    if (num === 1) return 'Je vybrán 1 řádek';
+    if (num >= 2 && num <= 4) return `Jsou vybrány ${num} řádky`;
+    return `Je vybráno ${num} řádků`;
+  },
+  optionPosition: (label, position, total) => `${label}, ${position} z ${total}`,
+  optionsLoadError: 'Možnosti se nepodařilo načíst',
+  pageXOfY: (page, total) => `Stránka ${page} z ${total}`,
+  pagination: 'Stránkování',
   pause: 'Pozastavit',
   pauseAnimation: 'Pozastavit animaci',
   pictureInPicture: 'Obraz v obraze',
+  pinLeft: 'Připnout vlevo',
+  pinRight: 'Připnout vpravo',
   play: 'Přehrát',
+  playAnimation: 'Přehrát animaci',
   playbackSpeed: 'Rychlost přehrávání',
   playlist: 'Playlist',
-  playAnimation: 'Přehrát animaci',
+  pm: 'odp.',
+  previousDecade: 'Předchozí desetiletí',
+  previousMonth: 'Předchozí měsíc',
+  previousPage: 'Předchozí stránka',
   previousSlide: 'Předchozí slide',
   previousVideo: 'Předchozí video',
+  previousYear: 'Předchozí rok',
   progress: 'Průběh',
+  rangeTooLong: max => {
+    if (max === 1) return 'Vyberte rozsah nejvýše 1 den';
+    if (max >= 2 && max <= 4) return `Vyberte rozsah nejvýše ${max} dny`;
+    return `Vyberte rozsah nejvýše ${max} dnů`;
+  },
+  rangeTooShort: min => {
+    if (min === 1) return 'Vyberte rozsah dlouhý alespoň 1 den';
+    if (min >= 2 && min <= 4) return `Vyberte rozsah dlouhý alespoň ${min} dny`;
+    return `Vyberte rozsah dlouhý alespoň ${min} dnů`;
+  },
+  readonly: 'Jen pro čtení',
   remove: 'Odstranit',
+  resetColumns: 'Obnovit sloupce',
   resize: 'Změnit velikost',
+  resizeColumn: 'Změnit šířku sloupce',
+  rowsPerPage: 'Řádků na stránku',
   scrollableRegion: 'Posunovatelná oblast',
   scrollToEnd: 'Scrollovat na konec',
   scrollToStart: 'Scrollovat na začátek',
-  selectAColorFromTheScreen: 'Vybrat barvu z obrazovky',
-  showPassword: 'Zobrazit heslo',
-  slideNum: slide => `Slide ${slide}`,
-  toggleColorFormat: 'Přepnout formát barvy',
+  search: 'Hledat',
+  second: 'Sekunda',
   seek: 'Přejít',
   seekProgress: (current, duration) => `${current} z ${duration}`,
-  currentlyPlaying: 'právě se přehrává',
+  selectAColorFromTheScreen: 'Vybrat barvu z obrazovky',
+  selectAllRows: 'Vybrat všechny řádky',
+  selected: 'Vybráno',
+  selectedDateLabel: date => `Vybráno: ${date}`,
+  selectedRangeLabel: range => `Vybraný rozsah: ${range}`,
+  selectGroup: 'Vybrat skupinu',
+  selectionCleared: 'Výběr zrušen',
+  selectRow: 'Vybrat řádek',
+  showingNofMRows: (shown, total) => `Zobrazeno ${shown} z ${total} řádků`,
+  showingXtoYofZ: (start, end, total) => `${start}–${end} z ${total}`,
+  showPassword: 'Zobrazit heslo',
+  slideNum: slide => `Slide ${slide}`,
+  sortAscending: 'Seřadit vzestupně',
+  sortColumn: 'Seřadit sloupec',
+  sortDescending: 'Seřadit sestupně',
+  startDate: 'Datum zahájení',
+  steps: 'Kroky',
+  stepXOfY: (step, total) => `Krok ${step} z ${total}`,
+  tagAdded: tag => `${tag} přidáno`,
+  tagAlreadyAdded: tag => `Štítek ${tag} již existuje`,
+  tagInputKeyboardHelp: 'Stisknutím Backspace nebo Delete tento štítek odeberete.',
+  tagRemoved: tag => `${tag} odebráno`,
+  time: 'Čas',
+  timeInputKeyboardHelp: 'Pomocí šipek změňte hodnoty; stisknutím Alt+Šipka dolů otevřete výběr času.',
+  today: 'Dnes',
+  toggleColorFormat: 'Přepnout formát barvy',
+  tooFewTags: min => {
+    if (min === 1) return 'Přidejte alespoň 1 štítek';
+    if (min >= 2 && min <= 4) return `Přidejte alespoň ${min} štítky`;
+    return `Přidejte alespoň ${min} štítků`;
+  },
+  tooManyTags: max => {
+    if (max === 1) return 'Přidejte nejvýše 1 štítek';
+    if (max >= 2 && max <= 4) return `Přidejte nejvýše ${max} štítky`;
+    return `Přidejte nejvýše ${max} štítků`;
+  },
   unmute: 'Zapnout zvuk',
+  unpin: 'Odepnout',
+  unpinColumn: 'Odepnout sloupec',
   videoPlayer: 'Přehrávač videa',
   volume: 'Hlasitost',
+  year: 'Rok',
   zoomIn: 'Přiblížit',
   zoomOut: 'Oddálit',
 };

@@ -6,13 +6,18 @@
   :root {
     /* max-width for fixed width app-based pages
      * We round() these to avoid obscure component rendering bugs caused by widths with fractional pixels */
-    --content-width-l: round(up, 132ch, 1px);
-    --content-width-m: round(up, 110ch, 1px);
-    --content-width-s: round(up, 80ch, 1px);
-    --content-width-xs: round(up, 50ch, 1px);
+    --content-width-l: round(up, 83rem, 1px);
+    --content-width-m: round(up, 70rem, 1px);
+    --content-width-s: round(up, 50rem, 1px);
+    --content-width-xs: round(up, 31.5rem, 1px);
     --content-width-full: 100%;
     --content-flow-spacing: 8ch;
-    --content-padding-inline: var(--wa-space-xl);
+    --content-padding-inline: var(--wa-space-2xl);
+
+    /* Outer cap for the wa-page body cluster (menu + main + aside).
+     * Chrome rows stay viewport-wide; their inner content caps to this
+     * value via .content-container. */
+    --page-max-inline-size: 90rem;
 
     --line-length-xs: 30ch;
     --line-length-s: 45ch;
@@ -21,7 +26,7 @@
     --line-length-xl: 90ch;
     --line-length-none: none;
 
-    --wa-brand-orange: #f36944;
+    --wa-brand-orange: #f46a45;
     --wa-brand-grey: #30323b;
 
     --brand-web-awesome-orange: var(--wa-brand-orange);
@@ -42,38 +47,93 @@
 
   /* #region layout utilities */
 
-  /*
-   * .content-container — CANONICAL DEFINITION
-   *
-   * Default sizing/centering primitive for main content areas across the
-   * Web Awesome ecosystem (app, marketing, docs). DO NOT redefine this
-   * class anywhere else (no shadow rules in pro site.css base, no app.css
-   * redefinition). Scoped overrides like `.page-footer .content-container { ... }`
-   * are fine — only base-class redefinition is forbidden.
-   *
-   * Override per-instance width via the `--max-inline-size` custom property:
-   *   main { --max-inline-size: var(--content-width-xs); }
-   */
+  /* DO NOT redefine this base class anywhere else (no shadow rules in
+   * site.css / app.css). Scoped overrides like `.page-footer .content-container`
+   * are fine. Per-instance width via --max-inline-size. Default caps at the
+   * page envelope (--page-max-inline-size) so main, footer, and chrome bands
+   * all align; narrower reading-width content opts down via --max-inline-size. */
   .content-container {
     margin-inline: auto;
-    max-inline-size: var(--max-inline-size, var(--content-width-l));
+    max-inline-size: var(--max-inline-size, var(--page-max-inline-size));
     padding-inline: var(--content-padding-inline);
   }
 
-  /* Default main content vertical spacing.
-   * Applies when <main> opts into the default sizing pattern via class.
-   * Pages opt out by setting front matter `hasFlushMain: true`, which causes
-   * the layout to omit the class entirely (no spacing, no container). */
+  /* Pages opt out via hasFramedMain: false (omits the class). */
   wa-page > main.content-container {
     padding-block: var(--wa-space-4xl);
   }
 
-  /* Neutralize wa-page's shadow-DOM `::slotted(main) { padding: var(--wa-space-3xl) }`
-   * on flush pages. When a page sets `hasFlushMain: true`, <main> renders without
-   * the .content-container class — this rule ensures the page is fully flush,
-   * not inheriting the component's default padding. */
+  /* Neutralize wa-page's slotted-main padding on unframed pages. */
   wa-page > main:not(.content-container) {
     padding: 0;
+  }
+
+  /* Body cluster cap on docs/app layouts. Chrome rows stay viewport-wide.
+   * inline-size: 100% gives wa-page's grid a definite size so --main-width:
+   * 1fr can fill the remaining track. */
+  :is(.layout-page, .layout-page-outline, .layout-docs, .layout-component, .layout-pattern) wa-page::part(body) {
+    inline-size: 100%;
+    max-inline-size: var(--page-max-inline-size);
+    margin-inline: auto;
+  }
+
+  /* Match chrome's inline padding so sidebar/aside content aligns with logo/nav. */
+  wa-page > [slot='navigation'],
+  wa-page > [slot='aside'] {
+    padding-inline: var(--content-padding-inline);
+  }
+
+  /* Tighten the shared inline-padding token in wa-page's mobile view so chrome
+   * bands, main, and footer content all breathe in the same direction on small
+   * viewports. Cascades to every .content-container inside wa-page. */
+  wa-page[view='mobile'] {
+    --content-padding-inline: var(--wa-space-l);
+  }
+
+  /* Footer base. Surface treatment lives per-surface (docs.css, site.css).
+   * Font-size goes on .page-footer-content (not here) to stay out of any
+   * nested .content-container's ch-based max-width. */
+  .page-footer {
+    display: block;
+    inline-size: 100%;
+    padding: 0;
+    color: var(--wa-color-text-quiet);
+    line-height: var(--wa-line-height-condensed);
+  }
+
+  .page-footer a:hover,
+  .page-footer a:focus-visible {
+    color: var(--wa-color-text-normal);
+  }
+
+  /* Match the legal-row .appearance-plain links (text-normal at rest,
+   * underline on hover). */
+  .page-footer .page-footer-cookie-button {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    color: var(--wa-color-text-normal);
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+  }
+
+  .page-footer .page-footer-socials {
+    margin-inline: calc(var(--wa-space-xs) * -1);
+  }
+
+  .page-footer .page-footer-socials a {
+    color: var(--wa-color-text-quiet);
+    padding-inline: var(--wa-space-xs);
+  }
+
+  .page-footer wa-icon[name='dot'] {
+    opacity: 0.3;
   }
 
   /* #endregion */
@@ -118,7 +178,7 @@
     --wa-color-brand-20: #003e23;
     --wa-color-brand-30: #005332;
     --wa-color-brand-40: #006542;
-    --wa-color-brand-50: var(--brand-build-awesome-green);
+    --wa-color-brand-50: #198560;
     --wa-color-brand-60: #43a57d;
     --wa-color-brand-70: #5fbf96;
     --wa-color-brand-80: #79d9af;
@@ -172,8 +232,6 @@
     /* inline padding handled by .content-container on inner .banner */
     padding-block: var(--wa-space-l);
     padding-inline: 0;
-    /* default to full-width in webawesome docs; pro overrides to --content-width-l */
-    --max-inline-size: 100%;
     transition: background-color var(--wa-transition-slow) var(--wa-transition-easing);
 
     .banner {
@@ -186,9 +244,24 @@
     /* make the callout-based banner full width */
     inline-size: 100%;
 
+    wa-callout {
+      background-color: var(--wa-color-brand-80);
+      color: var(--wa-color-neutral-fill-loud);
+
+      .wa-dark & {
+        background-color: var(--wa-color-brand-30);
+      }
+    }
+
     .banner-icon {
       font-size: var(--wa-font-size-2xl);
       margin-inline-end: var(--wa-space-m);
+
+      /* easter egg */
+      --fa-animation-duration: 4s;
+      --fa-float-height: 4px;
+      --fa-float-tilt: 2deg;
+      --fa-float-drift: 1px;
     }
   }
 
@@ -199,8 +272,10 @@
     padding-block-start: var(--wa-space-xs);
     padding-inline: 0;
     inline-size: 100%;
-    /* default to full-width in webawesome docs; pro overrides to --content-width-l */
-    --max-inline-size: 100%;
+  }
+
+  /* looks jarring to have the transition with SSR. save it for cloaked pages with CSR. */
+  .wa-cloak .page-nav-products {
     transition: background-color var(--wa-transition-slow) var(--wa-transition-easing);
   }
 
@@ -303,8 +378,8 @@
     container-type: inline-size;
     container-name: header;
 
-    /* Narrow (≤ 80ch): compact header with logo */
-    @container header (inline-size <= 80ch) {
+    /* Narrow (≤ 85ch): compact header with logo */
+    @container header (inline-size <= 85ch) {
       .page-nav-products {
         display: none;
       }
@@ -314,8 +389,6 @@
   /* subheader */
   wa-page > [slot='subheader'] {
     background-color: var(--wa-color-surface-default);
-    /* default to full-width in webawesome docs; pro overrides to --content-width-l */
-    --max-inline-size: 100%;
     border-block-end: var(--wa-border-style) var(--wa-panel-border-width) var(--wa-color-surface-border);
     padding-block: var(--wa-space-xs);
     padding-inline: 0;
@@ -333,8 +406,8 @@
       color: var(--wa-color-text-normal);
     }
 
-    /* Narrow (≤ 80ch): compact header with logo */
-    @container subheader (inline-size <= 80ch) {
+    /* Narrow (≤ 85ch): compact header with logo */
+    @container subheader (inline-size <= 85ch) {
       .subheader-links {
         display: none;
       }
@@ -344,8 +417,8 @@
       }
     }
 
-    /* > 80ch: hide compact logo */
-    @container subheader (inline-size > 80ch) {
+    /* > 85ch: hide compact logo */
+    @container subheader (inline-size > 85ch) {
       .subheader-logo-simple {
         display: none;
       }
@@ -426,6 +499,11 @@
     overflow: clip;
   }
 
+  /* Hide the empty forwarded footer that steals the drawer's bottom space (band-aid; see wa-page footer fix). */
+  wa-page[view='mobile']::part(drawer__footer) {
+    display: none;
+  }
+
   /* pro badge */
   wa-badge.pro {
     color: var(--wa-color-brand-on-loud);
@@ -437,6 +515,15 @@
     }
   }
 
+  /*
+   * Pro badges embedded in running text (markdown prose, tables, etc.).
+   * Pull up from `vertical-align: middle` so the pill sits with cap height.
+   */
+  :is(p, li, td, th, figcaption, dd, blockquote) wa-badge.pro {
+    vertical-align: 0.5em;
+    margin-inline: 0.1em;
+  }
+
   /* pro callout */
   wa-callout.pro {
     margin-block: calc(var(--wa-content-spacing) * 2);
@@ -444,6 +531,11 @@
     background-color: color-mix(in oklab, var(--wa-brand-orange) 12%, var(--wa-color-surface-default));
     border-color: color-mix(in oklab, var(--wa-brand-orange) 30%, var(--wa-color-surface-default));
     color: var(--wa-color-text-normal);
+
+    /* Re-declare --wa-color-text-link so its var() substitution resolves in the orange-scoped
+       context (callouts carry .wa-brand-orange). The theme sets it at :root where brand is still
+       blue, so inheritance alone keeps links blue. */
+    --wa-color-text-link: var(--wa-color-brand-40);
 
     &::part(icon) {
       align-items: flex-start;
@@ -454,14 +546,35 @@
       font-size: var(--wa-font-size-xl);
     }
 
-    strong {
-      display: block;
-      margin-block-end: var(--wa-space-2xs);
-    }
-
-    strong a {
+    strong a,
+    [class*='wa-caption'] a {
       color: inherit;
     }
+
+    wa-details {
+      --spacing: 0;
+    }
+
+    wa-details::part(icon) {
+      display: none;
+    }
+
+    wa-details::part(content) {
+      padding-block-start: var(--wa-space-l);
+    }
+
+    wa-details [slot='summary'] u {
+      --underline-color: var(--wa-color-brand);
+    }
+  }
+
+  .wa-dark wa-callout.pro {
+    --wa-color-text-link: var(--wa-color-brand-70);
+  }
+
+  /* Keep the "new in Core" callout's version link in the neutral scheme, not brand blue. */
+  wa-callout.new {
+    --wa-color-text-link: var(--wa-color-text-normal);
   }
 
   /* free badge */
@@ -483,23 +596,9 @@
     }
   }
 
-  /* colophon + sidebar: social link row */
-  #colophon {
-    margin-block-start: var(--wa-space-2xl);
-  }
-
-  #colophon .the-socials,
-  #sidebar .the-socials {
-    margin-inline-start: calc(var(--wa-space-xs) * -1);
-
-    a[target='_blank'] {
-      color: var(--wa-color-text-quiet);
-      padding-inline: var(--wa-space-xs);
-
-      &:hover {
-        color: var(--wa-color-text-normal);
-      }
-    }
+  /* Subtler treatment for filled neutral badges (since, category, etc.) */
+  wa-badge[variant='neutral'][appearance='filled'] {
+    background-color: var(--wa-color-surface-lowered);
   }
 
   /* Tooltips that include a <kbd> shortcut: keep copy + key on one baseline-centered row */
@@ -519,6 +618,60 @@
   .is-mac .non-mac,
   html:not(.is-mac) .mac-only {
     display: none;
+  }
+
+  /*
+   * UI reference in prose — kbd-like look for app controls (Settings, menu items, etc.)
+   * Usage: <wa-tag class="tag-ui tag-inline" appearance="filled-outlined"><wa-icon>...</wa-icon> Label</wa-tag>
+   */
+  wa-tag.tag-ui {
+    background-color: color-mix(in oklab, var(--wa-color-surface-default), transparent 50%);
+    border-radius: var(--wa-border-radius-l);
+    border-color: var(--wa-color-neutral-border-quiet);
+    box-shadow: var(--wa-shadow-s);
+    --wa-color-shadow: teal;
+    color: inherit;
+    padding: var(--wa-space-2xs) var(--wa-space-xs);
+    margin-inline: var(--wa-space-3xs);
+    gap: var(--wa-space-2xs);
+  }
+
+  wa-tag.tag-ui::part(content) {
+    font-weight: var(--wa-font-weight-bold);
+  }
+
+  /* The three colours are custom properties so a variant on another surface swaps those and keeps the shape. */
+  .kbd-modern,
+  wa-tooltip kbd {
+    --kbd-fill: color-mix(in oklab, var(--wa-color-surface-default), transparent 50%);
+    --kbd-border-color: var(--wa-color-neutral-border-quiet);
+    --kbd-shadow: var(--wa-shadow-s);
+
+    padding: var(--wa-space-2xs) var(--wa-space-xs);
+    line-height: 1;
+    background-color: var(--kbd-fill);
+    border: var(--wa-panel-border-style) var(--wa-panel-border-width) var(--kbd-border-color);
+    border-radius: var(--wa-border-radius-s);
+    box-shadow: var(--kbd-shadow);
+  }
+
+  /* The tooltip's fill is the page's inverse, so the surface-based colours above would read as a bright block on it. */
+  wa-tooltip kbd {
+    --kbd-fill: color-mix(in oklab, currentColor 7%, transparent);
+    --kbd-border-color: color-mix(in oklab, currentColor 10%, transparent);
+    --kbd-shadow: 0 1px 0 rgb(0 0 0 / 20%);
+
+    position: relative;
+    top: -0.1em;
+    display: inline-block;
+    padding: 0.15em 0.4em;
+    margin-block: -0.15em;
+    font-family: var(--wa-font-family-body);
+    font-size: 0.8em;
+    line-height: 1.2;
+    color: inherit;
+    vertical-align: middle;
+    border-width: var(--wa-border-width-s);
   }
 
   /* step icons for ordered instructions */
@@ -583,15 +736,26 @@
   .anchor-heading a {
     opacity: 0;
     visibility: hidden;
+    color: inherit;
     text-decoration: none;
     transition: opacity var(--wa-transition-normal) var(--wa-transition-easing);
   }
 
+  .anchor-heading a wa-icon {
+    font-size: 0.7em;
+    line-height: 1;
+    vertical-align: 0.05em;
+  }
+
   @media (hover: hover) {
     .anchor-heading:hover a {
-      opacity: 1;
+      opacity: 0.5;
       visibility: visible;
       padding: var(--wa-space-3xs);
+    }
+
+    .anchor-heading a:hover {
+      opacity: 1;
     }
   }
 
@@ -660,9 +824,10 @@
     }
   }
 
-  /* docs navigation: sidebar, outline, drawer nav chrome */
+  /* docs navigation: sidebar, outline (desktop aside + mobile expandable), drawer nav chrome */
   #sidebar,
-  #outline {
+  #outline,
+  #outline-expandable {
     h2 {
       font-size: var(--wa-font-size-s);
       margin: 0;
@@ -672,10 +837,16 @@
       margin-block-start: var(--wa-space-xs);
     }
 
-    /* visually align icon with child list's border-start */
+    /* visually align icon with child list's border-start without shifting the heading's end edge */
     h2:has(wa-icon) {
+      margin-inline-start: calc(var(--wa-space-xs) * -1);
+    }
+
+    /* mirror the icon's start-ward offset so a rolled-up section badge nudges
+     * end-ward by the same amount */
+    h2.wa-split > wa-badge {
       position: relative;
-      inset-inline-start: calc(var(--wa-space-xs) * -1);
+      inset-inline-end: calc(var(--wa-space-xs) * -1);
     }
 
     ul {
@@ -727,6 +898,10 @@
     }
   }
 
+  #sidebar ul:has(.current) {
+    border-inline-start-color: var(--wa-color-brand-border-quiet);
+  }
+
   #outline-standard h2 {
     margin-block-end: var(--wa-space-m);
   }
@@ -772,6 +947,10 @@
         background: var(--wa-color-brand-on-quiet);
       }
     }
+
+    section:has(.current) h2 wa-icon {
+      color: var(--wa-color-brand-on-quiet);
+    }
   }
 
   #sidebar .is-planned {
@@ -782,16 +961,23 @@
     padding-block-end: 1rem;
   }
 
-  @media screen and (min-width: 73.75rem) {
-    wa-page::part(navigation) {
-      border-inline-end: var(--wa-border-style) var(--wa-panel-border-width) var(--wa-color-surface-border);
-    }
+  wa-page > #sidebar {
+    overflow: auto;
+    max-block-size: 100%;
+  }
 
-    wa-page > #sidebar {
-      overflow: auto;
-      max-block-size: 100%;
-      padding: var(--wa-space-2xl) var(--content-padding-inline);
-    }
+  /* Reserve the icon-heading outdent as padding so #sidebar's overflow box doesn't clip it on mobile. */
+  wa-page[view='mobile'] > #sidebar {
+    padding-inline-start: var(--wa-space-xs);
+    margin-inline-start: calc(var(--wa-space-xs) * -1);
+  }
+
+  wa-page:not([view='mobile']) > #sidebar {
+    padding-block: var(--wa-space-2xl);
+  }
+
+  wa-page:not([view='mobile'])::part(navigation) {
+    border-inline-end: var(--wa-border-style) var(--wa-panel-border-width) var(--wa-color-surface-border);
   }
 
   /* #endregion */
@@ -836,6 +1022,7 @@
       position: absolute;
       inset: 0;
       z-index: 0;
+      border-radius: inherit;
       pointer-events: none;
     }
   }
@@ -924,13 +1111,42 @@
     }
   }
 
-  /* Bottom fade mask. With any .background-* utility, masks the ::after decoration only; on any other
-   * element, masks the host (content fades too). Mask reads alpha, color is irrelevant. */
+  /* Edge fade masks — fade an element toward one edge until transparent. On a .background-* utility they mask
+   * only its ::after decoration (grid/dots fade, not content); elsewhere they mask the element. Tune via
+   * --wa-mask-fade-start / --wa-mask-fade-end (accept a length or %, so `calc(100% - 3rem)` fades a fixed
+   * distance) and --wa-mask-fade-direction. Masking a solid box makes a scrim that reveals content behind. */
+  .wa-mask-fade-below {
+    --wa-mask-fade-direction: to bottom;
+  }
+
+  .wa-mask-fade-above {
+    --wa-mask-fade-direction: to top;
+  }
+
   .wa-mask-fade-below:not(:is(.background-grid, .background-dot-grid, .background-wa-pattern)),
-  :is(.background-grid, .background-dot-grid, .background-wa-pattern).wa-mask-fade-below::after {
+  .wa-mask-fade-above:not(:is(.background-grid, .background-dot-grid, .background-wa-pattern)),
+  :is(.background-grid, .background-dot-grid, .background-wa-pattern):is(
+      .wa-mask-fade-below,
+      .wa-mask-fade-above
+    )::after {
     --wa-mask-fade-start: 60%;
-    --wa-mask-fade-end: 95%;
-    mask-image: linear-gradient(to bottom, #000 var(--wa-mask-fade-start), transparent var(--wa-mask-fade-end));
+    --wa-mask-fade-end: 100%;
+    mask-image: linear-gradient(
+      var(--wa-mask-fade-direction),
+      #000 var(--wa-mask-fade-start),
+      transparent var(--wa-mask-fade-end)
+    );
+  }
+
+  /* Decorative heart that warms to brand orange and beats on hover. Pair with
+   * name="heart" animation="beat" — the animation is paused at rest. Use for
+   * affection / thank-you gestures (page footer, sign-offs, etc.). */
+  wa-icon.heart-affection {
+    --animation-iteration-count: 0;
+  }
+  wa-icon.heart-affection:hover {
+    --animation-iteration-count: infinite;
+    color: var(--wa-brand-orange);
   }
 
   /* icon swap on hover/focus: plain buttons + dropdown items (pair .icon-default / .icon-hover in icon slot) */
@@ -957,6 +1173,72 @@
   /* reducing the visual weight of peripheral presentational content */
   .de-emphasize {
     opacity: 0.6;
+  }
+
+  /* #region hover utilities */
+
+  /* Hover scale; override --hover-grow-scale per instance */
+  .hover-grow,
+  .hover-grow-from-direct-child {
+    --hover-grow-scale: 1.025;
+    transform-origin: center;
+    transition: transform var(--wa-transition-slow) var(--wa-transition-easing);
+  }
+
+  .hover-grow:is(:hover, :focus-visible) {
+    transform: scale(var(--hover-grow-scale));
+  }
+
+  /* Scale when a direct child link or button is hovered */
+  .hover-grow-from-direct-child:has(> :is(a, button):hover),
+  .hover-grow-from-direct-child:has(> :is(a, button):focus-visible) {
+    transform: scale(var(--hover-grow-scale));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hover-grow,
+    .hover-grow-from-direct-child {
+      transition: none;
+    }
+
+    .hover-grow:is(:hover, :focus-visible) {
+      transform: none;
+    }
+
+    .hover-grow-from-direct-child:has(> :is(a, button):hover),
+    .hover-grow-from-direct-child:has(> :is(a, button):focus-visible) {
+      transform: none;
+    }
+  }
+
+  /* Hover border + outline ring; pair with .hover-grow for card grids */
+  .hover-emphasize-border > wa-card {
+    outline: var(--wa-border-width-s) solid transparent;
+    transition:
+      border-color var(--wa-transition-normal),
+      outline-color var(--wa-transition-normal);
+  }
+
+  .hover-emphasize-border:is(:hover, :focus-visible) > wa-card {
+    border-color: var(--wa-color-brand-border-loud);
+    outline-color: var(--wa-color-brand-border-loud);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hover-emphasize-border > wa-card {
+      transition: none;
+    }
+  }
+
+  /* #endregion */
+  /* #endregion */
+
+  /* #region code blocks */
+  /* Browsers make an overflowing code block a tab stop so it can be scrolled by keyboard. */
+  /* Blocks with a copy button scroll the inner <code>, but the ring stays on the pre, which would clip an inset one. */
+  pre:is(:focus-visible, :has(> code:focus-visible)) {
+    outline: var(--wa-focus-ring);
+    outline-offset: var(--wa-focus-ring-offset);
   }
   /* #endregion */
 
@@ -995,6 +1277,76 @@
   /* decreasing visual size of icons in certain contexts (such as in sidebar nav) */
   wa-icon.icon-shrink {
     font-size: round(0.875em, 1px);
+  }
+
+  /* duotone icons styled as small illustrations: dark primary + brand secondary, fully opaque */
+  wa-icon.duotone-illustrated {
+    --primary-color: var(--wa-color-text-normal);
+    --secondary-color: var(--wa-color-brand-80);
+    --secondary-opacity: 1;
+
+    .wa-dark & {
+      --secondary-color: var(--wa-color-brand-60);
+    }
+  }
+  /* #endregion */
+
+  /* #region animations */
+
+  @keyframes fa-float {
+    0% {
+      transform: translateY(0) translateX(0) rotate(0deg)
+        scale(var(--fa-float-squash-x, 1.02), var(--fa-float-squash-y, 0.98));
+      animation-timing-function: cubic-bezier(0.33, 0, 0.66, 0.33);
+    }
+    15% {
+      transform: translateY(calc(-0.4 * var(--fa-float-height, 6px))) translateX(var(--fa-float-drift, 1px))
+        rotate(var(--fa-float-tilt, 1deg)) scale(1, 1);
+      animation-timing-function: cubic-bezier(0.33, 0.66, 0.66, 1);
+    }
+    35% {
+      transform: translateY(calc(-1 * var(--fa-float-height, 6px))) translateX(0) rotate(0deg)
+        scale(var(--fa-float-stretch-x, 0.98), var(--fa-float-stretch-y, 1.03));
+      animation-timing-function: cubic-bezier(0.5, 0, 0.5, 0);
+    }
+    50% {
+      transform: translateY(calc(-0.92 * var(--fa-float-height, 6px)))
+        translateX(calc(-0.5 * var(--fa-float-drift, 1px))) rotate(calc(-0.5 * var(--fa-float-tilt, 1deg)))
+        scale(0.995, 1.01);
+      animation-timing-function: cubic-bezier(0.33, 0, 0.66, 0.33);
+    }
+    70% {
+      transform: translateY(calc(-0.3 * var(--fa-float-height, 6px))) translateX(calc(-1 * var(--fa-float-drift, 1px)))
+        rotate(calc(-1 * var(--fa-float-tilt, 1deg))) scale(1, 1);
+      animation-timing-function: cubic-bezier(0.33, 0.66, 0.66, 1);
+    }
+    90% {
+      transform: translateY(calc(0.05 * var(--fa-float-height, 6px))) translateX(0) rotate(0deg)
+        scale(var(--fa-float-squash-x, 1.02), var(--fa-float-squash-y, 0.98));
+      animation-timing-function: cubic-bezier(0.33, 0, 0.66, 1);
+    }
+    100% {
+      transform: translateY(0) translateX(0) rotate(0deg)
+        scale(var(--fa-float-squash-x, 1.02), var(--fa-float-squash-y, 0.98));
+    }
+  }
+
+  .fa-float {
+    animation-name: fa-float;
+    animation-delay: var(--fa-animation-delay, 0s);
+    animation-direction: var(--fa-animation-direction, normal);
+    animation-duration: var(--fa-animation-duration, 3s);
+    animation-iteration-count: var(--fa-animation-iteration-count, infinite);
+    animation-timing-function: var(--fa-animation-timing, ease-in-out);
+    will-change: transform;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fa-float {
+      animation-delay: -1ms;
+      animation-duration: 1ms;
+      animation-iteration-count: 1;
+    }
   }
   /* #endregion */
 }

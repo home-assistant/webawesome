@@ -1,7 +1,7 @@
 ---
 title: Details
 layout: component
-category: Organization
+category: Layout
 synonyms:
   - accordion
   - collapsible
@@ -28,7 +28,7 @@ use-cases:
 
 Use the `open` attribute to expand the details initially.
 
-```html {.example}
+```html {.example .anatomy}
 <wa-details summary="Toggle Me" open>
   This details component is expanded by default. Users can click the summary to collapse it if they want to hide the
   content.
@@ -46,7 +46,7 @@ Use the `disabled` attribute to prevent the details from expanding.
 </wa-details>
 ```
 
-### Customizing the Summary Icon
+### Expand & Collapse Icons
 
 Use the `expand-icon` and `collapse-icon` slots to change the expand and collapse icons, respectively. To disable the animation, override the `rotate` property on the `icon` part as shown below.
 
@@ -55,8 +55,8 @@ Use the `expand-icon` and `collapse-icon` slots to change the expand and collaps
   <wa-icon name="square-plus" slot="expand-icon" variant="regular"></wa-icon>
   <wa-icon name="square-minus" slot="collapse-icon" variant="regular"></wa-icon>
 
-  This example uses custom plus and minus icons for expanding and collapsing. You can use any icon you want to match
-  the look and feel of your app.
+  This example uses custom plus and minus icons for expanding and collapsing. You can use any icon you want to match the
+  look and feel of your app.
 </wa-details>
 
 <style>
@@ -67,7 +67,7 @@ Use the `expand-icon` and `collapse-icon` slots to change the expand and collaps
 </style>
 ```
 
-### Icon Position
+### Icon Placement
 
 The default position for the expand and collapse icons is at the end of the summary. Set the `icon-placement` attribute to `start` to place the icon at the start of the summary.
 
@@ -78,8 +78,8 @@ The default position for the expand and collapse icons is at the end of the summ
     are used to tree views and file explorers.
   </wa-details>
   <wa-details summary="End" icon-placement="end">
-    The expand/collapse icon is at the end of the summary. This is the default placement and works great for most
-    use cases.
+    The expand/collapse icon is at the end of the summary. This is the default placement and works great for most use
+    cases.
   </wa-details>
 </div>
 ```
@@ -106,7 +106,7 @@ Links and other interactive elements will still retain their behavior:
 
 The details component, including its `icon-placement`, automatically adapts to right-to-left languages:
 
-```html {.example}
+```html {.example .no-dir}
 <div class="wa-stack">
   <wa-details summary="تبديلني" lang="ar" dir="rtl">
     استخدام طريقة لوريم إيبسوم لأنها تعطي توزيعاَ طبيعياَ -إلى حد ما- للأحرف عوضاً عن

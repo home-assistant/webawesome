@@ -30,7 +30,8 @@ import styles from './tab-group.styles.js';
  * @event {{ name: String }} wa-tab-show - Emitted when a tab is shown.
  * @event {{ name: String }} wa-tab-hide - Emitted when a tab is hidden.
  *
- * @csspart base - The component's base wrapper.
+ * @csspart base - Deprecated. Use the `tab-group` part instead.
+ * @csspart tab-group - The component's outer wrapper.
  * @csspart nav - The tab group's navigation container where tabs are slotted in.
  * @csspart tabs - The container that wraps the tabs.
  * @csspart body - The tab group's body where tab panels are slotted in.
@@ -42,6 +43,8 @@ import styles from './tab-group.styles.js';
  * @cssproperty --indicator-color - The color of the active tab indicator.
  * @cssproperty --track-color - The color of the indicator's track (the line that separates tabs from panels).
  * @cssproperty --track-width - The width of the indicator's track (the line that separates tabs from panels).
+ *
+ * @ssr - During SSR, `<wa-tab-group>` can't access its children to determine which tab is active. To render the correct panel, manually set the `active` attribute on the matching `<wa-tab>` and `<wa-tab-panel>`.
  */
 @customElement('wa-tab-group')
 export default class WaTabGroup extends WebAwesomeElement {
@@ -429,7 +432,7 @@ export default class WaTabGroup extends WebAwesomeElement {
 
     return html`
       <div
-        part="base"
+        part="base tab-group"
         class=${classMap({
           'tab-group': true,
           'tab-group-top': this.placement === 'top',

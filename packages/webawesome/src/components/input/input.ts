@@ -40,9 +40,11 @@ import styles from './input.styles.js';
  * @event wa-clear - Emitted when the clear button is activated.
  * @event wa-invalid - Emitted when the form control has been checked for validity and its constraints aren't satisfied.
  *
- * @csspart label - The label
+ * @csspart form-control-label - The label.
+ * @csspart label - Deprecated. Use the `form-control-label` part instead.
  * @csspart hint - The hint's wrapper.
- * @csspart base - The wrapper being rendered as an input
+ * @csspart base - Deprecated. Use the `input-wrapper` part instead.
+ * @csspart input-wrapper - The component's outer wrapper.
  * @csspart input - The internal `<input>` control.
  * @csspart start - The container that wraps the `start` slot.
  * @csspart clear-button - The clear button.
@@ -58,7 +60,7 @@ export default class WaInput extends WebAwesomeFormAssociatedElement {
   static shadowRootOptions = { ...WebAwesomeFormAssociatedElement.shadowRootOptions, delegatesFocus: true };
 
   static get validators() {
-    return [...super.validators, MirrorValidator()];
+    return isServer ? [] : [...super.validators, MirrorValidator()];
   }
 
   assumeInteractionOn = ['blur', 'input'];
@@ -104,6 +106,20 @@ export default class WaInput extends WebAwesomeFormAssociatedElement {
 
     this.valueHasChanged = true;
     this._value = val;
+  }
+
+  /**
+   * @internal
+   */
+  protected updateFormValue(value: string | FormData | File | null) {
+    if (value == null) {
+      // null is the fallback value when loading from browser "memory" (also called "state").
+      // we use an empty string to mimic browser behavior of `<input>`
+      this.setValue('', null);
+      return;
+    }
+
+    super.updateFormValue(value);
   }
 
   /** The default value of the form control. Primarily used for resetting the form control. */
@@ -373,14 +389,14 @@ export default class WaInput extends WebAwesomeFormAssociatedElement {
   }
 
   render() {
-    const hasLabelSlot = this.hasUpdated ? this.hasSlotController.test('label') : this.withLabel;
-    const hasHintSlot = this.hasUpdated ? this.hasSlotController.test('hint') : this.withHint;
+    const hasLabelSlot = this.hasSlotController.test('label', 'withLabel');
+    const hasHintSlot = this.hasSlotController.test('hint', 'withHint');
     const hasLabel = this.label ? true : !!hasLabelSlot;
     const hasHint = this.hint ? true : !!hasHintSlot;
     const hasClearIcon = this.withClear && !this.disabled && !this.readonly;
     const isClearIconVisible =
       // prevents hydration mismatch errors.
-      (isServer || this.hasUpdated) &&
+      (!this.didSSR || this.hasUpdated) &&
       hasClearIcon &&
       (typeof this.value === 'number' || (this.value && this.value.length > 0));
 
@@ -397,7 +413,7 @@ export default class WaInput extends WebAwesomeFormAssociatedElement {
         <slot name="label">${this.label}</slot>
       </label>
 
-      <div part="base" class="text-field">
+      <div part="base input-wrapper" class="text-field">
         <slot name="start" part="start" class="start"></slot>
 
         <input
@@ -458,7 +474,6 @@ export default class WaInput extends WebAwesomeFormAssociatedElement {
                   type="button"
                   aria-label=${this.localize.term(this.passwordVisible ? 'hidePassword' : 'showPassword')}
                   @click=${this.handlePasswordToggle}
-                  tabindex="-1"
                 >
                   ${!this.passwordVisible
                     ? html`

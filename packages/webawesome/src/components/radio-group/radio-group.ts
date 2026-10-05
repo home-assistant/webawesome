@@ -34,9 +34,8 @@ import styles from './radio-group.styles.js';
  * @event wa-invalid - Emitted when the form control has been checked for validity and its constraints aren't satisfied.
  *
  * @csspart form-control - The form control that wraps the label, input, and hint.
- * @csspart form-control-label - The label's wrapper.
- * @csspart form-control-input - The input's wrapper.
- * @csspart radios - The wrapper than surrounds radio items, styled as a flex container by default.
+ * @csspart form-control-label - The label.
+ * @csspart form-control-input - The element that wraps the grouped radios, styled as a flex container by default.
  * @csspart hint - The hint's wrapper.
  */
 @customElement('wa-radio-group')
@@ -352,8 +351,8 @@ export default class WaRadioGroup extends WebAwesomeFormAssociatedElement {
   }
 
   render() {
-    const hasLabelSlot = this.hasUpdated ? this.hasSlotController.test('label') : this.withLabel;
-    const hasHintSlot = this.hasUpdated ? this.hasSlotController.test('hint') : this.withHint;
+    const hasLabelSlot = this.hasSlotController.test('label', 'withLabel');
+    const hasHintSlot = this.hasSlotController.test('hint', 'withHint');
     const hasLabel = this.label ? true : !!hasLabelSlot;
     const hasHint = this.hint ? true : !!hasHintSlot;
 
