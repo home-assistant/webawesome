@@ -28,6 +28,9 @@ export function transformCssPlugin() {
             const result = await esbuild.transform(css, {
               loader: 'css',
               target: 'safari15',
+              // Keep non-ASCII characters literal. With the default ASCII charset, esbuild escapes them (e.g. `•` to
+              // `\2022`), which is an invalid escape inside a JS template literal and makes the css`` result undefined.
+              charset: 'utf8',
             });
 
             const transformedTemplate = `css\`${result.code}\``;
