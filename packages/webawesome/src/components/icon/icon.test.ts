@@ -1,4 +1,5 @@
-import { aTimeout, elementUpdated, expect, oneEvent } from '@open-wc/testing';
+import { aTimeout, elementUpdated, expect, oneEvent, waitUntil } from '@open-wc/testing';
+import { emulateMedia } from '@web/test-runner-commands';
 import { html } from 'lit';
 import { expectEvent } from '../../internal/test/expect-event.js';
 import { fixtures } from '../../internal/test/fixture.js';
@@ -7,6 +8,11 @@ import { fixtures } from '../../internal/test/fixture.js';
 import { registerIconLibrary } from '../../../dist-cdn/webawesome.js';
 import type WaIcon from './icon.js';
 import type { IconAnimation } from './icon.js';
+import defaultLibrary, { getIconFolder } from './library.default.js';
+import systemLibrary from './library.system.js';
+
+// Captures the autoWidth argument passed to a resolver so we can assert the canvas="auto" coupling.
+let probeAutoWidth: boolean | undefined;
 
 const testLibraryIcons = {
   'test-icon1': `
@@ -21,6 +27,14 @@ const testLibraryIcons = {
   `,
   'bad-icon': `<div></div>`,
 };
+
+// Mimics stroke-based libraries like Lucide and Feather, whose SVGs style themselves entirely through
+// presentation attributes on the root element.
+const strokeIcon = `
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M4 4h16v16H4z"></path>
+  </svg>
+`;
 
 describe('<wa-icon>', () => {
   before(() => {
@@ -37,6 +51,94 @@ describe('<wa-icon>', () => {
         return '';
       },
       mutator: (svg: SVGElement) => svg.setAttribute('fill', 'currentColor'),
+    });
+
+    registerIconLibrary('stroke-library', {
+      resolver: () => `data:image/svg+xml,${encodeURIComponent(strokeIcon)}`,
+    });
+
+    registerIconLibrary('autowidth-probe', {
+      resolver: (_name: string, _family?: string, _variant?: string, autoWidth?: boolean) => {
+        probeAutoWidth = autoWidth;
+        return `data:image/svg+xml,${encodeURIComponent(testLibraryIcons['test-icon1'])}`;
+      },
+    });
+  });
+
+  describe('getIconFolder() default-library mapping', () => {
+    const cases: Array<[family: string, variant: string, folder: string]> = [
+      // Classic
+      ['classic', 'thin', 'thin'],
+      ['classic', 'light', 'light'],
+      ['classic', 'regular', 'regular'],
+      ['classic', 'solid', 'solid'],
+      // Brands
+      ['brands', 'solid', 'brands'],
+      // Duotone + Sharp
+      ['duotone', 'solid', 'duotone'],
+      ['duotone', 'regular', 'duotone-regular'],
+      ['sharp', 'solid', 'sharp-solid'],
+      ['sharp-duotone', 'thin', 'sharp-duotone-thin'],
+      // Existing Pro+ packs
+      ['chisel', 'regular', 'chisel-regular'],
+      ['whiteboard', 'semibold', 'whiteboard-semibold'],
+      ['utility', 'semibold', 'utility-semibold'],
+      ['utility-fill', 'semibold', 'utility-fill-semibold'],
+      ['jelly', 'regular', 'jelly-regular'],
+      ['jelly-duo', 'regular', 'jelly-duo-regular'],
+      ['notdog', 'solid', 'notdog-solid'],
+      ['slab', 'regular', 'slab-regular'],
+      ['slab-press', 'regular', 'slab-press-regular'],
+      // New in 7.3
+      ['mosaic', 'solid', 'mosaic-solid'],
+      ['pixel', 'regular', 'pixel-regular'],
+      ['vellum', 'solid', 'vellum-solid'],
+      ['slab-duo', 'regular', 'slab-duo-regular'],
+      ['slab-press-duo', 'regular', 'slab-press-duo-regular'],
+    ];
+
+    cases.forEach(([family, variant, folder]) => {
+      it(`maps family="${family}" variant="${variant}" to "${folder}"`, () => {
+        expect(getIconFolder('icon-name', family, variant)).to.equal(folder);
+      });
+    });
+
+    it('falls back to "solid" for an unknown family', () => {
+      expect(getIconFolder('icon-name', 'not-a-real-family', 'solid')).to.equal('solid');
+    });
+  });
+
+  // Font Awesome fill handling lives in the default library's mutator, not the component stylesheet, so that
+  // other libraries receive their SVG exactly as authored. A stylesheet fill regressed twice (issue #1733).
+  describe('default library fill handling', () => {
+    it('adds fill="currentColor" to icons that do not specify a fill', () => {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      defaultLibrary.mutator!(svg);
+      expect(svg.getAttribute('fill')).to.equal('currentColor');
+    });
+
+    it('respects an existing fill attribute', () => {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('fill', 'none');
+      defaultLibrary.mutator!(svg);
+      expect(svg.getAttribute('fill')).to.equal('none');
+    });
+  });
+
+  // The system library embeds Font Awesome SVGs as strings, and not all of them include a fill attribute, so its
+  // mutator applies the same fallback as the default library.
+  describe('system library fill handling', () => {
+    it('adds fill="currentColor" to icons that do not specify a fill', () => {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      systemLibrary.mutator!(svg);
+      expect(svg.getAttribute('fill')).to.equal('currentColor');
+    });
+
+    it('respects an existing fill attribute', () => {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('fill', 'none');
+      systemLibrary.mutator!(svg);
+      expect(svg.getAttribute('fill')).to.equal('none');
     });
   });
 
@@ -130,6 +232,19 @@ describe('<wa-icon>', () => {
           expect(svg?.getAttribute('fill')).to.equal('currentColor');
         });
 
+        // Guards issue #1733: a fill rule in the component stylesheet overrides the presentation attributes that
+        // stroke-based libraries (Lucide, Feather, etc.) rely on, turning their icons into filled blobs.
+        it('should not force a fill on stroke-based library icons', async () => {
+          const el = await fixture<WaIcon>(html`<wa-icon library="stroke-library"></wa-icon>`);
+          const listener = oneEvent(el, 'wa-load');
+          el.name = 'square';
+          await listener;
+          await elementUpdated(el);
+          const svg = el.shadowRoot!.querySelector('svg')!;
+          expect(svg.getAttribute('fill')).to.equal('none');
+          expect(getComputedStyle(svg).fill).to.equal('none');
+        });
+
         it('should render icons from an async resolver', async () => {
           registerIconLibrary('async-library', {
             resolver: async name => {
@@ -163,6 +278,7 @@ describe('<wa-icon>', () => {
 
       describe('sprite sheets', () => {
         it('should produce a <use> element with the correct href', async () => {
+          // With SSR, this `registerIconLibrary` won't cross the server  boundary.
           registerIconLibrary('sprite', {
             resolver: name => `/docs/assets/images/sprite.svg#${name}`,
             mutator: svg => svg.setAttribute('fill', 'currentColor'),
@@ -170,7 +286,11 @@ describe('<wa-icon>', () => {
           });
 
           const el = await fixture<WaIcon>(html`<wa-icon name="bad-icon" library="sprite"></wa-icon>`);
-          const href = el.shadowRoot!.querySelector('use')?.getAttribute('href');
+          let href = null;
+          await waitUntil(() => {
+            href = el.shadowRoot!.querySelector('use')?.getAttribute('href');
+            return href;
+          });
           expect(href).to.equal('/docs/assets/images/sprite.svg#bad-icon');
         });
 
@@ -241,25 +361,36 @@ describe('<wa-icon>', () => {
       });
 
       describe('animations', () => {
-        const animations: IconAnimation[] = [
-          'beat',
-          'beat-fade',
-          'bounce',
-          'fade',
-          'flip',
-          'shake',
-          'spin',
-          'spin-pulse',
+        // [animation value, expected @keyframes name] — spin-pulse and spin-reverse reuse the `spin` keyframes
+        const animations: Array<[IconAnimation, string]> = [
+          ['beat', 'beat'],
+          ['fade', 'fade'],
+          ['beat-fade', 'beat-fade'],
+          ['bounce', 'bounce'],
+          ['flip', 'flip'],
+          ['flip-360', 'flip-360'],
+          ['shake', 'shake'],
+          ['spin', 'spin'],
+          ['spin-pulse', 'spin'],
+          ['spin-reverse', 'spin'],
+          ['spin-snap', 'spin-snap'],
+          ['spin-snap-4', 'spin-snap-4'],
+          ['spin-snap-8', 'spin-snap-8'],
+          ['buzz', 'buzz'],
+          ['wag', 'wag'],
+          ['float', 'float'],
+          ['swing', 'swing'],
+          ['jello', 'jello'],
         ];
 
-        animations.forEach(animation => {
+        animations.forEach(([animation, keyframe]) => {
           it(`should apply the "${animation}" animation`, async () => {
             const el = await fixture<WaIcon>(html`
               <wa-icon library="system" name="check" animation=${animation}></wa-icon>
             `);
             await elementUpdated(el);
             await el.updateComplete;
-            expect(getComputedStyle(el).animationName).to.equal(animation);
+            expect(getComputedStyle(el).animationName).to.equal(keyframe);
           });
         });
 
@@ -272,6 +403,124 @@ describe('<wa-icon>', () => {
           const computedStyle = getComputedStyle(el);
           expect(computedStyle.animationName).to.equal('spin');
           expect(computedStyle.animationDirection).to.equal('reverse');
+        });
+
+        // Defaults aligned with Font Awesome 7.3
+        const revisedDefaults: Array<[IconAnimation, 'animationDuration' | 'animationTimingFunction', string]> = [
+          ['flip', 'animationDuration', '1.5s'],
+          ['shake', 'animationDuration', '0.75s'],
+          ['shake', 'animationTimingFunction', 'ease-in-out'],
+          ['fade', 'animationTimingFunction', 'ease-in-out'],
+          ['beat-fade', 'animationTimingFunction', 'ease-in-out'],
+        ];
+
+        revisedDefaults.forEach(([animation, prop, value]) => {
+          it(`should default ${animation} ${prop} to ${value} (FA 7.3)`, async () => {
+            const el = await fixture<WaIcon>(html`
+              <wa-icon library="system" name="check" animation=${animation}></wa-icon>
+            `);
+            await elementUpdated(el);
+            await el.updateComplete;
+            expect(getComputedStyle(el)[prop]).to.equal(value);
+          });
+        });
+
+        it('should disable animation under prefers-reduced-motion', async () => {
+          const el = await fixture<WaIcon>(html` <wa-icon library="system" name="check" animation="spin"></wa-icon> `);
+          await elementUpdated(el);
+          try {
+            await emulateMedia({ reducedMotion: 'reduce' });
+            expect(getComputedStyle(el).animationName).to.equal('none');
+          } finally {
+            await emulateMedia({ reducedMotion: 'no-preference' });
+          }
+        });
+      });
+
+      describe('canvas sizing', () => {
+        // Fix the em base so 1.25em = 20px and 1.5em = 24px deterministically
+        const sizes: Array<[label: string, markup: ReturnType<typeof html>, width: string, height: string]> = [
+          [
+            'fixed (default)',
+            html`<wa-icon library="system" name="check" style="font-size:16px"></wa-icon>`,
+            '20px',
+            '16px',
+          ],
+          [
+            'fixed (explicit)',
+            html`<wa-icon library="system" name="check" canvas="fixed" style="font-size:16px"></wa-icon>`,
+            '20px',
+            '16px',
+          ],
+          [
+            'square',
+            html`<wa-icon library="system" name="check" canvas="square" style="font-size:16px"></wa-icon>`,
+            '20px',
+            '20px',
+          ],
+          [
+            'roomy',
+            html`<wa-icon library="system" name="check" canvas="roomy" style="font-size:16px"></wa-icon>`,
+            '24px',
+            '24px',
+          ],
+        ];
+
+        sizes.forEach(([label, markup, width, height]) => {
+          it(`should size the ${label} canvas to ${width} × ${height}`, async () => {
+            const el = await fixture<WaIcon>(markup);
+            await elementUpdated(el);
+            await el.updateComplete;
+            const style = getComputedStyle(el);
+            expect(style.width).to.equal(width);
+            expect(style.height).to.equal(height);
+          });
+        });
+
+        it('should hug the icon for canvas="auto" without a fixed-width box', async () => {
+          const el = await fixture<WaIcon>(
+            html`<wa-icon library="system" name="check" canvas="auto" style="font-size:16px"></wa-icon>`,
+          );
+          await elementUpdated(el);
+          await el.updateComplete;
+          const style = getComputedStyle(el);
+          // auto keeps the 1em height but drops the fixed 1.25em (20px) min-width that `fixed` enforces
+          expect(style.height).to.equal('16px');
+          expect(style.minWidth).to.equal('0px');
+        });
+
+        it('should reflect the canvas property to an attribute', async () => {
+          const el = await fixture<WaIcon>(html`<wa-icon library="system" name="check"></wa-icon>`);
+          el.canvas = 'roomy';
+          await elementUpdated(el);
+          expect(el.getAttribute('canvas')).to.equal('roomy');
+        });
+
+        it('should pass autoWidth=true to the resolver for canvas="auto"', async () => {
+          probeAutoWidth = undefined;
+          const el = await fixture<WaIcon>(html`<wa-icon library="autowidth-probe" canvas="auto"></wa-icon>`);
+          const listener = oneEvent(el, 'wa-load');
+          el.name = 'x';
+          await listener;
+          expect(probeAutoWidth).to.be.true;
+        });
+
+        it('should pass autoWidth=true to the resolver for the deprecated auto-width attribute', async () => {
+          probeAutoWidth = undefined;
+          const el = await fixture<WaIcon>(html`<wa-icon library="autowidth-probe" auto-width></wa-icon>`);
+          const listener = oneEvent(el, 'wa-load');
+          el.name = 'x';
+          await listener;
+          expect(probeAutoWidth).to.be.true;
+        });
+
+        it('should pass autoWidth=false to the resolver by default', async () => {
+          probeAutoWidth = undefined;
+          const el = await fixture<WaIcon>(html`<wa-icon library="autowidth-probe"></wa-icon>`);
+          const listener = oneEvent(el, 'wa-load');
+          el.name = 'x';
+          await listener;
+          expect(probeAutoWidth).to.be.false;
         });
       });
 

@@ -31,6 +31,7 @@ export default {
   exclude: ['**/*.styles.ts', '**/*.test.ts'],
   litelement: true,
   dependencies: true,
+  packagejson: false,
   outdir,
   // Give the plugin access to the TypeScript type checker
   overrideModuleCreation({ ts, globs }) {
@@ -61,7 +62,7 @@ export default {
           case ts.SyntaxKind.ClassDeclaration: {
             const className = node.name.getText();
             const classDoc = moduleDoc?.declarations?.find(declaration => declaration.name === className);
-            const customTags = ['dependency', 'documentation', 'since', 'status', 'title'];
+            const customTags = ['dependency', 'documentation', 'since', 'status', 'title', 'ssr'];
             let customComments = '/**';
 
             node.jsDoc?.forEach(jsDoc => {
@@ -131,6 +132,32 @@ export default {
             }
           }
         }
+      },
+    },
+    {
+      // Flag legacy duplicate parts in the manifest so editors and other CEM consumers see the
+      // deprecation, not just the docs: `base` everywhere, and `label` on form controls that also
+      // expose the canonical `form-control-label`.
+      name: 'wa-deprecate-legacy-parts',
+      packageLinkPhase({ customElementsManifest }) {
+        customElementsManifest?.modules?.forEach(mod => {
+          mod.declarations?.forEach(declaration => {
+            // We can only tell both parts exist on the component, not that they're on the same element
+            // (the manifest doesn't track that). True for every form control today; revisit if one ever
+            // adds a `label` that isn't the form-control label.
+            const hasFormControlLabel = declaration.cssParts?.some(part => part.name === 'form-control-label');
+            declaration.cssParts?.forEach(part => {
+              if (part.name === 'base') {
+                part.deprecated =
+                  'Use the part named after the component instead. This part will be removed in a future major version.';
+              }
+              if (part.name === 'label' && hasFormControlLabel) {
+                part.deprecated =
+                  'Use the `form-control-label` part instead. This part will be removed in a future major version.';
+              }
+            });
+          });
+        });
       },
     },
     {
@@ -215,8 +242,12 @@ export default {
       outdir,
       defaultExport: true,
       includeDefaultDOMEvents: true,
-      componentTypePath: (_name, _tag, modulePath) => {
-        return `./${modulePath}`;
+      componentTypePath: (name, tag, modulePath) => {
+        if (!tag) {
+          return `./${modulePath}`;
+        }
+        const unprefixedTag = tag.replace('wa-', '');
+        return `./components/${unprefixedTag}/${unprefixedTag}.js`;
       },
     }),
 

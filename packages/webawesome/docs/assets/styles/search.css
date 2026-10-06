@@ -12,13 +12,9 @@
     margin-block-end: 0;
   }
 
-  &::part(body) {
-    padding: 0;
-  }
-
+  &::part(body),
   &::part(footer) {
-    justify-content: center;
-    gap: 0.5rem;
+    padding: 0;
   }
 
   @media screen and (max-width: 900px) {
@@ -28,8 +24,11 @@
       margin-block: 1rem;
     }
 
+    /* Keep the flex column bounded so body scrolls and header/footer stay
+       fixed — just give it nearly the full viewport instead of the
+       large-screen calc. */
     #site-search-container {
-      max-height: none;
+      max-height: calc(100vh - 2.5rem);
     }
   }
 }
@@ -40,32 +39,17 @@
   max-height: calc(100vh - 18rem);
 }
 
-/* Header */
 #site-search-container header {
   flex: 0 0 auto;
-  align-items: center;
-  /* Fixes an iOS Safari 16.4 bug that draws the parent element's border radius incorrectly when showing/hiding results */
-  border-radius: var(--wa-border-radius-l);
-}
-
-#site-search.has-results header {
   border-start-start-radius: var(--wa-border-radius-l);
   border-start-end-radius: var(--wa-border-radius-l);
-  border-end-start-radius: 0;
-  border-end-end-radius: 0;
-}
-
-#site-search-input-wrapper {
-  display: flex;
-  align-items: center;
+  border-bottom: var(--wa-panel-border-style) var(--wa-panel-border-width) var(--wa-color-neutral-border-quiet);
 }
 
 #site-search-input {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-size: 1.25rem;
-  padding-block: 0.5rem;
+  padding: var(--wa-space-s) var(--wa-space-xs);
   margin: 0;
+  --wa-form-control-value-font-size: var(--wa-font-size-m);
 
   &::part(base) {
     border: none;
@@ -81,77 +65,73 @@
   overflow-y: auto;
 }
 
-#site-search.has-results,
-#site-search.no-results {
-  #site-search-body {
-    border-top: var(--wa-panel-border-style) var(--wa-panel-border-width) var(--wa-color-neutral-border-quiet);
-  }
+.site-search-listing {
+  padding: var(--wa-space-s);
 }
 
-/* Results */
-#site-search-listbox {
-  line-height: 1.4;
+.site-search-listing ul {
   list-style: none;
-  padding: 0;
   margin: 0;
-
-  a {
-    display: flex;
-    gap: 1.5rem;
-    align-items: center;
-    text-decoration: none;
-    padding: 0.5rem 1.5rem;
-  }
-
-  a:focus-visible {
-    outline: var(--wa-focus-ring);
-    outline-offset: -2px;
-  }
-
-  @media (hover: hover) {
-    li a:hover,
-    li a:hover small {
-      background-color: var(--wa-color-neutral-fill-normal);
-    }
-  }
-
-  li[data-selected='true'] a,
-  li[data-selected='true'] a * {
-    outline: none;
-    background-color: var(--wa-color-brand-fill-loud);
-    color: var(--wa-color-brand-on-loud);
-  }
-
-  h3 {
-    font-weight: var(--wa-font-weight-semibold);
-    margin: 0;
-  }
-
-  small {
-    display: block;
-    color: var(--wa-color-text-quiet);
-  }
+  padding: 0;
 }
 
-#site-search.has-results #site-search-results {
+/* Hide the results wrapper too, not just its inner UL — otherwise the
+   wrapper's padding shows through when there are no results. */
+.site-search-listing:has(#site-search-listbox),
+#site-search-empty {
+  display: none;
+}
+
+#site-search.has-results #site-search-default,
+#site-search.no-results #site-search-default {
+  display: none;
+}
+
+#site-search.has-results .site-search-listing:has(#site-search-listbox) {
   display: block;
 }
 
-/* Search results */
-.site-search-result {
-  padding: 0;
+#site-search.has-results #site-search-listbox {
+  display: flex;
+}
+
+#site-search.no-results #site-search-empty {
+  display: block;
+}
+
+.site-search-section-label {
+  padding-inline: var(--wa-space-s);
+  padding-block: var(--wa-space-xs);
   margin: 0;
+}
+
+/* Result row — layout (cluster/gap) comes from utility classes on the anchor.
+   The row carries the background so recent rows can seat a button inside it. */
+.site-search-result {
+  --row-bg-neutral: var(--wa-color-neutral-fill-quiet);
+  --row-bg-brand: var(--wa-color-brand-fill-quiet);
+
+  display: flex;
+  align-items: center;
+  border-radius: var(--wa-border-radius-m);
+  transition: background-color var(--wa-transition-normal) var(--wa-transition-easing);
+
+  > a {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-decoration: none;
+    padding: var(--wa-space-xs) var(--wa-space-s);
+    color: inherit;
+  }
 
   .site-search-result-icon {
-    flex: 0 0 auto;
-    display: flex;
-    width: 1.75rem;
-    justify-content: center;
+    color: var(--wa-color-on-quiet);
+    transition: color var(--wa-transition-normal) var(--wa-transition-easing);
+  }
 
-    wa-icon {
-      font-size: var(--wa-font-size-xl);
-      color: var(--wa-color-neutral-fill-loud);
-    }
+  .site-search-result-details {
+    min-width: 0;
+    flex: 1 1 auto;
   }
 
   .site-search-result-title,
@@ -163,73 +143,142 @@
     text-overflow: ellipsis;
   }
 
-  .site-search-result-details {
-    max-width: calc(100% - 4rem);
+  .site-search-result-url {
+    color: var(--wa-color-on-quiet);
+    transition: color var(--wa-transition-normal) var(--wa-transition-easing);
+  }
+}
+
+.wa-dark .site-search-result {
+  --row-bg-neutral: var(--wa-color-neutral-fill-normal);
+  --row-bg-brand: var(--wa-color-brand-fill-normal);
+}
+
+/* Source order is load-bearing: equal specificity, and removeRecentSearch leaves
+   a row both selected and focused, so focus must come last. */
+@media (hover: hover) {
+  .site-search-result:hover {
+    background-color: var(--row-bg-neutral);
+  }
+}
+
+.site-search-result[data-selected='true'] {
+  background-color: var(--row-bg-brand);
+}
+
+/* Neutral so a tabbed row never reads as the arrow-selected one. Ungated by the
+   hover query — keyboards get attached to touch devices. */
+.site-search-result:focus-within {
+  background-color: var(--row-bg-neutral);
+}
+
+/* Duplicated only because :hover must stay behind the media query */
+@media (hover: hover) {
+  .site-search-result:hover {
+    .site-search-result-icon,
+    .site-search-result-url {
+      color: var(--wa-color-brand-fill-loud);
+    }
+
+    .site-search-result-icon {
+      opacity: 1;
+    }
+
+    .site-search-recent-remove {
+      opacity: 1;
+    }
+  }
+}
+
+.site-search-result[data-selected='true'],
+.site-search-result:focus-within {
+  .site-search-result-icon,
+  .site-search-result-url {
+    color: var(--wa-color-brand-fill-loud);
   }
 
-  .site-search-result-title {
-    font-size: var(--wa-font-size-l);
+  .site-search-result-icon {
+    opacity: 1;
+  }
+
+  .site-search-recent-remove {
+    opacity: 1;
+  }
+}
+
+/* native.css rings every anchor, but the anchor stops short of the remove button.
+   Safe to kill only because the rule below rings the row instead. */
+.site-search-result > a:focus-visible {
+  outline: none;
+}
+
+/* Anchor-scoped, so a focused remove button shows only its own ring. */
+.site-search-result:has(> a:focus-visible) {
+  outline: var(--wa-focus-ring);
+  outline-offset: -2px;
+}
+
+.site-search-recent-remove {
+  --remove-color: var(--wa-color-on-quiet);
+  /* wa-button rings icon buttons 2px outside, so a full-height control leaves the
+     ring nowhere to go. 2em fits ring and all, and tracks the font-size above. */
+  --wa-form-control-height: 2em;
+
+  flex: 0 0 auto;
+  /* Same inset as the anchor's trailing padding */
+  margin-inline-end: var(--wa-space-s);
+  font-size: var(--wa-font-size-s);
+  opacity: 0;
+  transition: opacity var(--wa-transition-normal) var(--wa-transition-easing);
+
+  /* `plain` paints a fill on hover and active; stating it transparent here covers
+     every state at once. */
+  &::part(base) {
+    background-color: transparent;
+    color: var(--remove-color);
+    transition: color var(--wa-transition-normal) var(--wa-transition-easing);
+  }
+
+  /* :focus-within, not :focus-visible — wa-button delegates focus into its shadow
+     root, so the host never reliably matches :focus-visible itself. */
+  &:focus-within,
+  &:active {
+    --remove-color: var(--wa-color-danger-on-quiet);
+  }
+}
+
+@media (hover: hover) {
+  .site-search-recent-remove:hover {
+    --remove-color: var(--wa-color-danger-on-quiet);
+  }
+}
+
+/* No hover on touch, and this is the only pointer affordance for removing */
+@media not (hover: hover) {
+  .site-search-recent-remove {
+    opacity: 1;
+  }
+}
+
+#site-search-empty {
+  padding: var(--wa-space-xl) var(--wa-space-s);
+  color: var(--wa-color-on-quiet);
+  font-size: var(--wa-font-size-s);
+
+  p > span {
     font-weight: var(--wa-font-weight-semibold);
-    color: var(--wa-color-brand-on-normal);
-  }
-
-  .site-search-result-description {
-    font-size: 0.875rem;
     color: var(--wa-color-text-normal);
   }
-
-  .site-search-result-url {
-    font-size: 0.875rem;
-    color: var(--wa-color-text-quiet);
-  }
 }
 
-/* Empty state */
-#site-search-empty {
-  display: none;
-  text-align: center;
-  font-size: var(--wa-font-size-s);
-  color: var(--wa-color-text-quiet);
-  padding: var(--wa-space-3xl) var(--wa-space-2xl);
-
-  wa-icon {
-    display: block;
-    width: 2rem;
-    height: 2rem;
-    font-size: 1.5rem;
-    margin-inline: auto;
-    margin-block-end: 0.5rem;
-  }
+.site-search-empty-icon {
+  --primary-color: var(--wa-color-text-normal);
 }
 
-#site-search.no-results #site-search-empty {
-  display: block;
-}
-
-/* Footer */
 #site-search footer {
-  flex-direction: row;
-  justify-content: center;
-  color: var(--wa-color-text-quiet);
-  border-top: var(--wa-panel-border-style) var(--wa-panel-border-width) var(--wa-color-neutral-border-quiet);
+  border-block-start: var(--wa-panel-border-style) var(--wa-panel-border-width) var(--wa-color-neutral-border-quiet);
   border-bottom-left-radius: var(--wa-border-radius-l);
   border-bottom-right-radius: var(--wa-border-radius-l);
   padding: var(--wa-space-m);
-
-  kbd {
-    display: inline-flex;
-    height: 1.35rem;
-    justify-content: center;
-    align-items: center;
-    font-weight: var(--wa-font-weight-bold);
-
-    &:last-of-type {
-      margin-inline-end: 0.25rem;
-    }
-
-    > svg {
-      width: 1em;
-      height: 1em;
-    }
-  }
+  font-size: var(--wa-font-size-s);
 }

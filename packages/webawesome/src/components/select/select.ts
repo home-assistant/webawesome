@@ -61,7 +61,8 @@ import styles from './select.styles.js';
  * @event wa-invalid - Emitted when the form control has been checked for validity and its constraints aren't satisfied.
  *
  * @csspart form-control - The form control that wraps the label, input, and hint.
- * @csspart form-control-label - The label's wrapper.
+ * @csspart form-control-label - The label.
+ * @csspart label - Deprecated. Use the `form-control-label` part instead.
  * @csspart form-control-input - The select's wrapper.
  * @csspart hint - The hint's wrapper.
  * @csspart combobox - The container the wraps the start, end, value, clear icon, and expand button.
@@ -77,8 +78,8 @@ import styles from './select.styles.js';
  * @csspart clear-button - The clear button.
  * @csspart expand-icon - The container that wraps the expand icon.
  *
- * @cssproperty [--show-duration=100ms] - The duration of the show animation.
- * @cssproperty [--hide-duration=100ms] - The duration of the hide animation.
+ * @cssproperty [--show-duration=var(--wa-transition-fast)] - The duration of the show animation.
+ * @cssproperty [--hide-duration=var(--wa-transition-fast)] - The duration of the hide animation.
  * @cssproperty [--tag-max-size=10ch] - When using `multiple`, the max size of tags before their content is truncated.
  *
  * @cssstate blank - The select is empty.
@@ -606,6 +607,7 @@ export default class WaSelect extends WebAwesomeFormAssociatedElement {
   /* @internal - used by options to update labels */
   public handleDefaultSlotChange() {
     if (this.slotChangePending) return;
+
     this.slotChangePending = true;
     queueMicrotask(() => {
       this.slotChangePending = false;
@@ -616,6 +618,13 @@ export default class WaSelect extends WebAwesomeFormAssociatedElement {
   private processSlotChange() {
     if (!customElements.get('wa-option')) {
       customElements.whenDefined('wa-option').then(() => this.handleDefaultSlotChange());
+    }
+
+    if (this.didSSR && !this.hasUpdated) {
+      this.updateComplete.then(() => {
+        this.handleDefaultSlotChange();
+      });
+      return;
     }
 
     // Invalidate the options cache since slots have changed
@@ -707,6 +716,10 @@ export default class WaSelect extends WebAwesomeFormAssociatedElement {
       option.current = true;
       option.tabIndex = 0;
       option.focus({ preventScroll: true });
+
+      if (this.open && !this.listbox.hidden) {
+        scrollIntoView(option, this.listbox, 'vertical', 'auto');
+      }
     }
   }
 
@@ -747,6 +760,18 @@ export default class WaSelect extends WebAwesomeFormAssociatedElement {
   // current value, and the display value. The option component uses it internally to update labels as they change.
   public selectionChanged() {
     const options = this.getAllOptions();
+
+    // if (options.some((option) => {
+    //   option.didSSR && !option.hasUpdated
+    // })) {
+    //   Promise.allSettled(options.map((opt) => {
+    //     return opt.updateComplete
+    //   })).then(() => {
+    //     this.processSlotChange()
+    //   })
+
+    //   return
+    // }
 
     // Update selected options cache
     const newSelectedOptions = options.filter(el => {
@@ -839,6 +864,8 @@ export default class WaSelect extends WebAwesomeFormAssociatedElement {
               remove-button:tag__remove-button,
               remove-button__base:tag__remove-button__base
             "
+            ?pill=${this.pill}
+            size=${this.size}
             >+${this.selectedOptions.length - index}</wa-tag
           >
         `;
@@ -968,8 +995,8 @@ export default class WaSelect extends WebAwesomeFormAssociatedElement {
   }
 
   render() {
-    const hasLabelSlot = this.hasUpdated ? this.hasSlotController.test('label') : this.withLabel;
-    const hasHintSlot = this.hasUpdated ? this.hasSlotController.test('hint') : this.withHint;
+    const hasLabelSlot = this.hasSlotController.test('label', 'withLabel');
+    const hasHintSlot = this.hasSlotController.test('hint', 'withHint');
     const hasLabel = this.label ? true : !!hasLabelSlot;
     const hasHint = this.hint ? true : !!hasHintSlot;
     const hasClearIcon =

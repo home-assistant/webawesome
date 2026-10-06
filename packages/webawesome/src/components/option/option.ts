@@ -1,5 +1,5 @@
 import type { PropertyValues } from 'lit';
-import { html } from 'lit';
+import { html, nothing } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import getText from '../../internal/get-text.js';
 import WebAwesomeElement from '../../internal/webawesome-element.js';
@@ -30,6 +30,8 @@ import styles from './option.styles.js';
  * @cssstate selected - The option is selected and has aria-selected="true"
  * @cssstate disabled - Applied when the option is disabled
  * @cssstate hover - Like `:hover` but works while dragging in Safari
+ *
+ * @cssproperty --current-text-color - The text color of the current (highlighted) option, paired with `--wa-form-control-activated-color`.
  */
 @customElement('wa-option')
 export default class WaOption extends WebAwesomeElement {
@@ -113,26 +115,16 @@ export default class WaOption extends WebAwesomeElement {
     // Mark the default label as needing recalculation
     this.isDefaultLabelDirty = true;
 
-    if (this.isInitialized) {
-      // When the label changes, tell the parent <wa-select> to update. The parent's handleDefaultSlotChange already
-      // calls selectionChanged() internally, so we don't need to call it separately here.
-      customElements.whenDefined('wa-select').then(() => {
-        const controller = this.closest('wa-select');
-        if (controller) {
-          controller.handleDefaultSlotChange();
-        }
-      });
-
-      // When the label changes, tell the parent <wa-combobox> to update
-      customElements.whenDefined('wa-combobox').then(() => {
-        // We cast to <wa-select> because it shares the same API as combobox
-        const controller = this.closest<WaSelect>('wa-combobox');
-        if (controller) {
-          controller.handleDefaultSlotChange();
-        }
-      });
-    } else {
+    if (!this.isInitialized) {
       this.isInitialized = true;
+      return;
+    }
+
+    // Waiting for an unused controller leaves callbacks retaining detached options indefinitely.
+    // Combobox shares the same controller API as select.
+    const controller = this.closest<WaSelect>('wa-select, wa-combobox');
+    if (controller) {
+      customElements.whenDefined(controller.localName).then(() => controller.handleDefaultSlotChange?.());
     }
   }
 
@@ -148,7 +140,17 @@ export default class WaOption extends WebAwesomeElement {
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has('defaultSelected')) {
-      // We cast to <wa-select> because it shares the same API as combobox
+      if ((this.didSSR && this.hasUpdated) || !this.didSSR) {
+        this.syncDefaultSelected();
+      }
+    }
+    super.willUpdate(changedProperties);
+  }
+
+  syncDefaultSelected() {
+    // We cast to <wa-select> because it shares the same API as combobox
+    if ('closest' in this) {
+      // SSR guard.
       if (!this.closest<WaSelect>('wa-combobox, wa-select')?.hasInteracted) {
         // Only sync if defaultSelected is becoming true
         // This prevents overwriting `selected` when it was set directly by frameworks like Vue
@@ -159,12 +161,9 @@ export default class WaOption extends WebAwesomeElement {
         }
       }
     }
-    super.willUpdate(changedProperties);
   }
 
   updated(changedProperties: PropertyValues<this>) {
-    super.updated(changedProperties);
-
     if (changedProperties.has('disabled')) {
       this.setAttribute('aria-disabled', this.disabled ? 'true' : 'false');
       this.customStates.set('disabled', this.disabled);
@@ -188,10 +187,19 @@ export default class WaOption extends WebAwesomeElement {
     if (changedProperties.has('current')) {
       this.customStates.set('current', this.current);
     }
+
+    super.updated(changedProperties);
   }
 
-  protected firstUpdated(changedProperties: PropertyValues<this>) {
+  protected async firstUpdated(changedProperties: PropertyValues<this>) {
     super.firstUpdated(changedProperties);
+
+    if (this.didSSR && !this.hasUpdated) {
+      await this.updateComplete;
+      this.syncDefaultSelected();
+    } else {
+      this.syncDefaultSelected();
+    }
 
     // If the `selected` property was set directly (e.g., by Vue's :selected binding),
     // notify the parent select to update its selection. This is needed because
@@ -199,7 +207,10 @@ export default class WaOption extends WebAwesomeElement {
     // when using `:selected="true"` syntax.
     if (this.selected && !this.defaultSelected) {
       const parent = this.closest<WaSelect>('wa-select, wa-combobox');
+
       if (parent && !parent.hasInteracted) {
+        await customElements.whenDefined(parent?.localName);
+        await parent.updateComplete;
         parent.selectionChanged?.();
       }
     }
@@ -220,8 +231,17 @@ export default class WaOption extends WebAwesomeElement {
   }
 
   render() {
+    let selected = this.selected;
+
+    if (this.didSSR && !this.hasUpdated) {
+      this.updateComplete.then(() => {
+        this.requestUpdate();
+      });
+      return nothing;
+    }
+
     return html`
-      ${this.selected
+      ${selected
         ? html`<wa-icon
             part="checked-icon"
             class="check"

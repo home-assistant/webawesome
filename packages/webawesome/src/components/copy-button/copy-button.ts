@@ -1,11 +1,11 @@
-import { html } from 'lit';
+import { html, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { WaCopyEvent } from '../../events/copy.js';
 import { WaErrorEvent } from '../../events/error.js';
 import { animateWithClass } from '../../internal/animate.js';
+import { announce } from '../../internal/live-announcer.js';
 import { uniqueId } from '../../internal/math.js';
-import { HasSlotController } from '../../internal/slot.js';
 import { watch } from '../../internal/watch.js';
 import WebAwesomeElement from '../../internal/webawesome-element.js';
 import hostStyles from '../../styles/component/host.styles.js';
@@ -51,7 +51,6 @@ const ASSIGNED_ID_PROP = '__waCopyButtonAssignedId';
 export default class WaCopyButton extends WebAwesomeElement {
   static css = [hostStyles, visuallyHidden, styles];
 
-  private readonly hasSlotController = new HasSlotController(this, '[default]');
   private readonly localize = new LocalizeController(this);
 
   @query('slot[name="copy-icon"]') copyIcon: HTMLSlotElement;
@@ -63,7 +62,6 @@ export default class WaCopyButton extends WebAwesomeElement {
   @state() isCopying = false;
   @state() status: 'rest' | 'success' | 'error' = 'rest';
   @state() hasCustomTrigger = false;
-  @state() liveAnnouncement = '';
 
   private customTriggerEl: HTMLElement | null = null;
   private lightTooltip: WaTooltip | null = null;
@@ -122,8 +120,15 @@ export default class WaCopyButton extends WebAwesomeElement {
    */
   @property({ reflect: true }) tooltip: 'full' | 'copy' | 'none' = 'full';
 
-  firstUpdated() {
-    this.handleDefaultSlotChange();
+  firstUpdated(changedProperties: PropertyValues<typeof this>) {
+    super.firstUpdated(changedProperties);
+    if (this.didSSR) {
+      this.updateComplete.then(() => {
+        this.handleDefaultSlotChange();
+      });
+    } else {
+      this.handleDefaultSlotChange();
+    }
   }
 
   disconnectedCallback() {
@@ -137,11 +142,10 @@ export default class WaCopyButton extends WebAwesomeElement {
     this.customStates.set('error', this.status === 'error');
     this.syncTooltipText();
 
-    // Announce success/error to screen readers via live region
+    // Announce success/error to screen readers via a light-DOM live region. A live region inside the shadow root isn't
+    // reliably announced (notably JAWS + Firefox ignores it), so we use the shared announcer instead.
     if (this.status === 'success' || this.status === 'error') {
-      this.liveAnnouncement = this.currentLabel;
-    } else {
-      this.liveAnnouncement = '';
+      announce(this.currentLabel, 'polite');
     }
   }
 
@@ -372,9 +376,13 @@ export default class WaCopyButton extends WebAwesomeElement {
   }
 
   render() {
-    const hasCustomTrigger = this.hasSlotController.test('[default]');
-    const showTooltip = !hasCustomTrigger && this.tooltip !== 'none';
+    const hasCustomTrigger = this.hasCustomTrigger;
+    let showTooltip = !hasCustomTrigger && this.tooltip !== 'none';
     const triggerValue = this.tooltip === 'copy' ? 'manual' : 'hover focus';
+
+    if (this.didSSR && !this.hasUpdated) {
+      showTooltip = false;
+    }
 
     return html`
       <div class="copy-button__trigger" @click=${this.handleCopy}>
@@ -386,7 +394,7 @@ export default class WaCopyButton extends WebAwesomeElement {
           id="copy-button"
           aria-label=${this.currentLabel}
           ?disabled=${this.disabled}
-          ?hidden=${hasCustomTrigger}
+          ?hidden=${this.hasCustomTrigger}
         >
           <slot part="copy-icon" name="copy-icon">
             <wa-icon library="system" name="copy" variant="regular"></wa-icon>
@@ -417,7 +425,6 @@ export default class WaCopyButton extends WebAwesomeElement {
             `
           : ''}
         <slot name="${INTERNAL_TOOLTIP_SLOT}"></slot>
-        <div class="wa-visually-hidden" role="status" aria-live="polite">${this.liveAnnouncement}</div>
       </div>
     `;
   }

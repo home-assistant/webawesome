@@ -1,4 +1,4 @@
-import { html } from 'lit';
+import { html, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { WaAfterHideEvent } from '../../events/after-hide.js';
@@ -15,6 +15,29 @@ import WaPopup from '../popup/popup.js';
 import styles from './tooltip.styles.js';
 
 /**
+ * Checks containment in the composed tree, including nodes assigned through one or more slots.
+ */
+function containsComposedNode(ancestor: Node, node: Node | null) {
+  while (node) {
+    if (node === ancestor) {
+      return true;
+    }
+
+    if (node instanceof Element && node.assignedSlot) {
+      node = node.assignedSlot;
+    } else if (node.parentNode) {
+      node = node.parentNode;
+    } else if (node instanceof ShadowRoot) {
+      node = node.host;
+    } else {
+      node = null;
+    }
+  }
+
+  return false;
+}
+
+/**
  * @summary Tooltips display brief contextual information when the user hovers, focuses, or taps a target element.
  * @documentation https://webawesome.com/docs/components/tooltip
  * @status stable
@@ -29,7 +52,8 @@ import styles from './tooltip.styles.js';
  * @event wa-hide - Emitted when the tooltip begins to hide.
  * @event wa-after-hide - Emitted after the tooltip has hidden and all animations are complete.
  *
- * @csspart base - The component's base wrapper, an `<wa-popup>` element.
+ * @csspart base - Deprecated. Use the `tooltip` part instead.
+ * @csspart tooltip - The component's outer wrapper.
  * @csspart base__popup - The popup's exported `popup` part. Use this to target the tooltip's popup container.
  * @csspart base__arrow - The popup's exported `arrow` part. Use this to target the tooltip's arrow.
  * @csspart body - The tooltip's body where its content is rendered.
@@ -42,6 +66,10 @@ export default class WaTooltip extends WebAwesomeElement {
   static dependencies = { 'wa-popup': WaPopup };
 
   private hoverTimeout: number;
+
+  // Set when the anchor is pressed to light dismiss the tooltip. While true, hover and focus won't reopen it. Cleared
+  // when the pointer fully leaves the anchor and tooltip or when the anchor blurs.
+  private dismissedByPress = false;
 
   @query('slot:not([name])') defaultSlot: HTMLSlotElement;
   @query('.body') body: HTMLElement;
@@ -102,41 +130,49 @@ export default class WaTooltip extends WebAwesomeElement {
   connectedCallback() {
     super.connectedCallback();
 
-    // Recreate event controller if it was aborted
-    if (this.eventController.signal.aborted) {
-      this.eventController = new AbortController();
-    }
+    const isClient = typeof document !== 'undefined';
 
-    this.addEventListener('mouseout', this.handleMouseOut);
+    if (isClient) {
+      // Recreate event controller if it was aborted
+      if (this.eventController.signal.aborted) {
+        this.eventController = new AbortController();
+      }
 
-    // TODO: This is a hack that I need to revisit [Konnor]
-    if (this.open) {
-      this.open = false;
-      this.updateComplete.then(() => {
-        this.open = true;
-      });
-    }
+      this.addEventListener('mouseout', this.handleMouseOut);
 
-    // If the user doesn't give us an id, generate one.
-    if (!this.id) {
-      this.id = uniqueId('wa-tooltip-');
-    }
+      // The events that re-arm the tooltip after a light dismiss can be missed while disconnected
+      this.dismissedByPress = false;
 
-    // Re-establish anchor connection after being disconnected
-    if (this.for && this.anchor) {
-      this.anchor = null; // force reattach
-      this.handleForChange();
-    } else if (this.for) {
-      // Initial connection
-      this.handleForChange();
+      // TODO: This is a hack that I need to revisit [Konnor]
+      if (this.open) {
+        this.open = false;
+        this.updateComplete.then(() => {
+          this.open = true;
+        });
+      }
+
+      // If the user doesn't give us an id, generate one.
+      if (!this.id) {
+        this.id = uniqueId('wa-tooltip-');
+      }
+
+      // Re-establish anchor connection after being disconnected
+      if (this.for && this.anchor) {
+        this.anchor = null; // force reattach
+        this.handleForChange();
+      } else if (this.for) {
+        // Initial connection
+        this.handleForChange();
+      }
     }
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
 
-    // Cleanup this event in case the tooltip is removed while open
+    // Cleanup these events in case the tooltip is removed while open
     document.removeEventListener('keydown', this.handleDocumentKeyDown);
+    document.removeEventListener('click', this.handleDocumentClick);
     unregisterDismissible(this);
     this.eventController.abort();
 
@@ -145,7 +181,7 @@ export default class WaTooltip extends WebAwesomeElement {
     }
   }
 
-  firstUpdated() {
+  firstUpdated(changedProperties: PropertyValues<typeof this>) {
     this.body.hidden = !this.open;
 
     // If the tooltip is visible on init, update its position
@@ -153,9 +189,14 @@ export default class WaTooltip extends WebAwesomeElement {
       this.popup.active = true;
       this.popup.reposition();
     }
+    super.firstUpdated(changedProperties);
   }
 
   private handleBlur = () => {
+    // Moving focus away re-arms the tooltip after a light dismiss. On touch devices no mouseout fires, so this is the
+    // reset path.
+    this.dismissedByPress = false;
+
     if (this.hasTrigger('focus')) {
       this.hide();
     }
@@ -168,16 +209,48 @@ export default class WaTooltip extends WebAwesomeElement {
       } else {
         this.show();
       }
+      return;
     }
+
+    if (this.hasTrigger('manual')) {
+      return;
+    }
+
+    // Light dismiss for activations that don't fire mousedown, like Enter or Space on a button.
+    this.lightDismiss();
   };
 
   private handleFocus = () => {
+    if (this.dismissedByPress) {
+      return;
+    }
+
     if (this.hasTrigger('focus')) {
       this.show();
     }
   };
 
+  private handleMouseDown = () => {
+    if (this.hasTrigger('click') || this.hasTrigger('manual')) {
+      return;
+    }
+
+    // Light dismiss before focus fires so the tooltip doesn't flash visible during the click.
+    this.lightDismiss();
+  };
+
+  /** Hides the tooltip, or cancels a pending show, and keeps it hidden until re-armed. */
+  private lightDismiss() {
+    clearTimeout(this.hoverTimeout);
+    this.dismissedByPress = true;
+    this.hide();
+  }
+
   private handleDocumentKeyDown = (event: KeyboardEvent) => {
+    if (this.hasTrigger('manual')) {
+      return;
+    }
+
     // Pressing escape when a tooltip is open should dismiss it
     if (event.key === 'Escape' && this.open && isTopDismissible(this)) {
       event.preventDefault();
@@ -186,7 +259,25 @@ export default class WaTooltip extends WebAwesomeElement {
     }
   };
 
+  private handleDocumentClick = (event: MouseEvent) => {
+    if (this.hasTrigger('manual')) {
+      return;
+    }
+
+    // Clicks on the anchor are handled by the anchor's own listeners
+    if (this.anchor && event.composedPath().includes(this.anchor)) {
+      return;
+    }
+
+    // Light dismiss. Clicking anywhere else, including the tooltip itself, hides it.
+    this.hide();
+  };
+
   private handleMouseOver = () => {
+    if (this.dismissedByPress) {
+      return;
+    }
+
     if (this.hasTrigger('hover')) {
       clearTimeout(this.hoverTimeout);
 
@@ -194,22 +285,29 @@ export default class WaTooltip extends WebAwesomeElement {
     }
   };
 
-  private handleMouseOut = () => {
+  private handleMouseOut = (event: MouseEvent) => {
+    const relatedTarget = event.relatedTarget as Node | null;
+
+    // Use the event's relatedTarget (the element the pointer moved to) to determine whether the pointer is still within
+    // the anchor or the tooltip itself. Relying on `:hover` matching here is unreliable in Chrome when the pointer
+    // moves onto a slotted child element of the tooltip, since the host's `:hover` state can briefly report false
+    // during that transition.
+    const movedIntoAnchor = Boolean(relatedTarget && this.anchor && containsComposedNode(this.anchor, relatedTarget));
+    const movedIntoTooltip = Boolean(relatedTarget && containsComposedNode(this, relatedTarget));
+
+    if (movedIntoAnchor || movedIntoTooltip) {
+      return;
+    }
+
+    // The pointer has fully left, so hovering can show the tooltip again after a light dismiss
+    this.dismissedByPress = false;
+
     if (this.hasTrigger('hover')) {
-      const anchorHovered = Boolean(this.anchor?.matches(':hover'));
-      const tooltipHovered = this.matches(':hover');
-
-      if (anchorHovered || tooltipHovered) {
-        return;
-      }
-
       clearTimeout(this.hoverTimeout);
 
-      if (!(anchorHovered || tooltipHovered)) {
-        this.hoverTimeout = window.setTimeout(() => {
-          this.hide();
-        }, this.hideDelay);
-      }
+      this.hoverTimeout = window.setTimeout(() => {
+        this.hide();
+      }, this.hideDelay);
     }
   };
 
@@ -261,8 +359,13 @@ export default class WaTooltip extends WebAwesomeElement {
         return;
       }
 
-      document.addEventListener('keydown', this.handleDocumentKeyDown, { signal: this.eventController.signal });
-      registerDismissible(this);
+      // Manual tooltips never light dismiss, so they skip the document listeners and the dismissible
+      // stack. Joining the stack without handling Escape would block dismissibles beneath them.
+      if (!this.hasTrigger('manual')) {
+        document.addEventListener('keydown', this.handleDocumentKeyDown, { signal: this.eventController.signal });
+        document.addEventListener('click', this.handleDocumentClick, { signal: this.eventController.signal });
+        registerDismissible(this);
+      }
 
       this.body.hidden = false;
       this.popup.active = true;
@@ -275,11 +378,12 @@ export default class WaTooltip extends WebAwesomeElement {
       const waHideEvent = new WaHideEvent();
       this.dispatchEvent(waHideEvent);
       if (waHideEvent.defaultPrevented) {
-        this.open = false;
+        this.open = true;
         return;
       }
 
       document.removeEventListener('keydown', this.handleDocumentKeyDown);
+      document.removeEventListener('click', this.handleDocumentClick);
       unregisterDismissible(this);
 
       await animateWithClass(this.popup.popup, 'hide-with-scale');
@@ -292,18 +396,21 @@ export default class WaTooltip extends WebAwesomeElement {
 
   @watch('for')
   handleForChange() {
-    const rootNode = this.getRootNode() as Document | ShadowRoot | null;
+    const rootNode = this.getRootNode?.() as Document | ShadowRoot | null;
 
     if (!rootNode) {
       return;
     }
 
-    const newAnchor = this.for ? rootNode.getElementById(this.for) : null;
+    const newAnchor = this.for ? rootNode.getElementById?.(this.for) : null;
     const oldAnchor = this.anchor;
 
     if (newAnchor === oldAnchor) {
       return;
     }
+
+    // A new anchor must not inherit press dismissal state from the old one
+    this.dismissedByPress = false;
 
     const { signal } = this.eventController;
 
@@ -320,6 +427,7 @@ export default class WaTooltip extends WebAwesomeElement {
       newAnchor.addEventListener('blur', this.handleBlur, { capture: true, signal });
       newAnchor.addEventListener('focus', this.handleFocus, { capture: true, signal });
       newAnchor.addEventListener('click', this.handleClick, { signal });
+      newAnchor.addEventListener('mousedown', this.handleMouseDown, { signal });
       newAnchor.addEventListener('mouseover', this.handleMouseOver, { signal });
       newAnchor.addEventListener('mouseout', this.handleMouseOut, { signal });
     }
@@ -329,6 +437,7 @@ export default class WaTooltip extends WebAwesomeElement {
       oldAnchor.removeEventListener('blur', this.handleBlur, { capture: true });
       oldAnchor.removeEventListener('focus', this.handleFocus, { capture: true });
       oldAnchor.removeEventListener('click', this.handleClick);
+      oldAnchor.removeEventListener('mousedown', this.handleMouseDown);
       oldAnchor.removeEventListener('mouseover', this.handleMouseOver);
       oldAnchor.removeEventListener('mouseout', this.handleMouseOut);
     }
@@ -374,7 +483,7 @@ export default class WaTooltip extends WebAwesomeElement {
   render() {
     return html`
       <wa-popup
-        part="base"
+        part="base tooltip"
         exportparts="
           popup:base__popup,
           arrow:base__arrow

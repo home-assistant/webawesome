@@ -32,7 +32,8 @@ import styles from './checkbox.styles.js';
  * @event input - Emitted when the checkbox receives input.
  * @event wa-invalid - Emitted when the form control has been checked for validity and its constraints aren't satisfied.
  *
- * @csspart base - The component's label .
+ * @csspart base - Deprecated. Use the `checkbox` part instead.
+ * @csspart checkbox - The component's outer wrapper.
  * @csspart control - The square container that wraps the checkbox's checked state.
  * @csspart checked-icon - The checked icon, a `<wa-icon>` element.
  * @csspart indeterminate-icon - The indeterminate icon, a `<wa-icon>` element.
@@ -74,9 +75,6 @@ export default class WaCheckbox extends WebAwesomeFormAssociatedElement {
   @query('input[type="checkbox"]') input: HTMLInputElement;
 
   @property() title = ''; // make reactive to pass through
-
-  /** The name of the checkbox, submitted as a name/value pair with form data. */
-  @property({ reflect: true }) name = null;
 
   private _value: string | null = this.getAttribute('value') ?? null;
 
@@ -145,6 +143,12 @@ export default class WaCheckbox extends WebAwesomeFormAssociatedElement {
 
   connectedCallback() {
     super.connectedCallback();
+    if (this.didSSR && !this.hasUpdated) {
+      this.updateComplete.then(() => {
+        this.handleDefaultCheckedChange();
+      });
+      return;
+    }
     this.handleDefaultCheckedChange();
   }
 
@@ -154,6 +158,13 @@ export default class WaCheckbox extends WebAwesomeFormAssociatedElement {
   }
 
   handleValueOrCheckedChange() {
+    if (this.didSSR && !this.hasUpdated) {
+      this.updateComplete.then(() => {
+        this.handleValueOrCheckedChange();
+      });
+      return;
+    }
+
     // These @watch() commands seem to override the base element checks for changes, so we need to setValue for the form and and updateValidity()
     this.setValue(this.checked ? this.value : null, this._value);
     this.updateValidity();
@@ -179,7 +190,12 @@ export default class WaCheckbox extends WebAwesomeFormAssociatedElement {
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     super.willUpdate(changedProperties);
 
-    if (changedProperties.has('value') || changedProperties.has('checked') || changedProperties.has('defaultChecked')) {
+    if (
+      changedProperties.has('value') ||
+      changedProperties.has('checked') ||
+      changedProperties.has('defaultChecked') ||
+      changedProperties.has('disabled')
+    ) {
       this.handleValueOrCheckedChange();
     }
   }
@@ -212,26 +228,33 @@ export default class WaCheckbox extends WebAwesomeFormAssociatedElement {
     const isIndeterminate = !this.checked && this.indeterminate;
 
     const iconName = isIndeterminate ? 'indeterminate' : 'check';
-    const iconState = isIndeterminate ? 'indeterminate' : 'check';
+    const iconState = isIndeterminate ? 'indeterminate' : 'checked';
+
+    // We need to use the attribute for SSR, because for some reason Lit SSR always sets `.checked=${live(this.checked)}` as "true"
+    // TODO: Tell Konnor to submit a bug report + repo about this.
+    const checkedAttribute = this.didSSR && !this.hasUpdated ? this.checked : this.defaultChecked;
+    const checkedProperty = this.didSSR && !this.hasUpdated ? null : live(this.checked);
 
     //
     // NOTE: we use a `<div>` around the label slot because of this Chrome bug.
     // Fixed in Chrome 119
     // https://bugs.chromium.org/p/chromium/issues/detail?id=1413733
     //
+
     return html`
-      <label part="base">
+      <label part="base checkbox">
         <span part="control">
           <input
             class="input"
             type="checkbox"
             title=${this.title /* An empty title prevents browser validation tooltips from appearing on hover */}
             name=${ifDefined(this.name)}
-            value=${ifDefined(this._value)}
+            value=${ifDefined(this.value)}
             .indeterminate=${live(this.indeterminate)}
-            .checked=${live(this.checked)}
-            .disabled=${this.disabled}
-            .required=${this.required}
+            .checked=${ifDefined(checkedProperty)}
+            ?checked=${checkedAttribute}
+            ?disabled=${this.disabled}
+            ?required=${this.required}
             aria-checked=${this.indeterminate ? 'mixed' : this.checked ? 'true' : 'false'}
             aria-describedby="hint"
             @click=${this.handleClick}

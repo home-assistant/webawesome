@@ -1,6 +1,6 @@
 @import url('../layers.css');
 @import url('../color/palettes/bright.css'); /* To use this palette, add class="wa-palette-bright" to the <html> element */
-@import url('https://fonts.bunny.net/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Quicksand:wght@300..700&display=swap');
+@import url('https://fonts.bunny.net/css?family=crimson-pro:200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i|quicksand:300,400,500,600,700&display=swap');
 
 @layer wa-theme {
   .wa-theme-awesome,
@@ -465,6 +465,7 @@
         wa-textarea,
         wa-select,
         wa-combobox,
+        wa-tag-input,
         input:not(
             [type='button'],
             [type='checkbox'],
@@ -480,11 +481,12 @@
         textarea,
         select
       ):not(:focus, [appearance='filled']) {
-      &:where(:not(wa-input, wa-textarea, wa-select, wa-combobox)),
+      &:where(:not(wa-input, wa-textarea, wa-select, wa-combobox, wa-tag-input)),
       &:where(wa-input)::part(base),
       &:where(wa-textarea)::part(base),
       &:where(wa-select)::part(combobox),
-      &:where(wa-combobox)::part(combobox) {
+      &:where(wa-combobox)::part(combobox),
+      &:where(wa-tag-input)::part(tag-input) {
         box-shadow: inset var(--wa-shadow-offset-x-s)
           max(var(--wa-shadow-offset-y-s), var(--wa-form-control-border-width)) 0 0 var(--wa-color-shadow);
       }
@@ -575,6 +577,10 @@
     wa-tree-item::part(checkbox),
     input[type='checkbox'] {
       --checked-icon-color: var(--wa-color-surface-default);
+    }
+
+    wa-option {
+      --current-text-color: var(--wa-color-surface-default);
     }
 
     wa-switch {

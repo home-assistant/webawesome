@@ -112,6 +112,23 @@ describe('<wa-select>', () => {
           expect(tag.hasAttribute('pill')).to.be.true;
         });
 
+        it('should pass pill and size to the overflow tag', async () => {
+          const el = await fixture<WaSelect>(html`
+            <wa-select multiple pill size="l" max-options-visible="1">
+              <wa-option value="option-1" selected>Option 1</wa-option>
+              <wa-option value="option-2" selected>Option 2</wa-option>
+              <wa-option value="option-3" selected>Option 3</wa-option>
+            </wa-select>
+          `);
+          const tags = el.shadowRoot!.querySelectorAll('[part~="tag"]');
+          const overflowTag = tags[tags.length - 1];
+
+          expect(tags.length).to.equal(2);
+          expect(overflowTag.textContent?.trim()).to.equal('+2');
+          expect(overflowTag.hasAttribute('pill')).to.be.true;
+          expect(overflowTag.getAttribute('size')).to.equal('l');
+        });
+
         it('should update the display label when an option changes', async () => {
           const el = await fixture<WaSelect>(html`
             <wa-select value="option-1">
@@ -359,6 +376,7 @@ describe('<wa-select>', () => {
           el.addEventListener('change', handler);
           el.addEventListener('input', handler);
 
+          await aTimeout(1);
           await clickOnElement(el);
           await aTimeout(500);
           await el.updateComplete;
@@ -620,6 +638,59 @@ describe('<wa-select>', () => {
           await sendKeys({ up: 'Control' });
           await el.updateComplete;
           expect(displayInput.getAttribute('aria-expanded')).to.equal('false');
+        });
+
+        it('should scroll a type-to-select match into view', async () => {
+          const el = await fixture<WaSelect>(html`
+            <wa-select>
+              <wa-option value="argentina">Argentina</wa-option>
+              <wa-option value="belgium">Belgium</wa-option>
+              <wa-option value="canada">Canada</wa-option>
+              <wa-option value="denmark">Denmark</wa-option>
+              <wa-option value="egypt">Egypt</wa-option>
+              <wa-option value="france">France</wa-option>
+              <wa-option value="ghana">Ghana</wa-option>
+            </wa-select>
+          `);
+          const listbox = el.shadowRoot!.querySelector<HTMLElement>('.listbox')!;
+          const ghana = el.querySelector<WaOption>('wa-option[value="ghana"]')!;
+          const scrollTo = sinon.stub(listbox, 'scrollTo');
+
+          sinon.stub(listbox, 'getBoundingClientRect').returns({
+            top: 0,
+            left: 0,
+            right: 200,
+            bottom: 100,
+            width: 200,
+            height: 100,
+            x: 0,
+            y: 0,
+            toJSON: () => {},
+          });
+          sinon.stub(ghana, 'getBoundingClientRect').returns({
+            top: 140,
+            left: 0,
+            right: 200,
+            bottom: 160,
+            width: 200,
+            height: 20,
+            x: 0,
+            y: 140,
+            toJSON: () => {},
+          });
+          Object.defineProperty(listbox, 'offsetHeight', { configurable: true, value: 100 });
+          Object.defineProperty(ghana, 'clientHeight', { configurable: true, value: 20 });
+
+          el.focus();
+          await sendKeys({ press: 'g' });
+          await sendKeys({ press: 'h' });
+          await sendKeys({ press: 'a' });
+          await sendKeys({ press: 'n' });
+          await sendKeys({ press: 'a' });
+          await el.updateComplete;
+
+          expect(el.currentOption).to.equal(ghana);
+          expect(scrollTo).to.have.been.calledWith({ top: 60, behavior: 'auto' });
         });
       });
 
@@ -1059,7 +1130,7 @@ describe('<wa-select>', () => {
             <wa-option value="1">Option 1</wa-option>
             <wa-option value="2">Option 2</wa-option>
           </wa-select>
-          <wa-tooltip id="test-tooltip" for="test-select" trigger="manual">Tooltip content</wa-tooltip>
+          <wa-tooltip id="test-tooltip" for="test-select" trigger="click">Tooltip content</wa-tooltip>
         </div>
       `);
 
@@ -1072,14 +1143,14 @@ describe('<wa-select>', () => {
       await waitUntil(() => select.open);
       await aTimeout(200);
 
-      // Open tooltip programmatically (manual trigger won't steal focus)
+      // Open the tooltip programmatically so focus stays on the select
       tooltip.open = true;
       await waitUntil(() => tooltip.open);
       await aTimeout(200);
 
       await sendKeys({ press: 'Escape' });
-      await aTimeout(200);
 
+      await waitUntil(() => tooltip.open === false);
       expect(tooltip.open).to.be.false;
       expect(select.open).to.be.true;
     });
@@ -1153,6 +1224,52 @@ describe('<wa-select>', () => {
 
       expect(el.value).to.equal('option-2');
       expect(el.displayInput.value).to.equal('Option 2');
+    });
+  });
+
+  describe('trailing affordance alignment', () => {
+    // <wa-select> and <wa-input> are the canonical trailing axis the other form controls line
+    // up against (date/time/combobox guards compare against <wa-select>). This anchors the two
+    // references together so the axis itself can't silently drift.
+    function iconCenterFromRight(host: HTMLElement, partSelector: string): number {
+      const part = host.shadowRoot!.querySelector(partSelector);
+      let icon: Element | null | undefined = part?.querySelector('wa-icon');
+      if (!icon && part instanceof HTMLSlotElement) icon = part.assignedElements()[0];
+      const target = icon ?? part!;
+      const iconRect = target.getBoundingClientRect();
+      const hostRect = host.getBoundingClientRect();
+      return hostRect.right - (iconRect.left + iconRect.right) / 2;
+    }
+
+    it('shares the trailing axis with <wa-input>', async () => {
+      const fixture = fixtures[0];
+      const container = await fixture(html`
+        <div>
+          <wa-select with-clear value="a"><wa-option value="a">A</wa-option></wa-select>
+          <wa-input with-clear value="text"><wa-icon slot="end" name="circle-info"></wa-icon></wa-input>
+        </div>
+      `);
+      const select = container.querySelector<HTMLElement & { updateComplete: Promise<unknown> }>('wa-select')!;
+      const input = container.querySelector<HTMLElement & { updateComplete: Promise<unknown> }>('wa-input')!;
+      await Promise.all([customElements.whenDefined('wa-select'), customElements.whenDefined('wa-input')]);
+      await select.updateComplete;
+      await input.updateComplete;
+      await aTimeout(50);
+
+      // input's trailing-most icon is the end-slot decoration; select's is the chevron.
+      const trailingDelta = Math.abs(
+        iconCenterFromRight(input, '[part~="end"]') - iconCenterFromRight(select, '[part~="expand-icon"]'),
+      );
+      const clearDelta = Math.abs(
+        iconCenterFromRight(input, '[part~="clear-button"]') - iconCenterFromRight(select, '[part~="clear-button"]'),
+      );
+
+      // The clear buttons share a right edge, but <wa-input>'s is a square focus-ring target
+      // (aspect-ratio: 1 against its 1.5em height), so it pads the icon by 2px on each side and
+      // its center sits 2px inboard of the select's. That offset is intentional; anything beyond
+      // it means the shared trailing edge itself has drifted.
+      expect(trailingDelta, 'input end-slot icon is off the select trailing axis').to.be.lessThan(2);
+      expect(clearDelta, 'input clear button is off the select clear axis').to.be.at.most(2);
     });
   });
 });

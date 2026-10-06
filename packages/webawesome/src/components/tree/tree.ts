@@ -1,4 +1,4 @@
-import { html, isServer } from 'lit';
+import { html } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
 import { WaSelectionChangeEvent } from '../../events/selection-change.js';
 import { clamp } from '../../internal/math.js';
@@ -63,7 +63,8 @@ function syncCheckboxes(changedTreeItem: WaTreeItem, initialSync = false) {
  * @slot expand-icon - The icon to show when the tree item is expanded. Works best with `<wa-icon>`.
  * @slot collapse-icon - The icon to show when the tree item is collapsed. Works best with `<wa-icon>`.
  *
- * @csspart base - The component's base wrapper.
+ * @csspart base - Deprecated. Use the `tree` part instead.
+ * @csspart tree - The component's outer wrapper.
  *
  * @cssproperty [--indent-size=var(--wa-space-m)] - The size of the indentation for nested items.
  * @cssproperty [--indent-guide-color=var(--wa-color-surface-border)] - The color of the indentation line.
@@ -83,8 +84,9 @@ export default class WaTree extends WebAwesomeElement {
   /**
    * The selection behavior of the tree. Single selection allows only one node to be selected at a time. Multiple
    * displays checkboxes and allows more than one node to be selected. Leaf allows only leaf nodes to be selected.
+   * Leaf-multiple allows multiple leaf nodes to be selected while parent nodes only expand and collapse.
    */
-  @property() selection: 'single' | 'multiple' | 'leaf' = 'single';
+  @property() selection: 'single' | 'multiple' | 'leaf' | 'leaf-multiple' = 'single';
 
   //
   // A collection of all the items in the tree, in the order they appear. The collection is live, meaning it is
@@ -95,9 +97,12 @@ export default class WaTree extends WebAwesomeElement {
   private clickTarget: WaTreeItem | null = null;
   private readonly localize = new LocalizeController(this);
 
+  @property({ attribute: 'tabindex', reflect: true, type: Number }) tabIndex = 0;
+  @property({ reflect: true }) role = 'tree';
+
   constructor() {
     super();
-    if (!isServer) {
+    if ('addEventListener' in this) {
       this.addEventListener('focusin', this.handleFocusIn);
       this.addEventListener('focusout', this.handleFocusOut);
       this.addEventListener('wa-lazy-change', this.handleSlotChange);
@@ -108,15 +113,15 @@ export default class WaTree extends WebAwesomeElement {
     super.connectedCallback();
 
     // SSR guard: MutationObserver is not available during server-side rendering
-    if (!isServer) {
-      this.setAttribute('role', 'tree');
-      this.setAttribute('tabindex', '0');
-
+    if (typeof MutationObserver !== 'undefined') {
       await this.updateComplete;
 
       this.mutationObserver = new MutationObserver(this.handleTreeChanged);
       this.mutationObserver.observe(this, { childList: true, subtree: true });
     }
+
+    this.setAttribute('tabindex', '0');
+    this.setAttribute('role', 'tree');
   }
 
   disconnectedCallback() {
@@ -146,7 +151,7 @@ export default class WaTree extends WebAwesomeElement {
   // Initializes new items by setting the `selectable` property and the expanded/collapsed icons if any
   private initTreeItem = (item: WaTreeItem) => {
     item.updateComplete.then(() => {
-      item.selectable = this.selection === 'multiple';
+      item.selectable = this.selection === 'multiple' || (this.selection === 'leaf-multiple' && item.isLeaf);
 
       ['expand', 'collapse']
         .filter(status => !!this.querySelector(`[slot="${status}-icon"]`))
@@ -191,6 +196,12 @@ export default class WaTree extends WebAwesomeElement {
         selectedItem.expanded = true;
       }
       syncCheckboxes(selectedItem);
+    } else if (this.selection === 'leaf-multiple') {
+      if (selectedItem.isLeaf && !selectedItem.preventSelection) {
+        selectedItem.selected = !selectedItem.selected;
+      } else {
+        selectedItem.expanded = !selectedItem.expanded;
+      }
     } else if ((this.selection === 'single' || selectedItem.isLeaf) && !selectedItem.preventSelection) {
       const items = this.getAllTreeItems();
       for (const item of items) {
@@ -238,9 +249,17 @@ export default class WaTree extends WebAwesomeElement {
     const isRtl = this.localize.dir() === 'rtl';
 
     if (items.length > 0) {
-      event.preventDefault();
       const activeItemIndex = items.findIndex(item => item.matches(':focus'));
       const activeItem: WaTreeItem | undefined = items[activeItemIndex];
+
+      // Enter and Space select the focused node, so there's nothing to do when no tree item has focus. This happens
+      // when focus is inside a tree item instead of on it, e.g. on a link or a button slotted into the item. Let the
+      // event through so the focused element can handle it.
+      if (!activeItem && (event.key === 'Enter' || event.key === ' ')) {
+        return;
+      }
+
+      event.preventDefault();
 
       const focusItemAt = (index: number) => {
         const item = items[clamp(index, 0, items.length - 1)];
@@ -286,7 +305,7 @@ export default class WaTree extends WebAwesomeElement {
         focusItemAt(items.length - 1);
       } else if (event.key === 'Enter' || event.key === ' ') {
         // Selects the focused node.
-        if (!activeItem.disabled) {
+        if (activeItem && !activeItem.disabled) {
           this.selectItem(activeItem);
         }
       }
@@ -358,13 +377,14 @@ export default class WaTree extends WebAwesomeElement {
   @watch('selection')
   async handleSelectionChange() {
     const isSelectionMultiple = this.selection === 'multiple';
+    const isSelectionLeafMultiple = this.selection === 'leaf-multiple';
     const items = this.getAllTreeItems();
 
-    this.setAttribute('aria-multiselectable', isSelectionMultiple ? 'true' : 'false');
+    this.setAttribute('aria-multiselectable', isSelectionMultiple || isSelectionLeafMultiple ? 'true' : 'false');
 
     for (const item of items) {
       item.updateComplete.then(() => {
-        item.selectable = isSelectionMultiple;
+        item.selectable = isSelectionMultiple || (isSelectionLeafMultiple && item.isLeaf);
       });
     }
 
@@ -409,7 +429,7 @@ export default class WaTree extends WebAwesomeElement {
   render() {
     return html`
       <div
-        part="base"
+        part="base tree"
         class="tree"
         @click=${this.handleClick}
         @keydown=${this.handleKeyDown}

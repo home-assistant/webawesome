@@ -6,6 +6,7 @@
 @import 'cera-typeface.css';
 @import 'theme-icons.css';
 @import 'utils.css';
+@import 'anatomy.css';
 
 :root {
   /* layout-based example style aspects */
@@ -75,95 +76,199 @@ wa-button.delete {
   }
 }
 
-/* Main content */
+/* Main padding tiers as chrome unfolds: drawer → sidebar in column →
+ * sidebar plus outline aside. Inline padding follows --content-padding-inline
+ * so main and the chrome bands tighten together on mobile. */
 wa-page > main {
-  max-inline-size: var(--content-width-s);
-  padding: var(--wa-space-xl);
+  padding-block: var(--wa-space-xl);
+  padding-inline: var(--content-padding-inline);
   margin-inline: auto;
 }
 
-/* increase max-inline-size for index pages */
-wa-page > main:has(.modern-card-list) {
-  max-inline-size: var(--content-width-m);
+wa-page:not([view='mobile']) > main {
+  padding-inline: var(--wa-space-4xl);
 }
 
-/* Prose rhythm — replaces the wa-native layer's uniform `--wa-content-spacing`
-   between block siblings with hierarchical, asymmetric margins. Unlayered so
-   it wins via cascade order; re-check if this file ever joins a layer. */
+@media screen and (min-width: 75rem) {
+  wa-page > main {
+    padding-block: var(--wa-space-3xl);
+  }
+}
+
+/* Reserve aside-column space on prose-no-outline pages so main keeps the
+ * same width as outline-bearing prose pages. Gated to viewports where the
+ * aside actually shows (outline.css hides it below 1200px). Pages can
+ * override --aside-width locally to span full width. */
+@media screen and (min-width: 75rem) {
+  .has-prose-content:not(.has-outline) wa-page {
+    --aside-width: calc(240px + 2 * var(--content-padding-inline));
+  }
+}
+
+:is(.layout-docs, .layout-component, .layout-page, .layout-page-outline, .layout-pattern) .page-footer {
+  padding: var(--wa-space-xl);
+  border-block-start: var(--wa-border-style) var(--wa-panel-border-width) var(--wa-color-surface-border);
+  margin-block-start: var(--wa-space-2xl);
+}
+
+/* Docs footer stays compact at every viewport. Site/app surfaces use the
+ * larger --wa-font-size-s default from site.css and only drop to xs in
+ * wa-page's mobile view (see site.css's @layer wa-site). */
+:is(.layout-docs, .layout-component, .layout-page, .layout-page-outline, .layout-pattern) .page-footer-content {
+  font-size: var(--wa-font-size-xs);
+}
+
+/* Docs content renders on wa-prose's own rhythm — the docs are a live demo of it;
+   deliberate exceptions live in #content below. The line-length override must land on
+   .wa-prose itself, since an element's own declaration beats an inherited one. */
+#content > .wa-prose {
+  margin-inline: auto;
+  --wa-prose-line-length: round(up, 110ch, 1px);
+}
+
 #content {
-  /* Headings hug what they introduce: generous above, tight below. */
-
-  * + h2 {
-    margin-block-start: var(--wa-space-2xl);
+  /* Extend wa-prose's major-blocks treatment to `.code-example` live demos
+     (wa-prose covers `<details>` natively). */
+  .code-example:has(+ *) {
+    margin-block-end: var(--wa-prose-rhythm-xl);
   }
-  h2:has(+ *) {
+  :not(h1, h2, h3, h4, h5, h6) + .code-example {
+    margin-block-start: var(--wa-prose-rhythm-xl);
+  }
+  :is(h1, h2, h3, h4, h5, h6) + .code-example {
+    margin-block-start: var(--wa-prose-rhythm-m);
+  }
+
+  /* The anchor-heading transformer injects a <wa-tooltip> between stacked headings,
+     breaking the sibling adjacency prose.css tightens on — bridge it through the tooltip. */
+  .anchor-heading:has(+ wa-tooltip + .anchor-heading) {
+    margin-block-end: 0;
+  }
+  .anchor-heading + wa-tooltip + .anchor-heading {
+    margin-block-start: var(--wa-prose-rhythm-m);
+  }
+
+  /* Treat the page title + its date line as one header unit. */
+  h1.title:has(+ p > wa-format-date) {
     margin-block-end: var(--wa-space-s);
   }
 
-  * + h3 {
-    margin-block-start: var(--wa-space-xl);
+  /* Treat h2 + `<small><time>` as one header unit (changelog releases), bridging the injected tooltip. */
+  h2:has(+ wa-tooltip + p > small > time) {
+    margin-block-end: var(--wa-space-3xs);
   }
-  h3:has(+ *) {
-    margin-block-end: var(--wa-space-s);
-  }
-
-  :is(h4, h5, h6):has(+ *) {
-    margin-block-end: var(--wa-space-xs);
-  }
-
-  /* Prevents stacked top + bottom margins on back-to-back headings. */
-  h2 + :is(h3, h4),
-  h3 + h4 {
-    margin-block-start: var(--wa-space-m);
-  }
-
-  :is(ul, ol) > li:has(+ li) {
-    margin-block-end: var(--wa-space-2xs);
-  }
-
-  /* Slight optical tracking; only the larger sizes need it. */
-  :is(h1, h2) {
-    letter-spacing: -0.01em;
-  }
-
-  /* `<hr>` marks a topic shift. Its own margin defines the gap; the heading
-     or paragraph that follows shouldn't double-stack on top. */
-  hr {
-    margin-block: var(--wa-space-3xl);
-  }
-  hr + :is(h1, h2, h3, h4, h5, h6) {
+  h2 + wa-tooltip + p:has(> small > time) {
     margin-block-start: 0;
+    margin-block-end: var(--wa-space-l);
+    color: var(--wa-color-text-quiet);
   }
 
-  /* Major non-text blocks get more breathing room than running prose, but
-     headings still hug — so the top-margin rule only applies after non-heading
-     siblings. */
-  :is(pre, figure, table, blockquote, wa-callout, .code-example):has(+ *) {
-    margin-block-end: var(--wa-space-xl);
+  /* Subordinate prerelease version headings inside `<details data-no-outline>`
+     so they read as historical, not peer to current releases. */
+  details[data-no-outline] h2 {
+    font-size: var(--wa-font-size-l);
+    margin-block-start: var(--wa-space-l);
   }
 
-  :not(h1, h2, h3, h4, h5, h6) + :is(pre, figure, table, blockquote, wa-callout, .code-example) {
-    margin-block-start: var(--wa-space-xl);
-  }
-
-  /* Visually heavy blocks still deserve a minimum breath after a heading. */
-  :is(h1, h2, h3, h4, h5, h6) + :is(pre, figure, table, blockquote, wa-callout, .code-example) {
-    margin-block-start: var(--wa-space-m);
+  /* Improve repetitive code elements in tables by making them less distracting and not wrapping too soon */
+  table code,
+  .dependency-list code {
+    background-color: transparent;
+    white-space: nowrap;
   }
 }
 
-h1.title {
-  wa-badge {
-    vertical-align: middle;
-    font-size: 1.5rem;
+/* Policy pages are dense numbered clauses; give the items room to separate and let
+   the markers recede so the clause text leads. */
+.page-policy #content {
+  :is(ol, ul) li:not(:last-child) {
+    margin-block-end: var(--wa-space-m);
   }
+
+  ol li {
+    padding-inline-start: var(--wa-space-xs);
+  }
+
+  ol li::marker {
+    color: var(--wa-color-text-quiet);
+  }
+}
+
+.component-ref {
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    color: var(--wa-color-text-link);
+    text-decoration: var(--wa-link-decoration-hover);
+  }
+}
+
+/* GitHub refs (`[issue:N]`/`[pr:N]`/`[discuss:N]`) rewritten by replaceTextPlugin. */
+.ref-link {
+  margin-inline-start: var(--wa-space-3xs);
+  text-decoration: none;
+  color: inherit;
+
+  & wa-badge {
+    font-size: var(--wa-font-size-2xs);
+  }
+}
+
+/* Changelog category groups. Icon bullets injected by _transformers/changelog-list-icons.js. */
+.changelog-group {
+  & + .changelog-group {
+    margin-block-start: var(--wa-space-l);
+    padding-block-start: var(--wa-space-l);
+    border-block-start: var(--wa-border-width-s) solid var(--wa-color-surface-border);
+  }
+
+  & > ul {
+    list-style: none;
+    padding-inline-start: 0;
+
+    /* Resets native.css `li { margin-inline-start: 1.125em }` so the icon
+       column sits flush with the prose left edge. */
+    & > li {
+      position: relative;
+      margin-inline-start: 0;
+      padding-inline-start: calc(1.25em + var(--wa-space-s));
+
+      & + li {
+        margin-block-start: var(--wa-space-s);
+      }
+
+      /* Bigger gap after entries with a nested list. */
+      &:has(:is(ul, ol)) + li {
+        margin-block-start: var(--wa-space-m);
+      }
+
+      & :is(ul, ol) {
+        margin-block: var(--wa-space-xs);
+
+        /* `::marker` ignores opacity; bake de-emphasis into the color. */
+        & > li::marker {
+          color: color-mix(in oklch, var(--wa-color-text-quiet) 60%, transparent);
+        }
+      }
+
+      & > .changelog-bullet {
+        position: absolute;
+        inset-inline-start: 0;
+        inset-block-start: 0.4em;
+        color: var(--wa-color-text-quiet);
+        font-size: var(--wa-font-size-s);
+      }
+    }
+  }
+}
+
+h1.title wa-badge {
+  vertical-align: middle;
+  font-size: 1.5rem;
 }
 
 .component-info {
-  display: flex;
-  gap: var(--wa-space-xs);
-  flex-wrap: wrap;
-  align-items: center;
   margin-block-end: var(--wa-content-spacing);
 
   code {
@@ -175,9 +280,20 @@ h1.title {
     color: var(--wa-color-text-quiet);
     font-size: var(--wa-font-size-l);
   }
+
+  /* The category and since badges are wrapped in an <a> for the link, but the
+     wrapper was introducing a baseline offset against the bare wa-badge
+     siblings. Using display: contents removes the anchor's box from layout so
+     the badge becomes a direct flex child of the cluster (same as the others). */
+  .component-category-link,
+  .component-since-link {
+    display: contents;
+    text-decoration: none;
+  }
 }
 
-.component-summary {
+.component-summary,
+.support-intro {
   font-weight: var(--wa-font-weight-semibold);
   font-size: var(--wa-font-size-l);
 }
@@ -207,12 +323,6 @@ figure.signpost {
     line-height: var(--wa-line-height-condensed);
     text-align: center;
   }
-}
-
-/* Search list pages */
-wa-page > main:has(> .search-list) {
-  max-inline-size: var(--content-width-l);
-  margin-inline: auto;
 }
 
 .search-list {
@@ -267,11 +377,6 @@ wa-page > main:has(> .search-list) {
         min-block-size: calc(6rem + var(--spacing));
         padding: var(--spacing);
       }
-
-      &:hover {
-        border-color: var(--wa-color-brand-border-loud);
-        box-shadow: 0 0 0 0.0625rem var(--wa-color-brand-border-loud);
-      }
     }
   }
 }
@@ -316,22 +421,10 @@ wa-card .page-name {
       block-size: 100%;
     }
 
-    wa-card:defined {
-      transition:
-        border-color var(--wa-transition-normal),
-        box-shadow var(--wa-transition-normal);
-    }
-
     wa-card::part(body) {
       display: flex;
       flex-direction: column;
       block-size: 100%;
-    }
-
-    a:hover wa-card,
-    a:focus-visible wa-card {
-      border-color: var(--wa-color-brand-border-loud);
-      box-shadow: 0 0 0 0.0625rem var(--wa-color-brand-border-loud);
     }
 
     .page-name {
@@ -348,6 +441,10 @@ wa-card .page-name {
       font-size: var(--wa-font-size-s);
       line-height: var(--wa-line-height-normal);
       margin: 0 0 var(--wa-space-m);
+
+      &:last-child {
+        margin-block-end: 0;
+      }
     }
 
     .component-list-badges {
@@ -357,12 +454,9 @@ wa-card .page-name {
   }
 }
 
-/* Component list: centered search input (anchors a hero-style browse page) */
 .component-list {
   .search-list-input {
     display: block;
-    max-inline-size: 32rem;
-    margin-inline: auto;
     margin-block: var(--wa-space-m) var(--wa-space-s);
   }
 
@@ -382,7 +476,6 @@ wa-card .page-name {
 .modern-card-list {
   .search-list-input {
     display: block;
-    max-inline-size: 32rem;
     margin-block: 0 var(--wa-space-2xl);
   }
 
@@ -393,6 +486,230 @@ wa-card .page-name {
     &:first-of-type {
       margin-block-start: 0;
     }
+  }
+}
+
+/* #region Support
+   /support drives the shared .search-list filter, but its filterable units are prose
+   FAQ entries instead of card-grid links. */
+.support-view {
+  .search-list-input {
+    display: block;
+    margin-block-end: var(--wa-space-s);
+  }
+
+  /* The filter's label is visually hidden, so its empty box shouldn't reserve space. */
+  .search-list-input::part(form-control-label) {
+    margin-block-end: 0;
+  }
+}
+
+/* Guarded on :not([hidden]) because the display declaration would otherwise beat [hidden]. */
+.search-list-empty:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--wa-space-s);
+  color: var(--wa-color-text-quiet);
+
+  p {
+    margin: 0;
+  }
+}
+
+/* A lowered surface, not a dashed outline: a zero-result view is a real state of the page,
+   not a slot waiting for content. Shared with the components index's own #components-empty
+   so both empty states read the same. */
+.empty-state-panel {
+  /* One step off whatever the page's own ground is. Lowered is right on the docs surface,
+     which sits on the default surface; the pro components index rebinds it (site.css) because
+     that page's ground is already lowered. */
+  --panel-surface: var(--wa-color-surface-lowered);
+
+  align-self: stretch;
+  background-color: var(--panel-surface);
+  border-radius: var(--wa-border-radius-l);
+  padding: var(--wa-space-3xl);
+}
+
+/* Four empty-state actions wrap 3+1 in a cluster. As a grid they can only square up or stack:
+   with wa-gap-s (12px), two columns need 2 × 14rem + 12px = 460px and three would need
+   3 × 14rem + 24px = 696px, so capping the grid below that makes a three-across row
+   unreachable at any viewport. Above 460px it settles at 2×2, below it collapses to one
+   column. The cap and fill are custom because the utility set ships no width classes;
+   --min-column-size is wa-grid's own customization API. */
+.search-list-empty-actions {
+  --min-column-size: 14rem;
+  inline-size: 100%;
+  max-inline-size: 30rem;
+}
+
+.search-list-empty-actions wa-button {
+  inline-size: 100%;
+}
+
+/* Timings come from the theme's transition tokens — no bespoke values. The script
+   flags every results region, so this is the default for all search lists. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-search-list-updated] {
+    animation: search-list-updated var(--wa-transition-normal) var(--wa-transition-easing);
+  }
+
+  @keyframes search-list-updated {
+    from {
+      opacity: 0.75;
+    }
+  }
+}
+
+.support-popular {
+  margin-block-end: var(--wa-space-4xl);
+}
+
+/* Upgraded by search-list.js into a toggle button (role="button" + aria-pressed), so the
+   pressed chip is the one whose term is currently filtering the page. */
+.support-popular-link {
+  border: var(--wa-border-style) var(--wa-border-width-s) var(--wa-color-surface-border);
+  padding: var(--wa-space-3xs) var(--wa-space-s);
+  text-decoration: none;
+  transition:
+    border-color var(--wa-transition-normal),
+    background-color var(--wa-transition-normal),
+    color var(--wa-transition-normal);
+
+  &:is(:hover, :focus-visible) {
+    border-color: var(--wa-color-brand-border-loud);
+  }
+
+  &[aria-pressed='true'] {
+    background-color: var(--wa-color-brand-fill-quiet);
+    border-color: var(--wa-color-brand-border-quiet);
+    color: var(--wa-color-brand-on-quiet);
+  }
+}
+
+/* Weight is deliberately NOT set — it inherits the same heading weight as every other heading
+   on the site, because a heading at body weight reads as broken rather than as quiet. The
+   demotion is size plus color, never weight. */
+.support-section-heading {
+  color: var(--wa-color-text-quiet);
+  /* One step below the questions, which sit at wa-heading-l (20px). If the questions ever
+     move, move this with them: the pair is what carries the hierarchy. */
+  font-size: var(--wa-font-size-m);
+  line-height: var(--wa-line-height-condensed);
+  /* wa-prose tightens h1/h2 tracking for display sizes; at this step it should read normally. */
+  letter-spacing: normal;
+  margin-block: var(--wa-space-4xl) var(--wa-space-xs);
+}
+
+/* The chip row above already separates the first section. */
+.support-results > .support-section-heading:first-child {
+  margin-block-start: 0;
+}
+
+.support-section-blurb {
+  border-block-end: var(--wa-border-style) var(--wa-panel-border-width) var(--wa-color-surface-border);
+  padding-block-end: var(--wa-space-s);
+}
+
+/* Progressive enhancement: FAQ entries coming back fade in instead of snapping. Engines
+   without @starting-style ignore this and keep the instant toggle. Gated on
+   data-search-list-filtered so the first paint of the page isn't animated. Scoped to the
+   FAQ entries rather than shared with the card grids: card links already run their own
+   transition for .hover-grow / .hover-emphasize-border, and a second `transition` shorthand
+   on the same element would clobber it. */
+@media (prefers-reduced-motion: no-preference) {
+  .support-results[data-search-list-filtered] .faq-entry {
+    opacity: 1;
+    /* Only opacity transitions. `display` is deliberately out of the list: with allow-discrete
+       the exit held the entry at full opacity for the whole duration and then popped it away,
+       because nothing animates opacity on the way out. Filtering out is instant now; coming
+       back still fades, since @starting-style applies whenever an entry is rendered again. */
+    transition: opacity var(--wa-transition-normal) var(--wa-transition-easing);
+
+    @starting-style {
+      opacity: 0;
+    }
+  }
+}
+
+/* Channel rows: heading + blurb flanked by their actions, no card chrome and no rules —
+   spacing alone separates them. The stack's gap has to beat the flank's own wa-gap-xl (32px)
+   between a row's content and its actions, or a stacked row at narrow widths reads as two
+   rows; wa-gap-3xl clears that and preserves the separation the hairlines used to carry. */
+.support-channel {
+  /* One shared basis for every row's actions, whether that's a lone button or a stack of
+     two. wa-flank derives its wrap point from this, so all three rows break to a single
+     column at the same width instead of each one breaking at its own button's width. */
+  --flank-size: 15rem;
+
+  /* Only a floor — the blurb still takes every pixel the actions don't need. */
+  --content-percentage: 40%;
+}
+
+/* #endregion */
+
+/* Framework docs: hub logo cards + framework-page info cards */
+
+/* Hub: brand logos sit in a fixed-height row, always in full brand color */
+.framework-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  block-size: 2.5rem;
+}
+
+.framework-icon {
+  max-inline-size: 6.5rem;
+  font-size: var(--wa-font-size-3xl);
+  color: var(--color, currentColor);
+}
+
+.search-list-grid .framework-card::part(body) {
+  align-items: center;
+  justify-content: center;
+  gap: var(--wa-space-s);
+  min-block-size: 8rem;
+  text-align: center;
+}
+
+.framework-card .page-name {
+  margin: 0;
+}
+
+/* Framework pages: "next steps" / "see it in action" info cards */
+.info-cards .search-list-grid wa-card {
+  --spacing: var(--wa-space-l);
+}
+
+.info-cards .search-list-grid .page-name {
+  font-size: var(--wa-font-size-m);
+}
+
+.info-card-icon {
+  margin-block-end: var(--wa-space-s);
+  font-size: var(--wa-font-size-xl);
+}
+
+/* Duotone icon whose secondary (brand) color fades in on hover.
+   Companion to .duotone-illustrated (utils.css); ported so it also works on the free docs build. */
+.duotone-hover-context wa-icon.duotone-illustrated.duotone-secondary-reveal {
+  --secondary-opacity: 0;
+  transition: --secondary-opacity var(--wa-transition-slow) ease-in-out;
+}
+
+.duotone-hover-context[data-duotone-hover-trigger]:is(:hover, :focus-visible)
+  wa-icon.duotone-illustrated.duotone-secondary-reveal,
+.duotone-hover-context:has(:is(a, button):is(:hover, :focus-visible))
+  wa-icon.duotone-illustrated.duotone-secondary-reveal {
+  --secondary-opacity: 1;
+}
+
+/* Reduced motion + touch: show the two-tone icon up front instead of on hover */
+@media (prefers-reduced-motion: reduce), (hover: none) {
+  .duotone-hover-context wa-icon.duotone-illustrated.duotone-secondary-reveal {
+    transition: none;
+    --secondary-opacity: 1;
   }
 }
 
@@ -424,59 +741,70 @@ wa-scroller:has(.component-table) {
   margin-block-end: var(--wa-space-xl);
 }
 
-.component-table {
-  font-variant-numeric: tabular-nums;
+#content {
+  .component-table {
+    font-variant-numeric: tabular-nums;
 
-  .table-name {
-    white-space: nowrap;
-  }
+    .table-name {
+      white-space: nowrap;
+    }
 
-  .table-arguments,
-  .table-description {
-    min-inline-size: var(--line-length-xs);
-  }
+    .table-arguments,
+    .table-description {
+      min-inline-size: var(--line-length-s);
 
-  .table-selector .wa-cluster {
-    flex-wrap: nowrap;
-  }
+      code {
+        white-space: normal;
+      }
+    }
 
-  .table-reflect {
-    text-align: center;
-  }
+    .table-selector {
+      white-space: nowrap;
+    }
 
-  code {
-    white-space: inherit;
-  }
-}
+    .table-selector .wa-cluster {
+      flex-wrap: nowrap;
+    }
 
-.component-help {
-  display: flex;
-  inline-size: 100%;
-  gap: var(--wa-space-m);
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: start;
-  margin-block-start: var(--wa-space-xl);
+    .table-reflect {
+      text-align: center;
+    }
 
-  strong {
-    font-size: var(--wa-font-size-s);
-    font-weight: var(--wa-font-weight-semibold);
-  }
-}
-
-/** desktop */
-@media screen and (min-width: 73.75rem) {
-  wa-page > main {
-    padding: var(--wa-space-3xl);
-  }
-}
-
-.page-wide {
-  wa-page > main {
-    max-inline-size: var(--content-width-l);
-
-    .max-line-length {
-      max-inline-size: var(--line-length-l);
+    code {
+      white-space: inherit;
+      background: transparent;
+      padding-inline: 0;
     }
   }
+
+  .component-help {
+    display: flex;
+    inline-size: 100%;
+    gap: var(--wa-space-m);
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: start;
+    margin-block-start: var(--wa-space-xl);
+
+    strong {
+      font-size: var(--wa-font-size-s);
+      font-weight: var(--wa-font-weight-semibold);
+    }
+  }
+}
+
+/* Hosted project install instructions — tighter rhythm inside tab panels */
+#content .hosted-project-instructions .instruction-group + .instruction-group,
+#content .hosted-project-instructions .free-instructions + .pro-instructions {
+  margin-block-start: var(--wa-space-xl);
+}
+
+#content .hosted-project-instructions table {
+  margin-block: 0;
+}
+
+/* Icon docs: copy-button-wrapped icon previews. The copy button hosts a quiet
+   neutral color; reset it so the slotted icons match a default wa-icon. */
+#content .icon-copy-row wa-copy-button {
+  color: inherit;
 }

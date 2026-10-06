@@ -16,6 +16,7 @@ const queryTrackDelay = 1000;
 let searchTimeout;
 let queryTrackTimeout;
 let lastTrackedQuery = '';
+let lastQuerySource = 'typed';
 let resultSelected = false;
 
 // Optional event tracking - works standalone if track.js isn't available
@@ -46,16 +47,6 @@ const iconByPrefix = [
   ['/docs/customizing', 'rocket-launch'],
   ['/docs/form-controls', 'rocket-launch'],
   ['/docs/localization', 'rocket-launch'],
-  ['/docs/components/chart', 'chart-area'],
-  ['/docs/components/bar-chart', 'chart-area'],
-  ['/docs/components/line-chart', 'chart-area'],
-  ['/docs/components/bubble-chart', 'chart-area'],
-  ['/docs/components/doughnut-chart', 'chart-area'],
-  ['/docs/components/pie-chart', 'chart-area'],
-  ['/docs/components/polar-area-chart', 'chart-area'],
-  ['/docs/components/radar-chart', 'chart-area'],
-  ['/docs/components/scatter-chart', 'chart-area'],
-  ['/docs/components/sparkline', 'chart-area'],
   ['/docs/components', 'block'],
   ['/docs/patterns', 'block-brick'],
   ['/docs/patterns/layouts', 'table-layout'],
@@ -64,8 +55,23 @@ const iconByPrefix = [
   ['/docs/ai', 'sparkles'],
   ['/docs/ai/agent-skills', 'sparkles'],
   ['/docs/ai/llms', 'sparkles'],
+  ['/support', 'life-ring'],
   ['/docs/resources', 'book-spine'],
 ].sort((a, b) => b[0].length - a[0].length);
+
+// Component category icons (mirrors _data/componentCategories.json). Component results
+// resolve their icon from this map via the page's `category` field; falls back to the
+// generic component icon if the category is missing or unrecognized.
+const iconByCategory = {
+  Actions: 'hand-pointer',
+  Forms: 'pen-field',
+  Layout: 'layer',
+  Navigation: 'compass',
+  Feedback: 'bell',
+  Media: 'photo-film',
+  'Data Viz': 'chart-line',
+  Helpers: 'wrench',
+};
 
 // We're using Turbo, so references to these elements aren't guaranteed to remain intact
 function getElements() {
@@ -73,7 +79,156 @@ function getElements() {
     dialog: document.getElementById('site-search'),
     input: document.getElementById('site-search-input'),
     results: document.getElementById('site-search-listbox'),
+    emptyQuery: document.getElementById('site-search-empty-query'),
+    defaultContainer: document.getElementById('site-search-default'),
+    recentContainer: document.getElementById('site-search-recent-list'),
+    recentListbox: document.getElementById('site-search-recent-listbox'),
+    recentDivider: document.querySelector('[data-recent-divider]'),
+    emptyState: document.getElementById('site-search-empty'),
   };
+}
+
+function announce(message) {
+  const liveRegion = document.getElementById('site-search-live-region');
+  if (liveRegion) liveRegion.textContent = message;
+}
+
+// Returns the visible options container for keyboard nav: the results listbox
+// when there's an active query, otherwise the default-state container which
+// wraps both the Suggested and Recent sublists.
+function getActiveList() {
+  const { dialog, results, defaultContainer } = getElements();
+  if (!dialog) return null;
+  return dialog.classList.contains('has-results') ? results : defaultContainer;
+}
+
+// Recent searches — persisted in localStorage, capped at 5
+const recentSearchesKey = 'wa-search-recent';
+const recentSearchesMax = 5;
+
+function loadRecentSearches() {
+  try {
+    const raw = localStorage.getItem(recentSearchesKey);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(q => typeof q === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentSearches(queries) {
+  try {
+    if (queries.length > 0) {
+      localStorage.setItem(recentSearchesKey, JSON.stringify(queries));
+    } else {
+      localStorage.removeItem(recentSearchesKey);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function saveRecentSearch(query) {
+  const trimmed = (query || '').trim();
+  if (!trimmed) return;
+  const current = loadRecentSearches();
+  saveRecentSearches([trimmed, ...current.filter(q => q !== trimmed)].slice(0, recentSearchesMax));
+}
+
+function renderRecentSearches() {
+  const { recentContainer, recentListbox, recentDivider } = getElements();
+  if (!recentContainer || !recentListbox) return;
+
+  const queries = loadRecentSearches();
+  recentListbox.innerHTML = '';
+
+  const hasRecents = queries.length > 0;
+  recentContainer.hidden = !hasRecents;
+  if (recentDivider) recentDivider.hidden = !hasRecents;
+
+  if (!hasRecents) return;
+
+  queries.forEach((query, index) => {
+    const li = document.createElement('li');
+    li.className = 'site-search-result site-search-recent';
+    li.setAttribute('role', 'option');
+    li.id = `recent-item-${index + 1}`;
+    li.dataset.recentQuery = query;
+    li.setAttribute('data-selected', 'false');
+    // Beats name-from-contents, so the row doesn't absorb the button's label
+    li.setAttribute('aria-label', query);
+
+    const a = document.createElement('a');
+    a.href = '#';
+    a.className = 'wa-cluster wa-flex-nowrap wa-gap-s';
+    a.innerHTML = `
+      <wa-icon class="site-search-result-icon de-emphasize wa-font-size-m" name="clock-rotate-left" variant="regular" aria-hidden="true"></wa-icon>
+      <div class="site-search-result-details">
+        <div class="site-search-result-title wa-font-size-s"></div>
+      </div>
+    `;
+    // textContent — never innerHTML — for the user-supplied query string
+    a.querySelector('.site-search-result-title').textContent = query;
+
+    const remove = document.createElement('wa-button');
+    remove.className = 'site-search-recent-remove';
+    remove.dataset.recentRemove = '';
+    remove.setAttribute('appearance', 'plain');
+    remove.innerHTML = `<wa-icon name="xmark" variant="regular"></wa-icon>`;
+    // setAttribute, not a template literal — the query is user-supplied
+    remove.querySelector('wa-icon').setAttribute('label', `Remove ${query} from recent searches`);
+
+    li.append(a, remove);
+    recentListbox.appendChild(li);
+  });
+}
+
+// In place, not a re-render: the neighbour inheriting focus is already upgraded
+// and can take it synchronously. A rebuilt wa-button could not.
+function removeRecentSearch(li, selectionMethod) {
+  const query = li?.dataset.recentQuery;
+  if (!query) return;
+
+  const remaining = loadRecentSearches().filter(q => q !== query);
+  const wasSelected = li.getAttribute('data-selected') === 'true';
+  const hadFocus = li.contains(document.activeElement);
+  const next = li.nextElementSibling ?? li.previousElementSibling;
+
+  if (!saveRecentSearches(remaining)) return;
+  li.remove();
+
+  const { input, recentContainer, recentDivider } = getElements();
+  if (remaining.length === 0) {
+    if (recentContainer) recentContainer.hidden = true;
+    if (recentDivider) recentDivider.hidden = true;
+  }
+
+  trackEvent('navigation:search_recent_remove', {
+    remaining: remaining.length,
+    selection_method: selectionMethod,
+  });
+
+  announce(
+    remaining.length > 0
+      ? `Removed “${query}” from recent searches.`
+      : `Removed “${query}”. No recent searches remain.`,
+  );
+
+  if (!input) return;
+
+  // Otherwise focus falls to the body, outside the dialog
+  if (hadFocus) (next?.querySelector('[data-recent-remove]') ?? input).focus();
+
+  if (!wasSelected) return;
+
+  if (next) {
+    next.setAttribute('data-selected', 'true');
+    input.setAttribute('aria-activedescendant', next.id);
+  } else {
+    input.setAttribute('aria-activedescendant', '');
+  }
 }
 
 function trackQuerySubmit(query, resultSelectedValue) {
@@ -91,6 +246,7 @@ function trackQuerySubmit(query, resultSelectedValue) {
     result_count: matches,
     has_results: matches > 0,
     result_selected: resultSelectedValue,
+    source: lastQuerySource,
   });
 }
 
@@ -118,7 +274,7 @@ document.addEventListener('click', event => {
 });
 
 function show() {
-  const { dialog, input, results } = getElements();
+  const { dialog, input, results, defaultContainer, emptyState } = getElements();
   if (!dialog || !input || !results) return;
 
   const wasAlreadyOpen = dialog.open;
@@ -126,14 +282,26 @@ function show() {
   // Remove existing listeners before adding to prevent duplicates
   input.removeEventListener('input', handleInput);
   results.removeEventListener('click', handleSelection);
+  if (defaultContainer) defaultContainer.removeEventListener('click', handleDefaultListClick);
+  if (emptyState) emptyState.removeEventListener('click', handleEmptyStateClick);
   dialog.removeEventListener('keydown', handleKeyDown);
   dialog.removeEventListener('wa-hide', handleClose);
   resultSelected = false;
   lastTrackedQuery = '';
+  lastQuerySource = 'typed';
   input.addEventListener('input', handleInput);
   results.addEventListener('click', handleSelection);
+  if (defaultContainer) defaultContainer.addEventListener('click', handleDefaultListClick);
+  if (emptyState) emptyState.addEventListener('click', handleEmptyStateClick);
   dialog.addEventListener('keydown', handleKeyDown);
   dialog.addEventListener('wa-hide', handleClose);
+
+  // Refresh the recent searches list from localStorage every time the dialog opens
+  renderRecentSearches();
+
+  // Default state: point combobox controls at the visible Suggested listbox
+  input.setAttribute('aria-controls', 'site-search-suggested-list');
+
   dialog.open = true;
   if (!wasAlreadyOpen) {
     trackEvent('navigation:search_dialog_open');
@@ -141,18 +309,21 @@ function show() {
 }
 
 function cleanup() {
-  const { dialog, input, results } = getElements();
+  const { dialog, input, results, defaultContainer, emptyState } = getElements();
   if (!dialog || !input || !results) return;
   clearTimeout(searchTimeout);
   clearTimeout(queryTrackTimeout);
   input.removeEventListener('input', handleInput);
   results.removeEventListener('click', handleSelection);
+  if (defaultContainer) defaultContainer.removeEventListener('click', handleDefaultListClick);
+  if (emptyState) emptyState.removeEventListener('click', handleEmptyStateClick);
   dialog.removeEventListener('keydown', handleKeyDown);
   dialog.removeEventListener('wa-hide', handleClose);
 
   // Reset state to prevent leakage between dialog sessions
   resultSelected = false;
   lastTrackedQuery = '';
+  lastQuerySource = 'typed';
 }
 
 async function handleClose() {
@@ -184,6 +355,7 @@ function handleInput() {
   if (!input) return;
   clearTimeout(searchTimeout);
   clearTimeout(queryTrackTimeout);
+  lastQuerySource = 'typed';
 
   const query = input.value.trim();
 
@@ -209,15 +381,30 @@ function handleInput() {
 }
 
 function handleKeyDown(event) {
-  const { input, results } = getElements();
-  if (!input || !results) return;
+  const { input } = getElements();
+  const activeList = getActiveList();
+  if (!input || !activeList) return;
+
+  // List keys belong to the input. Without this the Enter interception below
+  // swallows activation for every other focusable in the dialog.
+  if (event.target !== input) return;
+
+  // Backspace too: MacBooks have no forward-delete key. Untrimmed on purpose —
+  // whitespace still renders recents, and it's the user's to edit.
+  if (event.shiftKey && ['Delete', 'Backspace'].includes(event.key) && !input.value) {
+    const selectedRecent = activeList.querySelector('.site-search-recent[data-selected="true"]');
+    if (!selectedRecent) return;
+    event.preventDefault();
+    removeRecentSearch(selectedRecent, 'keyboard');
+    return;
+  }
 
   // Handle keyboard selections
   if (['ArrowDown', 'ArrowUp', 'Home', 'End', 'Enter'].includes(event.key)) {
     event.preventDefault();
 
-    const currentEl = results.querySelector('[data-selected="true"]');
-    const items = [...results.querySelectorAll('li')];
+    const currentEl = activeList.querySelector('[data-selected="true"]');
+    const items = [...activeList.querySelectorAll('li')];
     const index = items.indexOf(currentEl);
     let nextEl;
 
@@ -242,7 +429,11 @@ function handleKeyDown(event) {
         if (currentEl) {
           const link = currentEl.querySelector('a');
           if (link) {
-            selectResult(link, 'keyboard_enter');
+            if (activeList.id === 'site-search-listbox') {
+              selectResult(link, 'keyboard_enter');
+            } else {
+              handleDefaultSelection(link, 'keyboard_enter');
+            }
           }
         }
         break;
@@ -278,6 +469,10 @@ function selectResult(link, selectionMethod) {
   const resultUrl = link.dataset.searchResultUrl || link.getAttribute('href');
   if (!resultUrl) return;
   lastTrackedQuery = query;
+
+  // Persist the query in recent searches so it shows up in the default view next time
+  saveRecentSearch(query);
+
   trackQuerySubmit(query, true);
   trackEvent('navigation:search_result_click', {
     query,
@@ -299,6 +494,87 @@ function selectResult(link, selectionMethod) {
   } else {
     location.href = resultUrl;
   }
+}
+
+// Click handler for the default-state list. Defers to handleDefaultSelection
+// so keyboard Enter can share the same logic with a known selection_method.
+function handleDefaultListClick(event) {
+  const removeButton = event.target.closest('[data-recent-remove]');
+  if (removeButton) {
+    event.preventDefault();
+    removeRecentSearch(removeButton.closest('li'), 'mouse_click');
+    return;
+  }
+
+  // From the row, not the target — the anchor doesn't span it. Assumes one
+  // non-anchor control per row, guarded above.
+  const link = event.target.closest('li')?.querySelector('a');
+  if (!link) return;
+  event.preventDefault();
+  handleDefaultSelection(link, 'mouse_click');
+}
+
+// Shared selection path for the default state. Suggested rows close the
+// dialog and navigate; recent-search rows repopulate the input and re-run.
+async function handleDefaultSelection(link, selectionMethod) {
+  const li = link.closest('li');
+  const recentQuery = li?.dataset.recentQuery;
+
+  if (recentQuery) {
+    const { input } = getElements();
+    if (!input) return;
+    input.value = recentQuery;
+    lastQuerySource = 'recent';
+    await updateResults(recentQuery);
+    if (recentQuery !== lastTrackedQuery) {
+      trackQuerySubmit(recentQuery, false);
+      lastTrackedQuery = recentQuery;
+    }
+    return;
+  }
+
+  // Suggested row — close the dialog and navigate to the link's href.
+  // Respect target="_blank" so external links open in a new tab.
+  const url = link.getAttribute('href');
+  if (!url) return;
+
+  // Position parsed from the `suggested-item-N` id (1-based)
+  const match = li?.id?.match(/^suggested-item-(\d+)$/);
+  const suggestedIndex = match ? parseInt(match[1], 10) : null;
+  trackEvent('navigation:search_suggested_click', {
+    suggested_index: suggestedIndex,
+    suggested_url: url,
+    selection_method: selectionMethod,
+  });
+
+  const opensInNewTab = link.target === '_blank';
+  const { dialog } = getElements();
+  if (dialog) {
+    dialog.removeEventListener('wa-hide', handleClose);
+    cleanup();
+    trackEvent('navigation:search_dialog_close');
+    dialog.open = false;
+  }
+
+  if (opensInNewTab) {
+    window.open(url, '_blank', 'noopener');
+  } else if (window.Turbo) {
+    Turbo.visit(url);
+  } else {
+    location.href = url;
+  }
+}
+
+// Click handler for the no-results CTAs. Buttons opt in via `data-cta`.
+function handleEmptyStateClick(event) {
+  const button = event.target.closest('[data-cta]');
+  if (!button) return;
+  const { input } = getElements();
+  const query = (input?.value || '').trim();
+  trackEvent('navigation:search_no_results_cta_click', {
+    destination: button.dataset.cta,
+    query,
+  });
 }
 
 function handleSelection(event) {
@@ -354,7 +630,27 @@ async function updateResults(query = '') {
 
     dialog.classList.toggle('has-results', hasQuery && hasResults);
     dialog.classList.toggle('no-results', hasQuery && !hasResults);
+
+    // Point aria-controls at whichever listbox the user is navigating now,
+    // and clear any stale data-selected on the default sub-lists when returning.
+    if (hasQuery) {
+      input.setAttribute('aria-controls', 'site-search-listbox');
+    } else {
+      input.setAttribute('aria-controls', 'site-search-suggested-list');
+      const { defaultContainer } = getElements();
+      if (defaultContainer) {
+        defaultContainer.querySelectorAll('li').forEach(item => item.setAttribute('data-selected', 'false'));
+      }
+    }
     input.setAttribute('aria-activedescendant', '');
+
+    // Echo the user's query into the empty state when there are no results
+    // (safe: textContent, never innerHTML)
+    if (hasQuery && !hasResults) {
+      const { emptyQuery } = getElements();
+      if (emptyQuery) emptyQuery.textContent = trimmedQuery;
+    }
+
     results.innerHTML = '';
     matches.forEach((match, index) => {
       const page = map[match.id];
@@ -373,7 +669,9 @@ async function updateResults(query = '') {
       li.setAttribute('data-selected', index === 0 ? 'true' : 'false');
       if (page.url === '/') icon = 'home';
       else if (page.url === '/docs') icon = 'rocket-launch';
-      else {
+      else if (page.url.startsWith('/docs/components/') && iconByCategory[page.category]) {
+        icon = iconByCategory[page.category];
+      } else {
         for (const [prefix, name] of iconByPrefix) {
           if (page.url.startsWith(prefix)) {
             icon = name;
@@ -382,14 +680,13 @@ async function updateResults(query = '') {
         }
       }
       a.href = page.url;
+      a.className = 'wa-cluster wa-flex-nowrap';
       a.innerHTML = `
-        <div class="site-search-result-icon" aria-hidden="true">
-          <wa-icon name="${icon}" variant="regular"></wa-icon>
-        </div>
-        <div class="site-search-result-details">
-          <div class="site-search-result-title"></div>
-          <div class="site-search-result-description"></div>
-          <div class="site-search-result-url"></div>
+        <wa-icon class="site-search-result-icon de-emphasize wa-font-size-m" name="${icon}" variant="regular" aria-hidden="true"></wa-icon>
+        <div class="site-search-result-details wa-stack wa-gap-3xs">
+          <div class="site-search-result-title wa-heading-s"></div>
+          <div class="site-search-result-description wa-font-size-s"></div>
+          <div class="site-search-result-url wa-font-size-xs"></div>
         </div>
       `;
       a.querySelector('.site-search-result-title').textContent = displayTitle;
@@ -402,6 +699,12 @@ async function updateResults(query = '') {
       li.appendChild(a);
       results.appendChild(li);
     });
+
+    // After rendering, point aria-activedescendant at the first selected item
+    if (hasResults) {
+      const firstSelected = results.querySelector('[data-selected="true"]');
+      if (firstSelected) input.setAttribute('aria-activedescendant', firstSelected.id);
+    }
   } catch {
     // Ignore query errors as the user types
   }

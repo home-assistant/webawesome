@@ -1,0 +1,10 @@
+[
+  { "label": "Actions", "slug": "actions", "icon": "hand-pointer" },
+  { "label": "Forms", "slug": "forms", "icon": "pen-field" },
+  { "label": "Layout", "slug": "layout", "icon": "layer" },
+  { "label": "Navigation", "slug": "navigation", "icon": "compass" },
+  { "label": "Feedback", "slug": "feedback", "icon": "bell" },
+  { "label": "Media", "slug": "media", "icon": "photo-film" },
+  { "label": "Data Viz", "slug": "data-viz", "icon": "chart-line" },
+  { "label": "Helpers", "slug": "helpers", "icon": "wrench" }
+]

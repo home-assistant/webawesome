@@ -15,7 +15,7 @@ let id = 0;
  *
  * @slot - The tab panel's content.
  *
- * @csspart base - The component's base wrapper.
+ * @csspart base - Deprecated. Style the host element instead.
  *
  * @cssproperty --padding - The tab panel's padding.
  */
@@ -32,10 +32,11 @@ export default class WaTabPanel extends WebAwesomeElement {
   /** When true, the tab panel will be shown. */
   @property({ type: Boolean, reflect: true }) active = false;
 
+  @property({ reflect: true }) role = 'tabpanel';
+
   connectedCallback() {
     super.connectedCallback();
-    this.id = this.id.length > 0 ? this.id : this.componentId;
-    this.setAttribute('role', 'tabpanel');
+    this.id = (this.id || '').length > 0 ? this.id : this.componentId;
   }
 
   @watch('active')

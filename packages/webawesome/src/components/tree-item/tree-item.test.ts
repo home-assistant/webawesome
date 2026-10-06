@@ -166,6 +166,45 @@ describe('<wa-tree-item>', () => {
         });
       });
 
+      describe('nested expanded items', () => {
+        it('should keep a nested item expanded when its expanded root item is connected', async function () {
+          // The parent/child expanded relationship isn't resolved during SSR (see the TODO in connectedCallback)
+          if (fixture.type === 'ssr-client-hydrated') {
+            this.skip();
+          }
+
+          const tree = await fixture<HTMLElement>(html`
+            <wa-tree>
+              <wa-tree-item expanded>
+                Root
+                <wa-tree-item expanded id="nested">
+                  Nested
+                  <wa-tree-item>Leaf</wa-tree-item>
+                </wa-tree-item>
+              </wa-tree-item>
+            </wa-tree>
+          `);
+          const nested = tree.querySelector<WaTreeItem>('#nested')!;
+          await nested.updateComplete;
+
+          expect(nested.expanded).to.be.true;
+        });
+
+        it('should keep a nested item expanded when the property is set before connecting', async () => {
+          const tree = await fixture<HTMLElement>(html`<wa-tree></wa-tree>`);
+          const root = document.createElement('wa-tree-item');
+          const nested = document.createElement('wa-tree-item');
+          root.expanded = true;
+          nested.expanded = true;
+          nested.append(document.createElement('wa-tree-item'));
+          root.append(nested);
+          tree.append(root);
+          await nested.updateComplete;
+
+          expect(nested.expanded).to.be.true;
+        });
+      });
+
       describe('CSS parts and states', () => {
         it('should set the selected custom state', async () => {
           leafItem.selected = true;

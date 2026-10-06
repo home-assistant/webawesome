@@ -21,7 +21,6 @@ export default css`
 
   slot[name]:not([name='skip-to-content'], [name='navigation-toggle'])::slotted(*) {
     display: flex;
-    background-color: var(--wa-color-surface-default);
   }
 
   ::slotted([slot='banner']) {
@@ -156,12 +155,14 @@ export default css`
     grid-area: footer;
   }
 
-  /* Z-indexes */
+  /* Sticky regions paint their own surface so content scrolls under them. Slotted content stays
+     transparent so ::part() backgrounds set by consumers show through. */
   [part~='banner'],
   [part~='header'],
   [part~='subheader'] {
     position: sticky;
     z-index: 5;
+    background-color: var(--wa-color-surface-default);
   }
   [part~='banner'] {
     top: 0px;
@@ -181,7 +182,7 @@ export default css`
   [part~='body'] {
     display: grid;
     min-height: 100%;
-    align-items: flex-start;
+    align-items: start;
     grid-template-columns: minmax(0, var(--menu-width)) minmax(0, var(--main-width)) minmax(0, var(--aside-width));
     grid-template-rows: minmax(0, 1fr);
     grid-template-areas: 'menu main aside';
@@ -226,8 +227,10 @@ export default css`
     position: sticky;
     top: calc(var(--banner-top) + var(--header-top) + var(--subheader-top));
     z-index: 4;
-    height: min(var(--main-height), calc(100dvh - var(--header-top) - var(--banner-top) - var(--subheader-top)));
-    max-height: min(var(--main-height), calc(100dvh - var(--header-top) - var(--banner-top) - var(--subheader-top)));
+    min-height: 0;
+    /** Allows the menu / aside to always be 100% of the height of the main content area */
+    align-self: stretch;
+    max-height: calc(100dvh - var(--header-top) - var(--banner-top) - var(--subheader-top));
     overflow: auto;
   }
 

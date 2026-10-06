@@ -1,4 +1,4 @@
-import { html, isServer } from 'lit';
+import { html, isServer, type PropertyValues } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
@@ -8,7 +8,9 @@ import { WaHideEvent } from '../../events/hide.js';
 import { WaShowEvent } from '../../events/show.js';
 import { animateWithClass } from '../../internal/animate.js';
 import { isTopDismissible, registerDismissible, unregisterDismissible } from '../../internal/dismissible-stack.js';
+import { isEventInsideRect } from '../../internal/offset.js';
 import { parseSpaceDelimitedTokens } from '../../internal/parse.js';
+import { RenderedWatcher } from '../../internal/rendered-watcher.js';
 import { lockBodyScrolling, unlockBodyScrolling } from '../../internal/scroll.js';
 import { HasSlotController } from '../../internal/slot.js';
 import { watch } from '../../internal/watch.js';
@@ -52,8 +54,8 @@ import styles from './dialog.styles.js';
  * @cssproperty --spacing - The amount of space around and between the dialog's content.
  * @cssproperty --width - The preferred width of the dialog. Note that the dialog will shrink to accommodate smaller screens.
  * @cssproperty [--backdrop-filter=none] - A filter to apply to the backdrop behind the dialog.
- * @cssproperty [--show-duration=200ms] - The animation duration when showing the dialog.
- * @cssproperty [--hide-duration=200ms] - The animation duration when hiding the dialog.
+ * @cssproperty [--show-duration=var(--wa-transition-normal)] - The animation duration when showing the dialog.
+ * @cssproperty [--hide-duration=var(--wa-transition-normal)] - The animation duration when hiding the dialog.
  */
 @customElement('wa-dialog')
 export default class WaDialog extends WebAwesomeElement {
@@ -61,6 +63,7 @@ export default class WaDialog extends WebAwesomeElement {
 
   private readonly localize = new LocalizeController(this);
   private readonly hasSlotController = new HasSlotController(this, 'footer', 'header-actions', 'label');
+  private readonly renderedWatcher = new RenderedWatcher(this, isRendered => this.handleRenderedChange(isRendered));
   private originalTrigger: HTMLElement | null;
 
   @query('.dialog') dialog: HTMLDialogElement;
@@ -70,7 +73,8 @@ export default class WaDialog extends WebAwesomeElement {
 
   /**
    * The dialog's label as displayed in the header. You should always include a relevant label, as it is required for
-   * proper accessibility. If you need to display HTML, use the `label` slot instead.
+   * proper accessibility. If you need to display HTML, use the `label` slot instead. When `without-header` is set,
+   * only the attribute provides the dialog's accessible name.
    */
   @property({ reflect: true }) label = '';
 
@@ -81,7 +85,7 @@ export default class WaDialog extends WebAwesomeElement {
   @property({ attribute: 'light-dismiss', type: Boolean }) lightDismiss = false;
 
   /** The ID of the element that labels the dialog.
-   *  Overrides the default `aria-labelledby="title"`. */
+   *  Overrides the default labelling derived from the header's title. */
   @property({ attribute: 'aria-labelledby' }) ariaLabelledby?: string;
 
   /** The ID of the element that describes the dialog. */
@@ -93,16 +97,25 @@ export default class WaDialog extends WebAwesomeElement {
    */
   @property({ attribute: 'with-footer', type: Boolean }) withFooter = false;
 
-  firstUpdated() {
+  /**
+   * Only required for SSR. Set to `true` if you're slotting in a `label` element so the server-rendered markup names
+   * the dialog before the component hydrates on the client.
+   */
+  @property({ attribute: 'with-label', type: Boolean }) withLabel = false;
+
+  firstUpdated(changedProperties: PropertyValues<typeof this>) {
+    super.firstUpdated(changedProperties);
     if (this.open) {
       this.addOpenListeners();
       this.dialog.showModal();
       lockBodyScrolling(this);
+      this.renderedWatcher.start(this.dialog);
     }
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    this.renderedWatcher.stop();
     unlockBodyScrolling(this);
     this.removeOpenListeners();
   }
@@ -125,6 +138,7 @@ export default class WaDialog extends WebAwesomeElement {
     this.open = false;
     this.dialog.close();
     unlockBodyScrolling(this);
+    this.renderedWatcher.stop();
 
     // Restore focus to the original trigger
     const trigger = this.originalTrigger;
@@ -165,8 +179,9 @@ export default class WaDialog extends WebAwesomeElement {
   }
 
   private async handleDialogPointerDown(event: PointerEvent) {
-    // Detect when the backdrop is clicked
-    if (event.target === this.dialog) {
+    // The backdrop and the dialog's own scrollbar both report the <dialog> as the target, so only a point outside
+    // its box counts as a backdrop click
+    if (event.target === this.dialog && !isEventInsideRect(event, this.dialog)) {
       if (this.lightDismiss) {
         this.requestClose(this.dialog);
       } else {
@@ -183,6 +198,29 @@ export default class WaDialog extends WebAwesomeElement {
     }
   };
 
+  /**
+   * Suspends the modal when third-party CSS (e.g. cookie banner blockers) hides an open dialog, so the page isn't
+   * left scroll locked and inert. "open" stays true so the modal resumes if the dialog is rendered again.
+   */
+  private handleRenderedChange(isRendered: boolean) {
+    if (!this.open) {
+      this.renderedWatcher.stop();
+      return;
+    }
+
+    if (!isRendered && this.dialog.open) {
+      // Suspend the modal while hidden so the page stays scrollable and interactive
+      this.removeOpenListeners();
+      this.dialog.close();
+      unlockBodyScrolling(this);
+    } else if (isRendered && !this.dialog.open) {
+      // Resume the modal now that the dialog is rendered again
+      this.addOpenListeners();
+      this.dialog.showModal();
+      lockBodyScrolling(this);
+    }
+  }
+
   @watch('open', { waitUntilFirstUpdate: true })
   handleOpenChange() {
     // Open or close the dialog
@@ -191,6 +229,9 @@ export default class WaDialog extends WebAwesomeElement {
     } else if (!this.open && this.dialog.open) {
       this.open = true;
       this.requestClose(this.dialog);
+    } else if (!this.open) {
+      // Closed programmatically while the modal was suspended (see handleRenderedChange)
+      this.renderedWatcher.stop();
     }
   }
 
@@ -210,6 +251,7 @@ export default class WaDialog extends WebAwesomeElement {
     this.dialog.showModal();
 
     lockBodyScrolling(this);
+    this.renderedWatcher.start(this.dialog);
 
     // Set focus on autocomplete if it exists
     requestAnimationFrame(() => {
@@ -228,13 +270,15 @@ export default class WaDialog extends WebAwesomeElement {
 
   render() {
     const hasHeader = !this.withoutHeader;
-    const hasFooter = this.hasUpdated ? this.hasSlotController.test('footer') : this.withFooter;
+    const hasFooter = this.hasSlotController.test('footer', 'withFooter');
+    const hasLabel = this.label.length > 0 || this.hasSlotController.test('label', 'withLabel');
 
     return html`
       <dialog
-        aria-labelledby=${this.ariaLabelledby ?? 'title'}
-        aria-describedby=${ifDefined(this.ariaDescribedby)}
         part="dialog"
+        aria-labelledby=${ifDefined(this.ariaLabelledby ?? (hasHeader && hasLabel ? 'title' : undefined))}
+        aria-label=${ifDefined(!this.ariaLabelledby && !hasHeader && this.label ? this.label : undefined)}
+        aria-describedby=${ifDefined(this.ariaDescribedby)}
         class=${classMap({
           dialog: true,
           open: this.open,
@@ -245,7 +289,7 @@ export default class WaDialog extends WebAwesomeElement {
       >
         ${hasHeader
           ? html`
-              <header part="header" class="header">
+              <div part="header" class="header">
                 <h2 part="title" class="title" id="title">
                   <!-- If there's no label, use an invisible character to prevent the header from collapsing -->
                   <slot name="label"> ${this.label.length > 0 ? this.label : String.fromCharCode(8203)} </slot>
@@ -267,19 +311,16 @@ export default class WaDialog extends WebAwesomeElement {
                     ></wa-icon>
                   </wa-button>
                 </div>
-              </header>
+              </div>
             `
           : ''}
 
         <div part="body" class="body"><slot></slot></div>
 
-        ${hasFooter
-          ? html`
-              <footer part="footer" class="footer">
-                <slot name="footer"></slot>
-              </footer>
-            `
-          : ''}
+        <!-- Use a hidden element so we still get "slotchange" events. -->
+        <div part="footer" class="footer" ?hidden=${!hasFooter}>
+          <slot name="footer"></slot>
+        </div>
       </dialog>
     `;
   }

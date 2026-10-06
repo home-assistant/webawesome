@@ -25,6 +25,12 @@ export default css`
     &:focus-within {
       outline-color: var(--wa-color-focus);
     }
+
+    /* Style disabled textareas */
+    &:has(:disabled) {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
   }
 
   /* Appearance modifiers */
@@ -50,6 +56,8 @@ export default css`
     background: transparent;
     font: inherit;
     color: inherit;
+    cursor: inherit;
+    scroll-padding-block: var(--wa-form-control-padding-block);
     padding: calc(var(--wa-form-control-padding-block) - ((1lh - 1em) / 2)) var(--wa-form-control-padding-inline); /* accounts for the larger line height of textarea content */
     min-height: calc(var(--wa-form-control-height) - var(--border-width) * 2);
     box-shadow: none;
@@ -127,13 +135,20 @@ export default css`
    * Footer (hint + character count)
    */
 
-  .footer {
+  /*
+   * This element carries the hint part, so the shared form control styles apply to it. Those styles set display:block
+   * and hide the element when it has no hint, both of which have to be undone when a character count is present.
+   */
+  .footer.has-slotted,
+  .footer.has-count {
     display: flex;
     align-items: baseline;
     gap: 1em;
   }
 
-  .footer.has-count [part='hint'] {
+  /* Slots default to display:contents, which would leave the hint unable to shrink below its content */
+  .footer.has-count .hint {
+    display: block;
     flex: 1 1 auto;
     min-width: 0;
   }

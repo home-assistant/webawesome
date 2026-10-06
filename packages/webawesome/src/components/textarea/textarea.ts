@@ -30,11 +30,13 @@ import styles from './textarea.styles.js';
  * @event input - Emitted when the control receives input.
  * @event wa-invalid - Emitted when the form control has been checked for validity and its constraints aren't satisfied.
  *
- * @csspart label - The label
- * @csspart form-control-input - The input's wrapper.
+ * @csspart form-control-label - The label.
+ * @csspart label - Deprecated. Use the `form-control-label` part instead.
  * @csspart hint - The hint's wrapper.
  * @csspart textarea - The internal `<textarea>` control.
- * @csspart base - The wrapper around the `<textarea>` control.
+ * @csspart base - Deprecated. Use the `textarea-wrapper` part instead.
+ * @csspart textarea-wrapper - The component's outer wrapper.
+ * @csspart textarea-adjuster - The invisible sizer that grows the control to fit its content when `resize` is `auto`.
  * @csspart count - The character count element, rendered when the `with-count` attribute is present.
  *
  * @cssstate blank - The textarea is empty.
@@ -209,6 +211,20 @@ export default class WaTextarea extends WebAwesomeFormAssociatedElement {
     clearTimeout(this.countAnnounceTimeout);
     this.resizeObserver?.disconnect();
     this.resizeObserver = undefined;
+  }
+
+  /**
+   * @internal
+   */
+  protected updateFormValue(value: string | FormData | File | null) {
+    if (value == null) {
+      // null is the fallback value when loading from browser "memory" (also called "state").
+      // we use an empty string to mimic browser behavior of `<input>`
+      this.setValue('', null);
+      return;
+    }
+
+    super.updateFormValue(value);
   }
 
   private lastObservedWidth = 0;
@@ -409,8 +425,8 @@ export default class WaTextarea extends WebAwesomeFormAssociatedElement {
   }
 
   render() {
-    const hasLabelSlot = this.hasUpdated ? this.hasSlotController.test('label') : this.withLabel;
-    const hasHintSlot = this.hasUpdated ? this.hasSlotController.test('hint') : this.withHint;
+    const hasLabelSlot = this.hasSlotController.test('label', 'withLabel');
+    const hasHintSlot = this.hasSlotController.test('hint', 'withHint');
     const hasLabel = this.label ? true : !!hasLabelSlot;
     const hasHint = this.hint ? true : !!hasHintSlot;
 
@@ -435,7 +451,7 @@ export default class WaTextarea extends WebAwesomeFormAssociatedElement {
         <slot name="label">${this.label}</slot>
       </label>
 
-      <div part="base" class="textarea">
+      <div part="base textarea-wrapper" class="textarea">
         <textarea
           part="textarea"
           id="input"
@@ -467,21 +483,14 @@ export default class WaTextarea extends WebAwesomeFormAssociatedElement {
       </div>
 
       <div
+        part="hint"
         class=${classMap({
           footer: true,
           'has-count': this.withCount,
+          'has-slotted': hasHint,
         })}
       >
-        <slot
-          id="hint"
-          name="hint"
-          part="hint"
-          aria-hidden=${hasHint ? 'false' : 'true'}
-          class=${classMap({
-            'has-slotted': hasHint,
-          })}
-          >${this.hint}</slot
-        >
+        <slot id="hint" name="hint" class="hint" aria-hidden=${hasHint ? 'false' : 'true'}>${this.hint}</slot>
 
         ${this.withCount
           ? html`

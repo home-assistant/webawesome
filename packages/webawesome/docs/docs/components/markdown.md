@@ -1,15 +1,21 @@
 ---
 title: Markdown
 layout: component
-category: Utilities
+category: Media
 synonyms:
   - md
   - markdown renderer
   - rich text
+  - gfm
+  - marked.js
+  - rendered markdown
 use-cases:
   - markdown display
   - markdown preview
   - content rendering
+  - documentation pages
+  - blog post rendering
+  - readme display
 ---
 
 The markdown component turns raw markdown into rendered HTML using the [Marked](https://marked.js.org/) library. Indentation is handled automatically. You can nest your markdown at any depth to match the surrounding HTML structure and the common leading whitespace will be stripped before parsing.
@@ -19,7 +25,7 @@ The markdown component turns raw markdown into rendered HTML using the [Marked](
   <script type="text/markdown">
     ## Getting Started
 
-    Here's a quick overview with **bold**, *italic*, and `inline code`.
+    Here's a quick overview with **bold**, _italic_, and `inline code`.
 
     - Install the package
     - Import the component
@@ -28,9 +34,8 @@ The markdown component turns raw markdown into rendered HTML using the [Marked](
 </wa-markdown>
 ```
 
-
 :::info
-Since content is rendered client-side, it won't be visible to search engine crawlers or available before JavaScript loads. This makes it a poor fit for SEO-critical content like landing pages and blog posts. It's best suited for prototyping, dashboards, admin panels, and other contexts where search indexing isn't a concern.
+**This component isn't suited for SEO-critical content.** Content renders client-side, so crawlers won't see it and it won't appear before JavaScript loads. It's best for prototypes, dashboards, and admin panels — not landing pages or blog posts.
 :::
 
 :::warning
@@ -39,7 +44,7 @@ Since content is rendered client-side, it won't be visible to search engine craw
 
 ## Examples
 
-### Providing content
+### Providing Content
 
 Markdown must go inside a `<script type="text/markdown">` element, which must be a direct child of the markdown component. (The script is required to prevent the browser from parsing the content.) The rendered output is placed in the light DOM where it inherits your page's styles.
 
@@ -53,7 +58,7 @@ Markdown must go inside a `<script type="text/markdown">` element, which must be
 
 The [Marked](https://marked.js.org/) library is used under the hood to render markdown. Marked supports [GitHub Flavored Markdown](https://github.github.com/gfm/) (GFM) and the [CommonMark](https://commonmark.org/) specification. This includes headings, bold, italic, links, images, lists, blockquotes, code blocks, tables, task lists, strike-through, and auto-links. For a full breakdown of supported syntax, see the [Marked documentation](https://marked.js.org/#specifications).
 
-### Whitespace normalization
+### Whitespace Normalization
 
 Indentation inside the script is automatically normalized before the markdown parser sees it. This lets you indent your content to match the surrounding HTML without it being treated as a code block. The normalization process:
 
@@ -67,13 +72,13 @@ This means you can write markdown at any indentation level and it will render co
 ```html {.example .no-edit}
 <wa-markdown>
   <script type="text/markdown">
-            ## Deeply Indented
+    ## Deeply Indented
 
-            Even though this content is heavily indented in the source,
-            the shared whitespace is stripped before parsing.
+    Even though this content is heavily indented in the source,
+    the shared whitespace is stripped before parsing.
 
-                Lines with extra indentation beyond the common
-                prefix are preserved, like this code block.
+        Lines with extra indentation beyond the common
+        prefix are preserved, like this code block.
   </script>
 </wa-markdown>
 ```
@@ -88,7 +93,7 @@ For tab-indented source files, adjust the tab stop width with the `tab-size` att
 </wa-markdown>
 ```
 
-### Formatting features
+### Formatting Features
 
 All standard markdown formatting supported by Marked is available, including headings, lists, blockquotes, code blocks, links, and images.
 
@@ -134,7 +139,7 @@ All `<wa-markdown>` instances share a single [Marked](https://marked.js.org/usin
     link(href, title, text) {
       const titleAttr = title ? ` title="${title}"` : '';
       return `<a href="${href}"${titleAttr} target="_blank" rel="noopener">${text}</a>`;
-    }
+    },
   };
 
   md.marked.use({ renderer });
@@ -143,10 +148,10 @@ All `<wa-markdown>` instances share a single [Marked](https://marked.js.org/usin
 ```
 
 :::info
-The Marked instance is shared across all `<wa-markdown>` elements. If you want every instance on the page to pick up the new configuration, call `WaMarkdown.updateAll()` instead of `renderMarkdown()` on a single element.
+**The Marked configuration is shared across every instance.** To make all `<wa-markdown>` elements pick up a change, call `WaMarkdown.updateAll()` instead of `renderMarkdown()` on a single element.
 :::
 
-### Writing a custom Marked plugin
+### Writing a Custom Marked Plugin
 
 Custom [Marked extensions](https://marked.js.org/using_advanced#extensions) can be applied through any element's `marked` property. The example below adds support for `==highlight==` syntax, wrapping matched text in `<mark>` tags.
 
@@ -162,24 +167,28 @@ Custom [Marked extensions](https://marked.js.org/using_advanced#extensions) can 
   const md = document.getElementById('markdown__plugin');
 
   const highlight = {
-    extensions: [{
-      name: 'highlight',
-      level: 'inline',
-      start(src) { return src.indexOf('=='); },
-      tokenizer(src) {
-        const match = src.match(/^==([^=]+)==/);
-        if (match) {
-          return {
-            type: 'highlight',
-            raw: match[0],
-            text: match[1]
-          };
-        }
+    extensions: [
+      {
+        name: 'highlight',
+        level: 'inline',
+        start(src) {
+          return src.indexOf('==');
+        },
+        tokenizer(src) {
+          const match = src.match(/^==([^=]+)==/);
+          if (match) {
+            return {
+              type: 'highlight',
+              raw: match[0],
+              text: match[1],
+            };
+          }
+        },
+        renderer(token) {
+          return `<mark>${token.text}</mark>`;
+        },
       },
-      renderer(token) {
-        return `<mark>${token.text}</mark>`;
-      }
-    }]
+    ],
   };
 
   md.marked.use(highlight);
@@ -187,7 +196,7 @@ Custom [Marked extensions](https://marked.js.org/using_advanced#extensions) can 
 </script>
 ```
 
-### Updating content dynamically
+### Updating Content Dynamically
 
 The component parses and renders automatically when the script element is first slotted in. It does not watch for subsequent changes to the script's content. To re-render after modifying the source, update the script's `textContent` and call `renderMarkdown()`.
 
@@ -198,7 +207,7 @@ The component parses and renders automatically when the script element is first 
       Click the button to swap this content out.
     </script>
   </wa-markdown>
-  <br>
+  <br />
   <wa-button>Update content</wa-button>
 </div>
 

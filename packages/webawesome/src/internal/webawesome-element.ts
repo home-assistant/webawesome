@@ -15,8 +15,42 @@ declare module 'lit' {
   }
 }
 
+const HAS_ENDING_COLON = /;\s+$/;
+
+function camelToKebab(str: string) {
+  return str.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`);
+}
+
+// if your server doesn't have a polyfill available for this.style, (assumed by it being undefined) we modify the attribute directly.
+function buildStyleAttribute(options: { property?: string | null; value?: unknown; element: HTMLElement }) {
+  const { property, value, element } = options;
+  if (value) {
+    let style = element.getAttribute('style') || '';
+    if (style) {
+      // need to check if the previous property ended with a colon or not.
+      if (!style.match(HAS_ENDING_COLON)) {
+        style += ';';
+      }
+      style += ' ';
+    }
+
+    const str = `${property}: ${value}`;
+
+    if (style.includes(str)) {
+      return;
+    }
+
+    return `${style}${str};`;
+  }
+
+  return null;
+}
+
+/**
+ * @internal
+ */
 export default class WebAwesomeElement extends LitElement {
-  /** One or more CSSResultGroup to include in the component's shadow root. Host styles are automatically prepended. */
+  // One or more CSSResultGroup to include in the component's shadow root. Host styles are automatically prepended.
   static css?: CSSResultGroup;
 
   /** Prepends host styles to the component's styles. */
@@ -68,13 +102,24 @@ export default class WebAwesomeElement extends LitElement {
     super.connectedCallback();
 
     // SSR guard: document is not available during server-side rendering
-    if (!isServer) {
+    if (!this.didSSR) {
       // Helpful comment node inside the shadow root that links to the docs
       this.shadowRoot?.prepend(
         document.createComment(
           ` Web Awesome: https://webawesome.com/docs/components/${this.localName.replace('wa-', '')} `,
         ),
       );
+    }
+
+    if (this.didSSR) {
+      this.updateComplete.then(() => {
+        // Helpful comment node inside the shadow root that links to the docs
+        this.shadowRoot?.prepend(
+          document.createComment(
+            ` Web Awesome: https://webawesome.com/docs/components/${this.localName.replace('wa-', '')} `,
+          ),
+        );
+      });
     }
   }
 
@@ -132,9 +177,60 @@ export default class WebAwesomeElement extends LitElement {
         // @ts-expect-error leave me alone TS.
         event.error = e;
         this.dispatchEvent(event);
+        // console.error(e);
       }
       throw e;
     }
+  }
+
+  /**
+   * @internal
+   * Internal way to set styles across both client and server
+   */
+  protected setStyle<T extends keyof CSSStyleDeclaration & string>(property: T, value: CSSStyleDeclaration[T]) {
+    // if your server doesn't have a polyfill available for this.style, (assumed by it being undefined) we modify the attribute directly.
+    if (!this.style) {
+      const str = buildStyleAttribute({
+        // because this is going to be serialized to an HTML style attribute, need to transform the casing.
+        property: camelToKebab(property),
+        value,
+        element: this,
+      });
+
+      if (str) {
+        this.setAttribute('style', str);
+      }
+
+      return;
+    }
+
+    // Client side
+    this.style[property] = value;
+  }
+
+  /**
+   * @internal
+   * Internal way to set a CSS custom property across both client and server.
+   */
+  protected setStyleProperty<T extends string>(property: T, value: string) {
+    // if your server doesn't have a polyfill available for this.style, (assumed by it being undefined) we modify the attribute directly.
+    if (!this.style) {
+      const str = buildStyleAttribute({
+        // because this is going to be serialized to an HTML style attribute, need to transform the casing.
+        property,
+        value,
+        element: this,
+      });
+
+      if (str) {
+        this.setAttribute('style', str);
+      }
+
+      return;
+    }
+
+    // Client side
+    this.style.setProperty(property, value);
   }
 
   /**
