@@ -84,8 +84,14 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          gh extension install github/gh-aw
-          gh aw upgrade
+          # Releases must be at least 3 days old, matching HA frontend's minimumReleaseAge
+          tag=$(gh api repos/github/gh-aw/releases --paginate --jq '
+            .[] | select(.draft | not) | select(.prerelease | not)
+                | select((.published_at | fromdateiso8601) <= (now - 259200)) | .tag_name' \
+            | sort -V | tail -1)
+          gh extension install github/gh-aw --pin "$tag"
+          # Stops upgrade from updating gh-aw past the pinned release
+          gh aw upgrade --skip-extension-upgrade
           # upgrade also adds Copilot agent, skill and setup files we don't use
           git clean -fd -- .github/agents .github/skills .github/workflows/copilot-setup-steps.yml
           if [ -z "$(git status --porcelain)" ]; then
