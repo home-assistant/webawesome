@@ -61,6 +61,51 @@ jobs:
           echo "current=$current" >> "$GITHUB_OUTPUT"
           echo "target=$target" >> "$GITHUB_OUTPUT"
           echo "Current: $current, target: ${target:-none}" >> "$GITHUB_STEP_SUMMARY"
+  upgrade_gh_aw:
+    runs-on: ubuntu-latest
+    # Don't hold up the upstream sync if the upgrade fails
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          client-id: ${{ vars.UPSTREAM_SYNC_APP_ID }}
+          private-key: ${{ secrets.UPSTREAM_SYNC_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-workflows: write
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: next
+          persist-credentials: false
+      - name: Upgrade gh-aw and open a pull request
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh extension install github/gh-aw
+          gh aw upgrade
+          # upgrade also adds Copilot agent, skill and setup files we don't use
+          git clean -fd -- .github/agents .github/skills .github/workflows/copilot-setup-steps.yml
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "gh-aw is up to date" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          version=$(gh aw version | awk '{print $NF}')
+          branch=gh-aw-upgrade
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -C "$branch"
+          git add .github
+          git commit -m "Upgrade gh-aw to $version"
+          git push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$branch"
+          if [ -z "$(gh pr list --head "$branch" --state open --json number --jq '.[].number')" ]; then
+            gh pr create --base next --head "$branch" --draft \
+              --title "Upgrade gh-aw to $version" \
+              --body "Runs \`gh aw upgrade\` to refresh the action pins and recompile the agentic workflows." \
+              --reviewer home-assistant/ohf-frontend
+          fi
   agent:
     needs: [check_upstream]
     if: needs.check_upstream.outputs.target != ''
