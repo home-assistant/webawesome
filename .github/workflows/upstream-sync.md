@@ -14,6 +14,7 @@ permissions:
   pull-requests: read
   copilot-requests: write
 checkout:
+  ref: next
   fetch-depth: 0
 network:
   allowed:
@@ -38,6 +39,8 @@ jobs:
       target: ${{ steps.pick.outputs.target }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: next
       - name: Pick upstream release
         id: pick
         env:
@@ -61,51 +64,6 @@ jobs:
           echo "current=$current" >> "$GITHUB_OUTPUT"
           echo "target=$target" >> "$GITHUB_OUTPUT"
           echo "Current: $current, target: ${target:-none}" >> "$GITHUB_STEP_SUMMARY"
-  upgrade_gh_aw:
-    runs-on: ubuntu-latest
-    # Don't hold up the upstream sync if the upgrade fails
-    continue-on-error: true
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        id: app-token
-        with:
-          client-id: ${{ vars.UPSTREAM_SYNC_APP_ID }}
-          private-key: ${{ secrets.UPSTREAM_SYNC_APP_PRIVATE_KEY }}
-          permission-contents: write
-          permission-pull-requests: write
-          permission-workflows: write
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: next
-          persist-credentials: false
-      - name: Upgrade gh-aw and open a pull request
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          gh extension install github/gh-aw
-          gh aw upgrade
-          # upgrade also adds Copilot agent, skill and setup files we don't use
-          git clean -fd -- .github/agents .github/skills .github/workflows/copilot-setup-steps.yml
-          if [ -z "$(git status --porcelain)" ]; then
-            echo "gh-aw is up to date" >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          version=$(gh aw version | awk '{print $NF}')
-          branch=gh-aw-upgrade
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch -C "$branch"
-          git add .github
-          git commit -m "Upgrade gh-aw to $version"
-          git push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$branch"
-          if [ -z "$(gh pr list --head "$branch" --state open --json number --jq '.[].number')" ]; then
-            gh pr create --base next --head "$branch" --draft \
-              --title "Upgrade gh-aw to $version" \
-              --body "Runs \`gh aw upgrade\` to refresh the action pins and recompile the agentic workflows." \
-              --reviewer home-assistant/ohf-frontend
-          fi
   agent:
     needs: [check_upstream]
     if: needs.check_upstream.outputs.target != ''
@@ -168,6 +126,8 @@ safe-outputs:
     report-as-issue: false
   report-incomplete:
     create-issue: false
+  missing-tool:
+    create-issue: false
   # Issues are disabled on this repository
   report-failure-as-issue: false
 ---
@@ -202,7 +162,7 @@ Files in `/tmp/gh-aw/upstream-sync/`:
    - At the repository root, run `npm install --package-lock-only --ignore-scripts`.
    - Do not use `npm version`. Its `postversion` script rewrites the root `package.json` and `VERSIONS.txt`, which come from upstream.
 5. At the root, run `npm ci`. Then in `packages/webawesome` run `npm run prettier` and `npm run build`.
-6. In `packages/webawesome`, run `npx playwright install chromium`. Then for each component in `overlap-components.txt` that has a `<name>.test.ts` file, run `CSR_ONLY=true npm run test:component -- <name>`.
+6. In `packages/webawesome`, run `npx playwright install chromium firefox`. Then for each component in `overlap-components.txt` that has a `<name>.test.ts` file, run `CI=true CSR_ONLY=true npx web-test-runner --group <name>`. Do not use `npm run test:component`, which runs in watch mode and never exits.
 7. Fix failures caused by the merge and commit the fixes. Don't change unrelated code.
 8. Call `create_pull_request` with branch `upgrade-<version>` and title `Upgrade WA to <version>`. Write the body with these sections, leaving out any that would be empty:
    - `## Upgrade to Web Awesome <version>`: one line saying which release was merged and from which version, and the new package version. Link the upstream release (`https://github.com/shoelace-style/webawesome/releases/tag/<target tag>`) and changelog (https://webawesome.com/docs/resources/changelog).
