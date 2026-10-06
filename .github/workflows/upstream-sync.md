@@ -22,6 +22,9 @@ network:
     - node
     - playwright
 timeout-minutes: 60
+runtimes:
+  node:
+    version: "24"
 concurrency:
   job-discriminator: ${{ github.run_id }}
 
