@@ -129,6 +129,8 @@ steps:
       git diff "$base" HEAD -- packages/webawesome/src > "$d/ha.diff"
       git diff --name-only "$base" "$head" > "$d/upstream-files.txt"
       comm -12 <(sort "$d/ha-files.txt") <(sort "$d/upstream-files.txt") > "$d/overlap.txt"
+      components() { sed -n 's|^packages/webawesome/src/components/\([^/]*\)/.*|\1|p' "$1" | sort -u; }
+      comm -12 <(components "$d/ha-files.txt") <(components "$d/upstream-files.txt") > "$d/overlap-components.txt"
       git log --oneline "$base..$head" -- packages/webawesome/src > "$d/upstream-log.txt"
 
 pre-agent-steps:
@@ -161,7 +163,13 @@ safe-outputs:
     protected-files: allowed
     max-patch-files: 2000
     max-patch-size: 10240
+    fallback-as-issue: false
   noop:
+    report-as-issue: false
+  report-incomplete:
+    create-issue: false
+  # Issues are disabled on this repository
+  report-failure-as-issue: false
 ---
 
 # Upstream Web Awesome sync
@@ -176,13 +184,14 @@ Files in `/tmp/gh-aw/upstream-sync/`:
 
 - `conflicts.txt`: files with merge conflicts.
 - `overlap.txt`: source files that both we and upstream changed. Check these even when they merged cleanly.
+- `overlap-components.txt`: components under `packages/webawesome/src/components/` where both we and upstream changed any file, even different ones (for example, we changed `foo.ts` and upstream changed `foo.styles.ts`).
 - `ha.diff` and `ha-files.txt`: our customizations, as a diff from the upstream release we are currently based on.
 - `upstream-files.txt` and `upstream-log.txt`: what upstream changed between the two releases.
 
 ## Task
 
 1. Read the context files.
-2. Resolve every conflict, and review every file in `overlap.txt`:
+2. Resolve every conflict, review every file in `overlap.txt`, and review each component in `overlap-components.txt` as a whole:
    - Keep our customizations from `ha.diff`.
    - Take upstream's changes wherever they don't conflict with ours.
    - If upstream now does what one of our customizations did, drop ours and note it in the pull request.
@@ -193,7 +202,7 @@ Files in `/tmp/gh-aw/upstream-sync/`:
    - At the repository root, run `npm install --package-lock-only --ignore-scripts`.
    - Do not use `npm version`. Its `postversion` script rewrites the root `package.json` and `VERSIONS.txt`, which come from upstream.
 5. At the root, run `npm ci`. Then in `packages/webawesome` run `npm run prettier` and `npm run build`.
-6. In `packages/webawesome`, run `npx playwright install chromium`. Then for each component in `overlap.txt` that has a `<name>.test.ts` file, run `CSR_ONLY=true npm run test:component -- <name>`.
+6. In `packages/webawesome`, run `npx playwright install chromium`. Then for each component in `overlap-components.txt` that has a `<name>.test.ts` file, run `CSR_ONLY=true npm run test:component -- <name>`.
 7. Fix failures caused by the merge and commit the fixes. Don't change unrelated code.
 8. Call `create_pull_request` with branch `upgrade-<version>` and title `Upgrade WA to <version>`. Write the body with these sections, leaving out any that would be empty:
    - `## Upgrade to Web Awesome <version>`: one line saying which release was merged and from which version, and the new package version. Link the upstream release (`https://github.com/shoelace-style/webawesome/releases/tag/<target tag>`) and changelog (https://webawesome.com/docs/resources/changelog).
