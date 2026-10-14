@@ -53,6 +53,9 @@ export default class WaTabGroup extends WebAwesomeElement {
   private activeTab?: WaTab;
   private mutationObserver: MutationObserver;
   private resizeObserver: ResizeObserver;
+  private intersectionObserver?: IntersectionObserver;
+  private hasIntersected = false;
+  private initialStateSet = false;
   private tabs: WaTab[] = [];
   private focusableTabs: WaTab[] = [];
   private panels: WaTabPanel[] = [];
@@ -115,8 +118,14 @@ export default class WaTabGroup extends WebAwesomeElement {
         return target.closest(this.localName) === this;
       });
 
-      // Sync tabs when disabled states change
-      if (relevantMutations.some(m => m.attributeName === 'disabled')) {
+      // Sync tabs when children or disabled states change
+      if (
+        relevantMutations.some(
+          m =>
+            (m.type === 'childList' && m.target === this) ||
+            (m.type === 'attributes' && m.attributeName === 'disabled'),
+        )
+      ) {
         this.syncTabsAndPanels();
       } else if (relevantMutations.some(m => m.attributeName === 'active')) {
         const tabs = relevantMutations
@@ -137,30 +146,22 @@ export default class WaTabGroup extends WebAwesomeElement {
       this.resizeObserver.observe(this.nav);
 
       // Set initial tab state when the tabs become visible
-      const intersectionObserver = new IntersectionObserver((entries, observer) => {
+      this.intersectionObserver = new IntersectionObserver(entries => {
         if (entries[0].intersectionRatio > 0) {
-          this.setAriaLabels();
-
-          if (this.active) {
-            const tab = this.tabs.find(t => t.panel === this.active);
-
-            if (tab) {
-              this.setActiveTab(tab);
-            }
-          } else {
-            this.setActiveTab(this.getActiveTab() ?? this.tabs[0], { emitEvents: false });
-          }
-
-          observer.unobserve(entries[0].target);
+          this.hasIntersected = true;
+          this.setInitialTabState();
         }
       });
-      intersectionObserver.observe(this.tabGroup);
+      this.intersectionObserver.observe(this.tabGroup);
     });
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     this.mutationObserver?.disconnect();
+    this.intersectionObserver?.disconnect();
+    this.intersectionObserver = undefined;
+    this.hasIntersected = false;
 
     if (this.nav) {
       this.resizeObserver?.unobserve(this.nav);
@@ -341,6 +342,9 @@ export default class WaTabGroup extends WebAwesomeElement {
 
       this.panels.forEach(el => (el.active = el.name === this.activeTab?.panel));
 
+      this.initialStateSet = true;
+      this.intersectionObserver?.unobserve(this.tabGroup);
+
       if (['top', 'bottom'].includes(this.placement)) {
         scrollIntoView(this.activeTab, this.nav, 'horizontal', options.scrollBehavior);
       }
@@ -374,9 +378,33 @@ export default class WaTabGroup extends WebAwesomeElement {
     this.tabs = this.getAllTabs();
     this.focusableTabs = this.tabs.filter(el => !el.disabled);
     this.panels = this.getAllPanels();
+    if (this.activeTab) {
+      this.panels.forEach(panel => (panel.active = panel.name === this.activeTab?.panel));
+    } else {
+      this.setInitialTabState();
+    }
 
     // After updating, show or hide scroll controls as needed
     this.updateComplete.then(() => this.updateScrollControls());
+  }
+
+  private setInitialTabState() {
+    if (!this.hasIntersected || this.initialStateSet) {
+      return;
+    }
+
+    this.setAriaLabels();
+
+    const activeTab = this.getActiveTab();
+    const tab = this.active
+      ? this.tabs.find(el => el.panel === this.active)
+      : activeTab && !activeTab.disabled
+        ? activeTab
+        : this.focusableTabs[0];
+
+    if (tab && !tab.disabled) {
+      this.setActiveTab(tab, { emitEvents: false });
+    }
   }
 
   @watch('active')
