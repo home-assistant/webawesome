@@ -25,6 +25,24 @@ describe('<wa-slider>', () => {
           expect(el.matches(':disabled')).to.be.true;
           expect(input.getAttribute('aria-disabled')).to.equal('true');
         });
+
+        it('should use accessible-label as the accessible name without a visible label', async () => {
+          const el = await fixture<WaSlider>(html`<wa-slider accessible-label="Volume"></wa-slider>`);
+          const slider = el.shadowRoot!.querySelector<HTMLElement>("[role='slider']")!;
+          expect(slider.getAttribute('aria-label')).to.equal('Volume');
+          expect(slider.hasAttribute('aria-labelledby')).to.be.false;
+          await expect(el).to.be.accessible();
+        });
+
+        it('should use accessible-label for both thumbs of a range slider', async () => {
+          const el = await fixture<WaSlider>(
+            html`<wa-slider range accessible-label="Price" min-value="20" max-value="80"></wa-slider>`,
+          );
+          const thumbMin = el.shadowRoot!.querySelector<HTMLElement>('#thumb-min')!;
+          const thumbMax = el.shadowRoot!.querySelector<HTMLElement>('#thumb-max')!;
+          expect(thumbMin.getAttribute('aria-label')).to.equal('Price (minimum value)');
+          expect(thumbMax.getAttribute('aria-label')).to.equal('Price (maximum value)');
+        });
       });
 
       describe('properties', () => {
