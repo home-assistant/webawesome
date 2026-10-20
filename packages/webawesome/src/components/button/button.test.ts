@@ -48,6 +48,27 @@ describe('<wa-button>', () => {
           await expect(el).to.be.accessible();
         });
 
+        it('should use accessible-label as the accessible name', async () => {
+          const el = await fixture<WaButton>(html`<wa-button accessible-label="Close"></wa-button>`);
+          const button = el.shadowRoot!.querySelector('button')!;
+          expect(button.getAttribute('aria-label')).to.equal('Close');
+          await expect(el).to.be.accessible();
+        });
+
+        it('should still forward the deprecated aria-label', async () => {
+          const el = await fixture<WaButton>(html`<wa-button aria-label="Close">x</wa-button>`);
+          const button = el.shadowRoot!.querySelector('button')!;
+          expect(button.getAttribute('aria-label')).to.equal('Close');
+        });
+
+        it('should prefer accessible-label over the deprecated aria-label', async () => {
+          const el = await fixture<WaButton>(
+            html`<wa-button accessible-label="Close dialog" aria-label="Close">x</wa-button>`,
+          );
+          const button = el.shadowRoot!.querySelector('button')!;
+          expect(button.getAttribute('aria-label')).to.equal('Close dialog');
+        });
+
         it('should be accessible when loading', async () => {
           const el = await fixture<WaButton>(html` <wa-button loading><span>Button Label</span></wa-button> `);
           await expect(el).to.be.accessible();
