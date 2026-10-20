@@ -68,7 +68,16 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
 
   @property() title = ''; // make reactive to pass through
 
-  /** The accessible label for the button, propagated to the underlying `<button>` or `<a>` element. */
+  /**
+   * An accessible label for the button that is announced by assistive technology but not shown visually, propagated to
+   * the underlying `<button>` or `<a>` element. Use it for icon buttons or buttons without descriptive text.
+   */
+  @property({ attribute: 'accessible-label' }) accessibleLabel = '';
+
+  /**
+   * The accessible label for the button, propagated to the underlying `<button>` or `<a>` element.
+   * @deprecated Use `accessible-label` instead.
+   */
   @property({ attribute: 'aria-label' }) ariaLabel: string | null = null;
 
   /** The button's theme variant. Defaults to `neutral` if not within another element with a variant. */
@@ -256,7 +265,7 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
     this.isIconButton = hasIcon && !hasText && !hasOtherElements;
     this.customStates.set('icon-button', this.isIconButton);
 
-    if (this.isIconButton && !hasIconLabel) {
+    if (this.isIconButton && !hasIconLabel && !this.accessibleLabel && !this.ariaLabel) {
       console.warn(
         `Icon buttons must have a label for screen readers. Add <${this.iconTag} ${standardIconTag ? 'label' : 'aria-label'}="..."> to remove this warning.`,
         this,
@@ -340,7 +349,7 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
         rel=${ifDefined(isLink && this.rel ? this.rel : undefined)}
         role=${ifDefined(isLink ? undefined : 'button')}
         aria-disabled=${ifDefined(isLink && this.disabled ? 'true' : undefined)}
-        aria-label=${ifDefined(this.ariaLabel ?? undefined)}
+        aria-label=${ifDefined(this.accessibleLabel || this.ariaLabel || undefined)}
         aria-busy=${this.loading ? 'true' : 'false'}
         tabindex=${this.disabled ? '-1' : '0'}
         @invalid=${this.isButton() ? this.handleInvalid : null}

@@ -19,6 +19,13 @@ describe('<wa-input>', () => {
           await expect(el).to.be.accessible();
         });
 
+        it('should use accessible-label as the accessible name without a visible label', async () => {
+          const el = await fixture<WaInput>(html`<wa-input accessible-label="Name"></wa-input>`);
+          const input = el.shadowRoot!.querySelector('input')!;
+          expect(input.getAttribute('aria-label')).to.equal('Name');
+          await expect(el).to.be.accessible();
+        });
+
         it('should focus the input when clicking on the label', async () => {
           const el = await fixture<WaInput>(html`<wa-input label="Name"></wa-input>`);
           const label = el.shadowRoot!.querySelector('[part~="form-control-label"]')!;

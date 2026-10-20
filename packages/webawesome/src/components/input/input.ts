@@ -142,6 +142,12 @@ export default class WaInput extends WebAwesomeFormAssociatedElement {
   /** The input's label. If you need to display HTML, use the `label` slot instead. */
   @property() label = '';
 
+  /**
+   * An accessible label for the input that is announced by assistive technology but not shown visually. Takes
+   * precedence over `label` for the accessible name. Use it when the input has no visible label.
+   */
+  @property({ attribute: 'accessible-label' }) accessibleLabel = '';
+
   /** The input's hint. If you need to display HTML, use the `hint` slot instead. */
   @property({ attribute: 'hint' }) hint = '';
 
@@ -441,6 +447,7 @@ export default class WaInput extends WebAwesomeFormAssociatedElement {
           pattern=${ifDefined(this.pattern)}
           enterkeyhint=${ifDefined(this.enterkeyhint)}
           inputmode=${ifDefined(this.inputmode)}
+          aria-label=${ifDefined(this.accessibleLabel || undefined)}
           aria-describedby="hint"
           @change=${this.handleChange}
           @input=${this.handleInput}

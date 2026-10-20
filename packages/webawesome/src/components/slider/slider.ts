@@ -2,6 +2,7 @@ import type { PropertyValues } from 'lit';
 import { html, isServer } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { activeElements } from '../../internal/active-elements.js';
 import { DraggableElement } from '../../internal/drag.js';
@@ -108,6 +109,12 @@ export default class WaSlider extends WebAwesomeFormAssociatedElement {
    * The slider's label. If you need to provide HTML in the label, use the `label` slot instead.
    */
   @property() label: string = '';
+
+  /**
+   * An accessible label for the slider that is announced by assistive technology but not shown visually. Takes
+   * precedence over `label` for the accessible name. Use it when the slider has no visible label.
+   */
+  @property({ attribute: 'accessible-label' }) accessibleLabel = '';
 
   /** The slider hint. If you need to display HTML, use the hint slot instead. */
   @property({ attribute: 'hint' }) hint = '';
@@ -903,6 +910,7 @@ export default class WaSlider extends WebAwesomeFormAssociatedElement {
       // Range slider mode
       const minThumbPosition = clamp(this.getPercentageFromValue(this.minValue), 0, 100);
       const maxThumbPosition = clamp(this.getPercentageFromValue(this.maxValue), 0, 100);
+      const thumbLabel = this.accessibleLabel || this.label;
 
       return html`
         ${label}
@@ -931,7 +939,7 @@ export default class WaSlider extends WebAwesomeFormAssociatedElement {
                 ? this.valueFormatter(this.minValue)
                 : this.localize.number(this.minValue)}
               aria-valuemax=${this.max}
-              aria-label="${this.label ? `${this.label} (minimum value)` : 'Minimum value'}"
+              aria-label="${thumbLabel ? `${thumbLabel} (minimum value)` : 'Minimum value'}"
               aria-orientation=${this.orientation}
               aria-disabled=${this.disabled ? 'true' : 'false'}
               aria-readonly=${this.readonly ? 'true' : 'false'}
@@ -952,7 +960,7 @@ export default class WaSlider extends WebAwesomeFormAssociatedElement {
                 ? this.valueFormatter(this.maxValue)
                 : this.localize.number(this.maxValue)}
               aria-valuemax=${this.max}
-              aria-label="${this.label ? `${this.label} (maximum value)` : 'Maximum value'}"
+              aria-label="${thumbLabel ? `${thumbLabel} (maximum value)` : 'Maximum value'}"
               aria-orientation=${this.orientation}
               aria-disabled=${this.disabled ? 'true' : 'false'}
               aria-readonly=${this.readonly ? 'true' : 'false'}
@@ -994,7 +1002,8 @@ export default class WaSlider extends WebAwesomeFormAssociatedElement {
             ? this.valueFormatter(this.value)
             : this.localize.number(this.value)}
           aria-valuemax=${this.max}
-          aria-labelledby="label"
+          aria-label=${ifDefined(this.accessibleLabel || undefined)}
+          aria-labelledby=${ifDefined(this.accessibleLabel ? undefined : 'label')}
           aria-describedby="hint"
           tabindex=${this.disabled ? -1 : 0}
           @blur=${this.handleBlur}

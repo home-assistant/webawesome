@@ -18,6 +18,13 @@ describe('<wa-textarea>', () => {
           await expect(el).to.be.accessible();
         });
 
+        it('should use accessible-label as the accessible name without a visible label', async () => {
+          const el = await fixture<WaTextarea>(html`<wa-textarea accessible-label="Name"></wa-textarea>`);
+          const control = el.shadowRoot!.querySelector('textarea')!;
+          expect(control.getAttribute('aria-label')).to.equal('Name');
+          await expect(el).to.be.accessible();
+        });
+
         it('should focus the textarea when clicking on the label', async () => {
           const el = await fixture<WaTextarea>(html`<wa-textarea label="Name"></wa-textarea>`);
           const label = el.shadowRoot!.querySelector('[part~="label"]')!;

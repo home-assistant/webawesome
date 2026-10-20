@@ -63,6 +63,12 @@ export default class WaTextarea extends WebAwesomeFormAssociatedElement {
 
   @property() title = ''; // make reactive to pass through
 
+  /**
+   * An accessible label for the textarea that is announced by assistive technology but not shown visually. Use it when
+   * the textarea has no visible label.
+   */
+  @property({ attribute: 'accessible-label' }) accessibleLabel = '';
+
   /** The name of the textarea, submitted as a name/value pair with form data. */
   @property({ reflect: true }) name: string | null = null;
 
@@ -472,6 +478,7 @@ export default class WaTextarea extends WebAwesomeFormAssociatedElement {
           spellcheck=${ifDefined(this.spellcheck)}
           enterkeyhint=${ifDefined(this.enterkeyhint)}
           inputmode=${ifDefined(this.inputmode)}
+          aria-label=${ifDefined(this.accessibleLabel || undefined)}
           aria-describedby="hint"
           @change=${this.handleChange}
           @input=${this.handleInput}

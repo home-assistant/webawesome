@@ -76,6 +76,12 @@ export default class WaCheckbox extends WebAwesomeFormAssociatedElement {
 
   @property() title = ''; // make reactive to pass through
 
+  /**
+   * An accessible label for the checkbox that is announced by assistive technology but not shown visually. Use it when
+   * the checkbox has no visible label.
+   */
+  @property({ attribute: 'accessible-label' }) accessibleLabel = '';
+
   private _value: string | null = this.getAttribute('value') ?? null;
 
   /** The value of the checkbox, submitted as a name/value pair with form data. */
@@ -256,6 +262,7 @@ export default class WaCheckbox extends WebAwesomeFormAssociatedElement {
             ?disabled=${this.disabled}
             ?required=${this.required}
             aria-checked=${this.indeterminate ? 'mixed' : this.checked ? 'true' : 'false'}
+            aria-label=${ifDefined(this.accessibleLabel || undefined)}
             aria-describedby="hint"
             @click=${this.handleClick}
           />

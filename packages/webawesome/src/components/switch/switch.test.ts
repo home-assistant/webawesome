@@ -18,6 +18,13 @@ describe('<wa-switch>', () => {
           await expect(el).to.be.accessible();
         });
 
+        it('should use accessible-label as the accessible name without a visible label', async () => {
+          const el = await fixture<WaSwitch>(html`<wa-switch accessible-label="Name"></wa-switch>`);
+          const control = el.shadowRoot!.querySelector('input')!;
+          expect(control.getAttribute('aria-label')).to.equal('Name');
+          await expect(el).to.be.accessible();
+        });
+
         it('should have role="switch" on the internal input', async () => {
           const el = await fixture<WaSwitch>(html`<wa-switch>Switch</wa-switch>`);
           const input = el.shadowRoot!.querySelector('input')!;

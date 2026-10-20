@@ -58,6 +58,12 @@ export default class WaSwitch extends WebAwesomeFormAssociatedElement {
 
   @property() title = ''; // make reactive to pass through
 
+  /**
+   * An accessible label for the switch that is announced by assistive technology but not shown visually. Use it when
+   * the switch has no visible label.
+   */
+  @property({ attribute: 'accessible-label' }) accessibleLabel = '';
+
   /** The name of the switch, submitted as a name/value pair with form data. */
   @property({ reflect: true }) name: string | null = null;
 
@@ -247,6 +253,7 @@ export default class WaSwitch extends WebAwesomeFormAssociatedElement {
           ?required=${this.required}
           role="switch"
           aria-checked=${this.checked ? 'true' : 'false'}
+          aria-label=${ifDefined(this.accessibleLabel || undefined)}
           aria-describedby="hint"
           @click=${this.handleClick}
           @keydown=${this.handleKeyDown}

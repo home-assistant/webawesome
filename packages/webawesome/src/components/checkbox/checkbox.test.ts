@@ -19,6 +19,13 @@ describe('<wa-checkbox>', () => {
           const el = await fixture<WaCheckbox>(html`<wa-checkbox>Checkbox</wa-checkbox>`);
           await expect(el).to.be.accessible();
         });
+
+        it('should use accessible-label as the accessible name without a visible label', async () => {
+          const el = await fixture<WaCheckbox>(html`<wa-checkbox accessible-label="Name"></wa-checkbox>`);
+          const control = el.shadowRoot!.querySelector('input')!;
+          expect(control.getAttribute('aria-label')).to.equal('Name');
+          await expect(el).to.be.accessible();
+        });
       });
 
       describe('properties', () => {
