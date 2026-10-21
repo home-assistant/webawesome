@@ -29,6 +29,14 @@ Web Awesome follows <a href="https://semver.org/" class="appearance-plain">Seman
 
 {% include "changelog-email-signup.njk" %}
 
+## Unreleased
+
+:::fixed
+
+- Fixed `<wa-tab-group>` initialization when its tabs are added after it becomes visible.
+
+:::
+
 ## 3.14.0
 
 <small><time datetime="2026-09-24">September 24th, 2026</time></small>
