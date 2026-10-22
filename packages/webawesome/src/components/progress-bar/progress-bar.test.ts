@@ -1,4 +1,5 @@
 import { expect } from '@open-wc/testing';
+import { emulateMedia } from '@web/test-runner-commands';
 import { html } from 'lit';
 import { fixtures } from '../../internal/test/fixture.js';
 import type WaProgressBar from './progress-bar.js';
@@ -64,10 +65,14 @@ describe('<wa-progress-bar>', () => {
           expect(el.hasAttribute('indeterminate')).to.be.true;
         });
 
-        it('should set aria-valuenow to 0 when indeterminate', async () => {
-          const el = await fixture<WaProgressBar>(html`<wa-progress-bar indeterminate></wa-progress-bar>`);
+        it('should not set aria-valuenow when indeterminate', async () => {
+          const el = await fixture<WaProgressBar>(html`<wa-progress-bar indeterminate value="40"></wa-progress-bar>`);
           const base = el.shadowRoot!.querySelector('[part~="base"]')!;
-          expect(base.getAttribute('aria-valuenow')).to.equal('0');
+          expect(base.hasAttribute('aria-valuenow')).to.be.false;
+
+          el.indeterminate = false;
+          await el.updateComplete;
+          expect(base.getAttribute('aria-valuenow')).to.equal('40');
         });
 
         it('should use custom label for aria-label when provided', async () => {
@@ -90,6 +95,33 @@ describe('<wa-progress-bar>', () => {
           expect(base.getAttribute('role')).to.equal('progressbar');
           expect(base.getAttribute('aria-valuemin')).to.equal('0');
           expect(base.getAttribute('aria-valuemax')).to.equal('100');
+        });
+      });
+
+      describe('reduced motion', () => {
+        afterEach(async () => {
+          await emulateMedia({ reducedMotion: 'no-preference' });
+        });
+
+        it('should not animate the indicator', async () => {
+          const el = await fixture<WaProgressBar>(html`<wa-progress-bar value="50"></wa-progress-bar>`);
+          const indicator = el.shadowRoot!.querySelector<HTMLElement>('[part~="indicator"]')!;
+
+          await emulateMedia({ reducedMotion: 'reduce' });
+          expect(getComputedStyle(indicator).transitionProperty).to.equal('none');
+        });
+
+        it('should fill the track with a still indicator when indeterminate', async () => {
+          const el = await fixture<WaProgressBar>(html`<wa-progress-bar indeterminate></wa-progress-bar>`);
+          const track = el.shadowRoot!.querySelector<HTMLElement>('[part~="progress-bar"]')!;
+          const indicator = el.shadowRoot!.querySelector<HTMLElement>('[part~="indicator"]')!;
+
+          expect(getComputedStyle(indicator).animationName).to.equal('wa-progress-indeterminate');
+
+          await emulateMedia({ reducedMotion: 'reduce' });
+          expect(getComputedStyle(indicator).animationName).to.equal('none');
+          expect(indicator.getBoundingClientRect().left).to.equal(track.getBoundingClientRect().left);
+          expect(indicator.getBoundingClientRect().width).to.equal(track.getBoundingClientRect().width);
         });
       });
 
