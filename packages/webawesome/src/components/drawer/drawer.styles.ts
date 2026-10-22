@@ -289,6 +289,18 @@ export default css`
     }
   }
 
+  /* Zero the durations instead of removing the animations, which the placement and direction rules would win over */
+  @media (prefers-reduced-motion: reduce) {
+    .drawer {
+      --show-duration: 0s;
+      --hide-duration: 0s;
+    }
+
+    .drawer.pulse {
+      animation: none;
+    }
+  }
+
   @media (forced-colors: active) {
     .drawer {
       border: solid 1px white;

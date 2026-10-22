@@ -78,6 +78,12 @@ export default css`
     rotate: -90deg;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .expand-button {
+      transition: none;
+    }
+  }
+
   .tree-item-expanded:not(.tree-item-loading) slot[name='expand-icon'],
   .tree-item:not(.tree-item-expanded) slot[name='collapse-icon'] {
     display: none;

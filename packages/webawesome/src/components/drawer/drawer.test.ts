@@ -1,5 +1,5 @@
 import { aTimeout, expect, waitUntil } from '@open-wc/testing';
-import { sendKeys } from '@web/test-runner-commands';
+import { emulateMedia, sendKeys } from '@web/test-runner-commands';
 import { html } from 'lit';
 import { expectEvent } from '../../internal/test/expect-event.js';
 import { fixtures } from '../../internal/test/fixture.js';
@@ -196,6 +196,27 @@ describe('<wa-drawer>', () => {
           });
 
           expect((hideEvent as CustomEvent).detail.source).to.exist;
+        });
+      });
+
+      describe('reduced motion', () => {
+        afterEach(async () => {
+          await emulateMedia({ reducedMotion: 'no-preference' });
+        });
+
+        it('should open and close at once when the user prefers reduced motion', async () => {
+          const el = await fixture<WaDrawer>(
+            html`<wa-drawer style="--show-duration: 5s; --hide-duration: 5s">Content</wa-drawer>`,
+          );
+          await emulateMedia({ reducedMotion: 'reduce' });
+
+          // expectEvent waits one second, far less than these durations
+          await expectEvent(el, 'wa-after-show', () => {
+            el.open = true;
+          });
+          await expectEvent(el, 'wa-after-hide', () => {
+            el.open = false;
+          });
         });
       });
 

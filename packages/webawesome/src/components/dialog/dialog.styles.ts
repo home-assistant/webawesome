@@ -182,6 +182,16 @@ export default css`
     }
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .dialog.show,
+    .dialog.hide,
+    .dialog.pulse,
+    .dialog.show::backdrop,
+    .dialog.hide::backdrop {
+      animation: none;
+    }
+  }
+
   @media (forced-colors: active) {
     .dialog {
       border: solid 1px white;
