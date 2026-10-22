@@ -84,6 +84,13 @@ export default css`
     transform-origin: left bottom;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    #menu.show,
+    #menu.hide {
+      animation: none;
+    }
+  }
+
   @keyframes show {
     from {
       scale: 0.9;

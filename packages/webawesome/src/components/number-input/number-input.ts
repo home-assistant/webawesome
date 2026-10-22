@@ -317,6 +317,8 @@ export default class WaNumberInput extends WebAwesomeFormAssociatedElement {
     const hasHintSlot = this.hasSlotController.test('hint', 'withHint');
     const hasLabel = this.label ? true : !!hasLabelSlot;
     const hasHint = this.hint ? true : !!hasHintSlot;
+    // A custom error is announced right away, other errors once the user has interacted, like `:user-invalid`
+    const isInvalid = Boolean(this.customError) || this.customStates.has('user-invalid');
 
     return html`
       <label
@@ -373,6 +375,7 @@ export default class WaNumberInput extends WebAwesomeFormAssociatedElement {
           ?autofocus=${this.autofocus}
           enterkeyhint=${ifDefined(this.enterkeyhint)}
           aria-describedby="hint"
+          aria-invalid=${isInvalid ? 'true' : 'false'}
           @change=${this.handleChange}
           @input=${this.handleInput}
           @keydown=${this.handleKeyDown}

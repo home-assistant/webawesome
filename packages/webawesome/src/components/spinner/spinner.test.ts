@@ -1,4 +1,5 @@
 import { expect } from '@open-wc/testing';
+import { emulateMedia } from '@web/test-runner-commands';
 import { html } from 'lit';
 import { fixtures } from '../../internal/test/fixture.js';
 import type WaSpinner from './spinner.js';
@@ -29,6 +30,25 @@ describe('<wa-spinner>', () => {
         it('should have a base part', async () => {
           const el = await fixture<WaSpinner>(html`<wa-spinner></wa-spinner>`);
           expect(el.shadowRoot!.querySelector('[part~="base"]')).to.exist;
+        });
+      });
+
+      describe('reduced motion', () => {
+        afterEach(async () => {
+          await emulateMedia({ reducedMotion: 'no-preference' });
+        });
+
+        it('should hold the spinner and its arc still', async () => {
+          const el = await fixture<WaSpinner>(html`<wa-spinner></wa-spinner>`);
+          const svg = el.shadowRoot!.querySelector('svg')!;
+          const indicator = el.shadowRoot!.querySelector('.indicator')!;
+
+          expect(getComputedStyle(svg).animationName).to.equal('spin');
+          expect(getComputedStyle(indicator).animationName).to.equal('dash');
+
+          await emulateMedia({ reducedMotion: 'reduce' });
+          expect(getComputedStyle(svg).animationName).to.equal('none');
+          expect(getComputedStyle(indicator).animationName).to.equal('none');
         });
       });
 

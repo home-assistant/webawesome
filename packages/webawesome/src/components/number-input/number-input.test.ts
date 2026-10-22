@@ -587,6 +587,29 @@ describe('<wa-number-input>', () => {
         });
       });
 
+      describe('aria-invalid', () => {
+        it('should not mark the input invalid before the user has interacted', async () => {
+          const el = await fixture<WaNumberInput>(html`<wa-number-input required></wa-number-input>`);
+          const control = el.shadowRoot!.querySelector('input')!;
+
+          expect(el.checkValidity()).to.be.false;
+          expect(control.getAttribute('aria-invalid')).to.equal('false');
+        });
+
+        it('should mark the input invalid right away when it has a custom error', async () => {
+          const el = await fixture<WaNumberInput>(html`<wa-number-input></wa-number-input>`);
+          const control = el.shadowRoot!.querySelector('input')!;
+
+          el.customError = 'Enter a name';
+          await el.updateComplete;
+          expect(control.getAttribute('aria-invalid')).to.equal('true');
+
+          el.customError = null;
+          await el.updateComplete;
+          expect(control.getAttribute('aria-invalid')).to.equal('false');
+        });
+      });
+
       describe('CSS parts and states', () => {
         it('should be valid by default', async () => {
           const el = await fixture<WaNumberInput>(html` <wa-number-input></wa-number-input> `);

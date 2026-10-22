@@ -70,7 +70,7 @@ export default class WaProgressBar extends WebAwesomeElement {
         aria-label=${this.label.length > 0 ? this.label : this.localize.term('progress')}
         aria-valuemin="0"
         aria-valuemax="100"
-        aria-valuenow=${this.indeterminate ? '0' : this.value}
+        aria-valuenow=${ifDefined(this.indeterminate ? undefined : this.value) /* Indeterminate bars have no value */}
       >
         <div part="indicator" class="indicator">
           ${!this.indeterminate ? html` <slot part="label" class="label"></slot> ` : ''}

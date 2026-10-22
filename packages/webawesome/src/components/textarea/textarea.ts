@@ -435,6 +435,8 @@ export default class WaTextarea extends WebAwesomeFormAssociatedElement {
     const hasHintSlot = this.hasSlotController.test('hint', 'withHint');
     const hasLabel = this.label ? true : !!hasLabelSlot;
     const hasHint = this.hint ? true : !!hasHintSlot;
+    // A custom error is announced right away, other errors once the user has interacted, like `:user-invalid`
+    const isInvalid = Boolean(this.customError) || this.customStates.has('user-invalid');
 
     // We use .length intentionally here instead of Intl.Segmenter so the count stays consistent with the browser's
     // native maxlength enforcement, which also counts UTF-16 code units.
@@ -480,6 +482,7 @@ export default class WaTextarea extends WebAwesomeFormAssociatedElement {
           inputmode=${ifDefined(this.inputmode)}
           aria-label=${ifDefined(this.accessibleLabel || undefined)}
           aria-describedby="hint"
+          aria-invalid=${isInvalid ? 'true' : 'false'}
           @change=${this.handleChange}
           @input=${this.handleInput}
           @blur=${this.handleBlur}

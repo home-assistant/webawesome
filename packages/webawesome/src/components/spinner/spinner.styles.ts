@@ -51,6 +51,14 @@ export default css`
     animation: dash 1.5s ease-in-out infinite;
   }
 
+  /* The arc holds still, which still reads as busy */
+  @media (prefers-reduced-motion: reduce) {
+    svg,
+    .indicator {
+      animation: none;
+    }
+  }
+
   @keyframes spin {
     0% {
       transform: rotate(0deg);

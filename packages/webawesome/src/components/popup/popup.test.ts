@@ -1,4 +1,5 @@
 import { aTimeout, expect } from '@open-wc/testing';
+import { emulateMedia } from '@web/test-runner-commands';
 import { html } from 'lit';
 import { fixtures } from '../../internal/test/fixture.js';
 import type WaPopup from './popup.js';
@@ -215,6 +216,23 @@ describe('<wa-popup>', () => {
 
           const hoverBridgePart = el.shadowRoot!.querySelector('[part~="hover-bridge"]');
           expect(hoverBridgePart).to.exist;
+        });
+      });
+
+      describe('reduced motion', () => {
+        afterEach(async () => {
+          await emulateMedia({ reducedMotion: 'no-preference' });
+        });
+
+        it('should not run the built-in animations when the user prefers reduced motion', async () => {
+          const el = await fixture<WaPopup>(html`<wa-popup active></wa-popup>`);
+          await emulateMedia({ reducedMotion: 'reduce' });
+
+          for (const className of ['show', 'hide', 'show-with-scale', 'hide-with-scale']) {
+            el.popup.classList.add(className);
+            expect(getComputedStyle(el.popup).animationName).to.equal('none');
+            el.popup.classList.remove(className);
+          }
         });
       });
 

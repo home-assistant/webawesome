@@ -1,5 +1,5 @@
 import { aTimeout, expect, waitUntil } from '@open-wc/testing';
-import { sendKeys, setViewport } from '@web/test-runner-commands';
+import { emulateMedia, sendKeys, setViewport } from '@web/test-runner-commands';
 import { html } from 'lit';
 import sinon from 'sinon';
 import { expectEvent } from '../../internal/test/expect-event.js';
@@ -412,6 +412,30 @@ describe('<wa-dropdown>', () => {
           await aTimeout(100);
 
           expect(item.checked).to.be.true;
+        });
+      });
+
+      describe('reduced motion', () => {
+        afterEach(async () => {
+          await emulateMedia({ reducedMotion: 'no-preference' });
+        });
+
+        it('should open and close at once when the user prefers reduced motion', async () => {
+          const el = await fixture<WaDropdown>(html`
+            <wa-dropdown style="--show-duration: 5s; --hide-duration: 5s">
+              <wa-button slot="trigger">Dropdown</wa-button>
+              <wa-dropdown-item>One</wa-dropdown-item>
+            </wa-dropdown>
+          `);
+          await emulateMedia({ reducedMotion: 'reduce' });
+
+          // expectEvent waits one second, far less than these durations
+          await expectEvent(el, 'wa-after-show', () => {
+            el.open = true;
+          });
+          await expectEvent(el, 'wa-after-hide', () => {
+            el.open = false;
+          });
         });
       });
 

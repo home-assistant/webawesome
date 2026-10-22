@@ -108,6 +108,12 @@ export default css`
     rotate: -90deg;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    [part~='icon'] {
+      transition: none;
+    }
+  }
+
   :host([open]) slot[name='expand-icon'],
   :host(:not([open])) slot[name='collapse-icon'] {
     display: none;

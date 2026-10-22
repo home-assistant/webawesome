@@ -102,6 +102,12 @@ export default css`
       rotate: -90deg;
     }
 
+    @media (prefers-reduced-motion: reduce) {
+      [part~='icon'] {
+        transition: none;
+      }
+    }
+
     .body {
       overflow: hidden;
       color: var(--wa-color-text-quiet);

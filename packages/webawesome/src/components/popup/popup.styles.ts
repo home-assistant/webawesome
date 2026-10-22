@@ -144,4 +144,13 @@ export default css`
       scale: 1;
     }
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .show,
+    .hide,
+    .show-with-scale,
+    .hide-with-scale {
+      animation: none;
+    }
+  }
 `;
