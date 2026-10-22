@@ -330,6 +330,42 @@ describe('<wa-textarea>', () => {
         });
       });
 
+      describe('aria-invalid', () => {
+        it('should not mark the textarea invalid before the user has interacted', async () => {
+          const el = await fixture<WaTextarea>(html`<wa-textarea required></wa-textarea>`);
+          const control = el.shadowRoot!.querySelector('textarea')!;
+
+          expect(el.checkValidity()).to.be.false;
+          expect(control.getAttribute('aria-invalid')).to.equal('false');
+        });
+
+        it('should mark the textarea invalid once the user has interacted', async () => {
+          const el = await fixture<WaTextarea>(html`<wa-textarea required></wa-textarea>`);
+          const control = el.shadowRoot!.querySelector('textarea')!;
+
+          el.focus();
+          await sendKeys({ press: 'a' });
+          await sendKeys({ press: 'Backspace' });
+          el.blur();
+          await el.updateComplete;
+
+          expect(control.getAttribute('aria-invalid')).to.equal('true');
+        });
+
+        it('should mark the textarea invalid right away when it has a custom error', async () => {
+          const el = await fixture<WaTextarea>(html`<wa-textarea></wa-textarea>`);
+          const control = el.shadowRoot!.querySelector('textarea')!;
+
+          el.customError = 'Enter a name';
+          await el.updateComplete;
+          expect(control.getAttribute('aria-invalid')).to.equal('true');
+
+          el.customError = null;
+          await el.updateComplete;
+          expect(control.getAttribute('aria-invalid')).to.equal('false');
+        });
+      });
+
       describe('CSS parts and states', () => {
         it('should receive the correct validation states when valid', async () => {
           const el = await fixture<WaTextarea>(html`<wa-textarea required value="a"></wa-textarea>`);

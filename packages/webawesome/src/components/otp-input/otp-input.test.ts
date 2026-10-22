@@ -340,6 +340,29 @@ describe('<wa-otp-input>', () => {
         });
       });
 
+      describe('aria-invalid', () => {
+        it('should not mark the input invalid before the user has interacted', async () => {
+          const el = await fixture<WaOtpInput>(html`<wa-otp-input required></wa-otp-input>`);
+          const control = el.shadowRoot!.querySelector('input')!;
+
+          expect(el.checkValidity()).to.be.false;
+          expect(control.getAttribute('aria-invalid')).to.equal('false');
+        });
+
+        it('should mark the input invalid right away when it has a custom error', async () => {
+          const el = await fixture<WaOtpInput>(html`<wa-otp-input></wa-otp-input>`);
+          const control = el.shadowRoot!.querySelector('input')!;
+
+          el.customError = 'Enter a name';
+          await el.updateComplete;
+          expect(control.getAttribute('aria-invalid')).to.equal('true');
+
+          el.customError = null;
+          await el.updateComplete;
+          expect(control.getAttribute('aria-invalid')).to.equal('false');
+        });
+      });
+
       describe('methods', () => {
         it('should clear the value and focus on clear()', async () => {
           const el = await fixture<WaOtpInput>(html`<wa-otp-input value="123"></wa-otp-input>`);

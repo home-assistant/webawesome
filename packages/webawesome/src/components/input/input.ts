@@ -405,6 +405,8 @@ export default class WaInput extends WebAwesomeFormAssociatedElement {
       (!this.didSSR || this.hasUpdated) &&
       hasClearIcon &&
       (typeof this.value === 'number' || (this.value && this.value.length > 0));
+    // A custom error is announced right away, other errors once the user has interacted, like `:user-invalid`
+    const isInvalid = Boolean(this.customError) || this.customStates.has('user-invalid');
 
     return html`
       <label
@@ -449,6 +451,7 @@ export default class WaInput extends WebAwesomeFormAssociatedElement {
           inputmode=${ifDefined(this.inputmode)}
           aria-label=${ifDefined(this.accessibleLabel || undefined)}
           aria-describedby="hint"
+          aria-invalid=${isInvalid ? 'true' : 'false'}
           @change=${this.handleChange}
           @input=${this.handleInput}
           @keydown=${this.handleKeyDown}
