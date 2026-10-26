@@ -246,7 +246,7 @@ export default class WaDropdownItem extends WebAwesomeElement {
       const siblings = [...parent.children].filter(
         el =>
           el !== this &&
-          el.localName === 'wa-dropdown-item' &&
+          el.localName === this.localName &&
           el.getAttribute('slot') === this.getAttribute('slot') &&
           (el as WaDropdownItem).submenuOpen,
       ) as WaDropdownItem[];
@@ -310,8 +310,7 @@ export default class WaDropdownItem extends WebAwesomeElement {
   private getSubmenuItems(): WaDropdownItem[] {
     // Only get direct children with slot="submenu", not nested ones
     return [...this.children].filter(
-      el =>
-        el.localName === 'wa-dropdown-item' && el.getAttribute('slot') === 'submenu' && !el.hasAttribute('disabled'),
+      el => el.localName === this.localName && el.getAttribute('slot') === 'submenu' && !el.hasAttribute('disabled'),
     ) as WaDropdownItem[];
   }
 

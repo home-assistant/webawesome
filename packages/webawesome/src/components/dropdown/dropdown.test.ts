@@ -711,6 +711,67 @@ describe('<wa-dropdown>', () => {
     });
   });
 
+  describe('sibling submenus', () => {
+    const siblingSubmenusFixture = () =>
+      clientFixture<WaDropdown>(html`
+        <wa-dropdown>
+          <wa-button slot="trigger">Menu</wa-button>
+          <wa-dropdown-item id="first">
+            First
+            <wa-dropdown-item slot="submenu" value="first-child">First child</wa-dropdown-item>
+          </wa-dropdown-item>
+          <wa-dropdown-item id="second">
+            Second
+            <wa-dropdown-item slot="submenu" value="second-child">Second child</wa-dropdown-item>
+          </wa-dropdown-item>
+        </wa-dropdown>
+      `);
+
+    async function hover(item: WaDropdownItem) {
+      item.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
+      await waitUntil(() => item.submenuOpen);
+      await aTimeout(100);
+    }
+
+    it('should close the previously hovered sibling submenu', async () => {
+      const el = await siblingSubmenusFixture();
+      el.open = true;
+      await waitUntil(() => el.open);
+
+      const first = el.querySelector<WaDropdownItem>('#first')!;
+      const second = el.querySelector<WaDropdownItem>('#second')!;
+      await hover(first);
+      await hover(second);
+
+      expect(first.submenuOpen).to.be.false;
+      expect(second.submenuOpen).to.be.true;
+    });
+
+    it('should not navigate into a closed sibling submenu with the keyboard', async () => {
+      const el = await siblingSubmenusFixture();
+      el.open = true;
+      await waitUntil(() => el.open);
+
+      const first = el.querySelector<WaDropdownItem>('#first')!;
+      const second = el.querySelector<WaDropdownItem>('#second')!;
+      const selectHandler = sinon.spy();
+      el.addEventListener('wa-select', selectHandler);
+
+      await hover(first);
+      await hover(second);
+
+      // Leave the second submenu, then move down and select
+      await sendKeys({ press: 'ArrowLeft' });
+      await aTimeout(50);
+      await sendKeys({ press: 'ArrowDown' });
+      await sendKeys({ press: 'Enter' });
+      await aTimeout(50);
+
+      const selected = selectHandler.getCalls().map(call => call.args[0].detail.item.value);
+      expect(selected).not.to.include('first-child');
+    });
+  });
+
   describe('submenu positioning', () => {
     const submenuFixture = () =>
       clientFixture<WaDropdown>(html`
