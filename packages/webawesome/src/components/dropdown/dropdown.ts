@@ -221,7 +221,6 @@ export default class WaDropdown extends WebAwesomeElement {
 
   /** Closes sibling submenus at the same level as the specified item. */
   private closeSiblingSubmenus(item: WaDropdownItem) {
-    // Only items in a submenu have a parent item. `closest()` would match the item itself.
     const parentDropdownItem =
       item.getAttribute('slot') === 'submenu' && item.parentElement?.localName === this.dropdownItemTag
         ? (item.parentElement as WaDropdownItem)
