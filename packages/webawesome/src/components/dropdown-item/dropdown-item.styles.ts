@@ -226,6 +226,13 @@ export default css`
     --spacing: 0.25em;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    #submenu.show,
+    #submenu.hide {
+      animation: none;
+    }
+  }
+
   @keyframes submenu-show {
     from {
       scale: 0.9;

@@ -45,6 +45,20 @@ export default css`
     animation: wa-progress-indeterminate 2.5s infinite cubic-bezier(0.37, 0, 0.63, 1);
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .indicator {
+      transition: none;
+    }
+
+    /* A still, half-width indicator would read as 50%, so fill the track with stripes that still read as busy */
+    :host([indeterminate]) .indicator {
+      inset-inline-start: 0;
+      inline-size: 100%;
+      animation: none;
+      background-image: repeating-linear-gradient(-45deg, transparent 0 4px, var(--track-color) 4px 8px);
+    }
+  }
+
   @media (forced-colors: active) {
     .progress-bar {
       outline: solid 1px SelectedItem;

@@ -786,6 +786,7 @@ describe('<wa-time-input>', () => {
       // Invalid, but the user hasn't interacted yet.
       expect(el.customStates.has('invalid')).to.equal(true);
       expect(el.customStates.has('user-invalid')).to.equal(false);
+      expect(getSegments(el).map(segment => segment.getAttribute('aria-invalid'))).to.deep.equal(['false', 'false']);
     });
 
     it('becomes user-invalid after editing a segment (assumeInteractionOn=["input"])', async () => {
@@ -800,6 +801,19 @@ describe('<wa-time-input>', () => {
       // The value is still incomplete (minute empty), so it remains invalid — but now interacted.
       expect(el.validity.valueMissing).to.equal(true);
       expect(el.customStates.has('user-invalid')).to.equal(true);
+      expect(getSegments(el).map(segment => segment.getAttribute('aria-invalid'))).to.deep.equal(['true', 'true']);
+    });
+
+    it('marks the segments invalid right away when it has a custom error', async () => {
+      const el = await fixture<WaTimeInput>(html`<wa-time-input lang="en-GB"></wa-time-input>`);
+
+      el.customError = 'Pick a later time';
+      await el.updateComplete;
+      expect(getSegments(el).map(segment => segment.getAttribute('aria-invalid'))).to.deep.equal(['true', 'true']);
+
+      el.customError = null;
+      await el.updateComplete;
+      expect(getSegments(el).map(segment => segment.getAttribute('aria-invalid'))).to.deep.equal(['false', 'false']);
     });
   });
 

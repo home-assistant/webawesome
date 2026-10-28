@@ -1,5 +1,12 @@
-/** Same as `el.animate()`, except returns a promise that doesn't throw an error when the animation is canceled. */
+/**
+ * Same as `el.animate()`, except returns a promise that doesn't throw an error when the animation is canceled. When the
+ * user prefers reduced motion, the animation finishes at once.
+ */
 export async function animate(el: Element, keyframes: Keyframe[], options?: KeyframeAnimationOptions) {
+  if (prefersReducedMotion()) {
+    options = { ...options, duration: 0, delay: 0 };
+  }
+
   return el.animate(keyframes, options).finished.catch(() => {
     /* suppress errors in Safari */
   });

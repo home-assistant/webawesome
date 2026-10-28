@@ -1122,6 +1122,8 @@ export default class WaTimeInput extends WebAwesomeFormAssociatedElement {
           ? { min: 0, max: 59 }
           : { min: 0, max: 1 };
     const ariaValueText = this.segmentAriaValueText(field);
+    // A custom error is announced right away, other errors once the user has interacted, like `:user-invalid`
+    const isInvalid = Boolean(this.customError) || this.customStates.has('user-invalid');
 
     return html`<span
       part="segment"
@@ -1138,6 +1140,7 @@ export default class WaTimeInput extends WebAwesomeFormAssociatedElement {
       aria-readonly=${this.readonly ? 'true' : 'false'}
       aria-disabled=${this.disabled ? 'true' : 'false'}
       aria-describedby=${this.keyboardHelpId}
+      aria-invalid=${isInvalid ? 'true' : 'false'}
       inputmode=${field === 'dayPeriod' ? 'text' : 'numeric'}
       @keydown=${this.handleSegmentKeyDown}
       @focus=${this.handleSegmentFocus}

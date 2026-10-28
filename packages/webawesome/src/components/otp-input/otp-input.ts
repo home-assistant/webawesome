@@ -526,6 +526,8 @@ export default class WaOtpInput extends WebAwesomeFormAssociatedElement {
     const hasHintSlot = this.hasSlotController.test('hint');
     const hasLabel = this.label ? true : !!hasLabelSlot;
     const hasHint = this.hint ? true : !!hasHintSlot;
+    // A custom error is announced right away, other errors once the user has interacted, like `:user-invalid`
+    const isInvalid = Boolean(this.customError) || this.customStates.has('user-invalid');
 
     const chars = [...this._value];
     const parts = this.parsedFormat;
@@ -597,6 +599,7 @@ export default class WaOtpInput extends WebAwesomeFormAssociatedElement {
           autocomplete=${this.autocomplete}
           inputmode=${this.type === 'numeric' ? 'numeric' : 'text'}
           aria-describedby="hint"
+          aria-invalid=${isInvalid ? 'true' : 'false'}
           ?required=${this.required}
           ?disabled=${this.disabled}
           ?readonly=${this.readonly}
