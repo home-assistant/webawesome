@@ -221,7 +221,10 @@ export default class WaDropdown extends WebAwesomeElement {
 
   /** Closes sibling submenus at the same level as the specified item. */
   private closeSiblingSubmenus(item: WaDropdownItem) {
-    const parentDropdownItem = item.closest<WaDropdownItem>(`${this.dropdownItemTag}:not([slot="submenu"])`);
+    const parentDropdownItem =
+      item.getAttribute('slot') === 'submenu' && item.parentElement?.localName === this.dropdownItemTag
+        ? (item.parentElement as WaDropdownItem)
+        : null;
     let siblingItems: WaDropdownItem[];
 
     if (parentDropdownItem) {
@@ -233,6 +236,13 @@ export default class WaDropdown extends WebAwesomeElement {
     siblingItems.forEach(siblingItem => {
       if (siblingItem !== item && siblingItem.submenuOpen) {
         siblingItem.submenuOpen = false;
+      }
+
+      // Drop closed siblings and their nested submenus from the stack, so keyboard navigation
+      // doesn't continue in a submenu that is no longer visible
+      const index = this.openSubmenuStack.indexOf(siblingItem);
+      if (siblingItem !== item && index !== -1) {
+        this.openSubmenuStack = this.openSubmenuStack.slice(0, index);
       }
     });
 
