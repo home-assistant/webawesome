@@ -66,6 +66,7 @@ export default class WaTooltip extends WebAwesomeElement {
   static dependencies = { 'wa-popup': WaPopup };
 
   private hoverTimeout: number;
+  private anchorAssociation: 'label' | 'description' = 'label';
 
   // Set when the anchor is pressed to light dismiss the tooltip. While true, hover and focus won't reopen it. Cleared
   // when the pointer fully leaves the anchor and tooltip or when the anchor blurs.
@@ -120,6 +121,12 @@ export default class WaTooltip extends WebAwesomeElement {
 
   /** Removes the arrow from the tooltip. */
   @property({ attribute: 'without-arrow', type: Boolean, reflect: true }) withoutArrow = false;
+
+  /**
+   * How the tooltip is associated with its anchor. Use `description` for supplementary information, such as keyboard
+   * shortcuts, to preserve the anchor's accessible name. The default `label` uses `aria-labelledby`.
+   */
+  @property() association: 'label' | 'description' = 'label';
 
   @property() for: string | null = null;
 
@@ -177,7 +184,7 @@ export default class WaTooltip extends WebAwesomeElement {
     this.eventController.abort();
 
     if (this.anchor) {
-      this.removeFromAriaLabelledBy(this.anchor, this.id);
+      this.removeAriaAssociation(this.anchor);
     }
   }
 
@@ -316,31 +323,37 @@ export default class WaTooltip extends WebAwesomeElement {
     return triggers.includes(triggerType);
   }
 
-  /** Adds the tooltip ID to the aria-labelledby attribute */
-  private addToAriaLabelledBy(element: Element, id: string) {
-    const currentLabel = element.getAttribute('aria-labelledby') || '';
-    const labels = currentLabel.split(/\s+/).filter(Boolean);
+  private associationAttribute(association: 'label' | 'description') {
+    return association === 'description' ? 'aria-describedby' : 'aria-labelledby';
+  }
 
-    // Only add if not already present
-    if (!labels.includes(id)) {
-      labels.push(id);
-      element.setAttribute('aria-labelledby', labels.join(' '));
+  private addAriaAssociation(element: Element) {
+    this.anchorAssociation = this.association;
+    const attribute = this.associationAttribute(this.association);
+    const ids = (element.getAttribute(attribute) || '').split(/\s+/).filter(Boolean);
+
+    if (!ids.includes(this.id)) {
+      ids.push(this.id);
+      element.setAttribute(attribute, ids.join(' '));
     }
   }
 
-  /** Removes the tooltip ID from the aria-labelledby attribute */
-  private removeFromAriaLabelledBy(element: Element, id: string) {
-    const currentLabel = element.getAttribute('aria-labelledby') || '';
-    const labels = currentLabel.split(/\s+/).filter(Boolean);
+  private removeAriaAssociation(element: Element) {
+    const attribute = this.associationAttribute(this.anchorAssociation);
+    const ids = (element.getAttribute(attribute) || '').split(/\s+/).filter(id => id && id !== this.id);
 
-    // Remove the ID
-    const filteredLabels = labels.filter(label => label !== id);
-
-    if (filteredLabels.length > 0) {
-      element.setAttribute('aria-labelledby', filteredLabels.join(' '));
+    if (ids.length > 0) {
+      element.setAttribute(attribute, ids.join(' '));
     } else {
-      // Remove the attribute if empty
-      element.removeAttribute('aria-labelledby');
+      element.removeAttribute(attribute);
+    }
+  }
+
+  @watch('association')
+  handleAssociationChange() {
+    if (this.anchor) {
+      this.removeAriaAssociation(this.anchor);
+      this.addAriaAssociation(this.anchor);
     }
   }
 
@@ -414,15 +427,25 @@ export default class WaTooltip extends WebAwesomeElement {
 
     const { signal } = this.eventController;
 
+    if (oldAnchor) {
+      this.removeAriaAssociation(oldAnchor);
+      oldAnchor.removeEventListener('blur', this.handleBlur, { capture: true });
+      oldAnchor.removeEventListener('focus', this.handleFocus, { capture: true });
+      oldAnchor.removeEventListener('click', this.handleClick);
+      oldAnchor.removeEventListener('mousedown', this.handleMouseDown);
+      oldAnchor.removeEventListener('mouseover', this.handleMouseOver);
+      oldAnchor.removeEventListener('mouseout', this.handleMouseOut);
+    }
+
     if (newAnchor) {
       /**
-       * We use `aria-labelledby` because it seems to have the most consistent screen reader experience.
+       * By default, we use `aria-labelledby` because it seems to have the most consistent screen reader experience.
        * Particularly for our "special" focusable elements like `<wa-button>`, `<wa-input>` etc.
        * aria-describedby usually in some screen readers is required to be on the actually focusable element,
        * whereas with `aria-labelledby` it'll still read on first focus. The APG does and WAI-ARIA does recommend aria-describedby
        * so perhaps once we have cross-root aria, we can revisit this decision.
        */
-      this.addToAriaLabelledBy(newAnchor, this.id);
+      this.addAriaAssociation(newAnchor);
 
       newAnchor.addEventListener('blur', this.handleBlur, { capture: true, signal });
       newAnchor.addEventListener('focus', this.handleFocus, { capture: true, signal });
@@ -430,16 +453,6 @@ export default class WaTooltip extends WebAwesomeElement {
       newAnchor.addEventListener('mousedown', this.handleMouseDown, { signal });
       newAnchor.addEventListener('mouseover', this.handleMouseOver, { signal });
       newAnchor.addEventListener('mouseout', this.handleMouseOut, { signal });
-    }
-
-    if (oldAnchor) {
-      this.removeFromAriaLabelledBy(oldAnchor, this.id);
-      oldAnchor.removeEventListener('blur', this.handleBlur, { capture: true });
-      oldAnchor.removeEventListener('focus', this.handleFocus, { capture: true });
-      oldAnchor.removeEventListener('click', this.handleClick);
-      oldAnchor.removeEventListener('mousedown', this.handleMouseDown);
-      oldAnchor.removeEventListener('mouseover', this.handleMouseOver);
-      oldAnchor.removeEventListener('mouseout', this.handleMouseOut);
     }
 
     this.anchor = newAnchor;
