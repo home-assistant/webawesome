@@ -25,6 +25,94 @@ describe('<wa-tooltip>', () => {
           const labelledBy = anchor.getAttribute('aria-labelledby');
           expect(labelledBy).to.include(tooltip.id);
         });
+
+        it('should preserve the anchor name when describing it and clean up associations', async () => {
+          const el = await fixture<HTMLDivElement>(html`
+            <div>
+              <button id="first" aria-label="Move item" aria-labelledby="name" aria-describedby="help">Move</button>
+              <button id="second" aria-describedby="other-help">Other</button>
+              <span id="name">Item name</span>
+              <span id="help">Existing help</span>
+              <span id="other-help">Other help</span>
+              <wa-tooltip for="first" association="description" trigger="focus">Alt+↑ / Alt+↓</wa-tooltip>
+            </div>
+          `);
+          const tooltip = el.querySelector<WaTooltip>('wa-tooltip')!;
+          const first = el.querySelector<HTMLElement>('#first')!;
+          const second = el.querySelector<HTMLElement>('#second')!;
+          await tooltip.updateComplete;
+
+          expect(first.getAttribute('aria-label')).to.equal('Move item');
+          expect(first.getAttribute('aria-labelledby')).to.equal('name');
+          expect(first.getAttribute('aria-describedby')).to.equal(`help ${tooltip.id}`);
+
+          tooltip.association = 'label';
+          await tooltip.updateComplete;
+          expect(first.getAttribute('aria-describedby')).to.equal('help');
+          expect(first.getAttribute('aria-labelledby')).to.equal(`name ${tooltip.id}`);
+
+          tooltip.association = 'description';
+          await tooltip.updateComplete;
+          expect(first.getAttribute('aria-labelledby')).to.equal('name');
+          expect(first.getAttribute('aria-describedby')).to.equal(`help ${tooltip.id}`);
+
+          tooltip.for = 'second';
+          await tooltip.updateComplete;
+          expect(first.getAttribute('aria-describedby')).to.equal('help');
+          expect(second.getAttribute('aria-describedby')).to.equal(`other-help ${tooltip.id}`);
+
+          tooltip.remove();
+          expect(second.getAttribute('aria-describedby')).to.equal('other-help');
+          el.append(tooltip);
+          await tooltip.updateComplete;
+          expect(second.getAttribute('aria-describedby')).to.equal(`other-help ${tooltip.id}`);
+          expect(second.hasAttribute('aria-labelledby')).to.be.false;
+
+          tooltip.for = 'first';
+          tooltip.association = 'label';
+          await tooltip.updateComplete;
+          expect(second.getAttribute('aria-describedby')).to.equal('other-help');
+          expect(first.getAttribute('aria-describedby')).to.equal('help');
+          expect(first.getAttribute('aria-labelledby')).to.equal(`name ${tooltip.id}`);
+        });
+
+        it('should preserve the order of existing aria-labelledby IDs on first update', async () => {
+          const el = await fixture<HTMLDivElement>(html`
+            <div>
+              <button id="anchor" aria-labelledby="tooltip other">Move</button>
+              <span id="other">Other label</span>
+              <wa-tooltip id="tooltip" for="anchor">Tooltip label</wa-tooltip>
+            </div>
+          `);
+          const tooltip = el.querySelector<WaTooltip>('wa-tooltip')!;
+          const anchor = el.querySelector<HTMLElement>('#anchor')!;
+          await tooltip.updateComplete;
+
+          expect(anchor.getAttribute('aria-labelledby')).to.equal('tooltip other');
+        });
+
+        it('should not associate a detached tooltip when its association changes', async () => {
+          const el = await fixture<HTMLDivElement>(html`
+            <div>
+              <button id="anchor">Move</button>
+              <wa-tooltip for="anchor">Tooltip label</wa-tooltip>
+            </div>
+          `);
+          const tooltip = el.querySelector<WaTooltip>('wa-tooltip')!;
+          const anchor = el.querySelector<HTMLElement>('#anchor')!;
+          await tooltip.updateComplete;
+
+          tooltip.remove();
+          tooltip.association = 'description';
+          await tooltip.updateComplete;
+
+          expect(anchor.hasAttribute('aria-labelledby')).to.be.false;
+          expect(anchor.hasAttribute('aria-describedby')).to.be.false;
+
+          el.append(tooltip);
+          await tooltip.updateComplete;
+          expect(anchor.getAttribute('aria-describedby')).to.equal(tooltip.id);
+        });
       });
 
       describe('properties', () => {
