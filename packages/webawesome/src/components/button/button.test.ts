@@ -4,6 +4,7 @@ import sinon from 'sinon';
 import { fixtures } from '../../internal/test/fixture.js';
 import { runFormControlBaseTests } from '../../internal/test/form-control-base-tests.js';
 import { clickOnElement } from '../../internal/test/pointer-utilities.js';
+import type WaSpinner from '../spinner/spinner.js';
 import type WaButton from './button.js';
 
 const variants = ['brand', 'success', 'neutral', 'warning', 'danger'];
@@ -96,6 +97,15 @@ describe('<wa-button>', () => {
           const el = await fixture<WaButton>(html` <wa-button loading>Button Label</wa-button> `);
           const button = el.shadowRoot!.querySelector<HTMLButtonElement>('[part~="base"]')!;
           expect(button.getAttribute('aria-busy')).to.equal('true');
+        });
+
+        it('should hide the loading spinner from assistive technology', async () => {
+          const el = await fixture<WaButton>(html` <wa-button loading>Button Label</wa-button> `);
+          const spinner = el.shadowRoot!.querySelector<WaSpinner>('wa-spinner')!;
+          await spinner.updateComplete;
+          const progressbar = spinner.shadowRoot!.querySelector('[role="progressbar"]')!;
+          expect(spinner.getAttribute('aria-hidden')).to.equal('true');
+          expect(progressbar.getAttribute('aria-hidden')).to.equal('true');
         });
       });
 
