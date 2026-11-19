@@ -1,4 +1,4 @@
-import { html } from 'lit';
+import { html, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import WebAwesomeElement from '../../internal/webawesome-element.js';
 import { LocalizeController } from '../../utilities/localize.js';
@@ -31,6 +31,7 @@ export default class WaSpinner extends WebAwesomeElement {
         part="base spinner"
         role="progressbar"
         aria-label=${this.localize.term('loading')}
+        aria-hidden=${this.getAttribute('aria-hidden') ?? nothing}
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >

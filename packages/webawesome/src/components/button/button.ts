@@ -365,7 +365,7 @@ export default class WaButton extends WebAwesomeFormAssociatedElement {
               `
             : ''
         }
-        ${this.loading ? html`<wa-spinner part="spinner"></wa-spinner>` : ''}
+        ${this.loading ? html`<wa-spinner part="spinner" aria-hidden="true"></wa-spinner>` : ''}
       </${tag}>
     `;
   }
