@@ -28,22 +28,6 @@ Tooltips can't be reliably focused or operated with a keyboard, so avoid buttons
 
 ## Examples
 
-### Supplementary descriptions
-
-By default, the tooltip labels its anchor with `aria-labelledby`. For supplementary information such as a keyboard shortcut,
-use `association="description"` to add the tooltip to `aria-describedby` and preserve the anchor's accessible name.
-
-```html
-<button id="move-item" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown">Move item</button>
-<wa-tooltip for="move-item" association="description" trigger="focus">
-  Move up (Alt+↑)<br />
-  Move down (Alt+↓)
-</wa-tooltip>
-```
-
-With `trigger="focus"`, the hint appears on keyboard focus. Pressing or tapping the anchor dismisses it. For components that
-forward focus into a shadow root, verify that assistive technology announces the description on the focused element.
-
 ### Placement
 
 Use the `placement` attribute to set the tooltip's preferred position. The actual placement may shift to keep the tooltip inside the viewport.
@@ -132,6 +116,22 @@ Open tooltips light dismiss, which means pressing the target, clicking the toolt
 <wa-button appearance="filled" id="toggle-button">Click to Toggle</wa-button>
 <wa-tooltip for="toggle-button" trigger="click">Click again to dismiss</wa-tooltip>
 ```
+
+### Supplementary descriptions
+
+By default, the tooltip labels its anchor with `aria-labelledby`. For supplementary information such as a keyboard shortcut,
+use `association="description"` to add the tooltip to `aria-describedby` and preserve the anchor's accessible name.
+
+```html {.example}
+<button id="move-item" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown">Move item</button>
+<wa-tooltip for="move-item" association="description" trigger="focus">
+  Move up (Alt+↑)<br />
+  Move down (Alt+↓)
+</wa-tooltip>
+```
+
+With `trigger="focus"`, the hint appears on keyboard focus. Pressing or tapping the anchor dismisses it. For components that
+forward focus into a shadow root, verify that assistive technology announces the description on the focused element.
 
 ### HTML in Tooltips
 

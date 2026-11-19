@@ -75,6 +75,44 @@ describe('<wa-tooltip>', () => {
           expect(first.getAttribute('aria-describedby')).to.equal('help');
           expect(first.getAttribute('aria-labelledby')).to.equal(`name ${tooltip.id}`);
         });
+
+        it('should preserve the order of existing aria-labelledby IDs on first update', async () => {
+          const el = await fixture<HTMLDivElement>(html`
+            <div>
+              <button id="anchor" aria-labelledby="tooltip other">Move</button>
+              <span id="other">Other label</span>
+              <wa-tooltip id="tooltip" for="anchor">Tooltip label</wa-tooltip>
+            </div>
+          `);
+          const tooltip = el.querySelector<WaTooltip>('wa-tooltip')!;
+          const anchor = el.querySelector<HTMLElement>('#anchor')!;
+          await tooltip.updateComplete;
+
+          expect(anchor.getAttribute('aria-labelledby')).to.equal('tooltip other');
+        });
+
+        it('should not associate a detached tooltip when its association changes', async () => {
+          const el = await fixture<HTMLDivElement>(html`
+            <div>
+              <button id="anchor">Move</button>
+              <wa-tooltip for="anchor">Tooltip label</wa-tooltip>
+            </div>
+          `);
+          const tooltip = el.querySelector<WaTooltip>('wa-tooltip')!;
+          const anchor = el.querySelector<HTMLElement>('#anchor')!;
+          await tooltip.updateComplete;
+
+          tooltip.remove();
+          tooltip.association = 'description';
+          await tooltip.updateComplete;
+
+          expect(anchor.hasAttribute('aria-labelledby')).to.be.false;
+          expect(anchor.hasAttribute('aria-describedby')).to.be.false;
+
+          el.append(tooltip);
+          await tooltip.updateComplete;
+          expect(anchor.getAttribute('aria-describedby')).to.equal(tooltip.id);
+        });
       });
 
       describe('properties', () => {

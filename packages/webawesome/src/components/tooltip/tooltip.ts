@@ -351,7 +351,7 @@ export default class WaTooltip extends WebAwesomeElement {
 
   @watch('association')
   handleAssociationChange() {
-    if (this.anchor) {
+    if (this.anchor && this.isConnected && this.anchorAssociation !== this.association) {
       this.removeAriaAssociation(this.anchor);
       this.addAriaAssociation(this.anchor);
     }
