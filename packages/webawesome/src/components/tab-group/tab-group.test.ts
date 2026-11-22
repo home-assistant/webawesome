@@ -168,6 +168,74 @@ describe('<wa-tab-group>', () => {
           const activeTab = getActiveTab(tabGroup);
           expect(activeTab!.panel).to.equal('custom');
         });
+
+        it('should select the requested tab when tabs are added after becoming visible', async () => {
+          const tabGroup = await fixture<WaTabGroup>(html`<wa-tab-group active="custom"></wa-tab-group>`);
+          await aTimeout(50);
+
+          const showSpy = sinon.spy();
+          tabGroup.addEventListener('wa-tab-show', showSpy);
+          tabGroup.insertAdjacentHTML(
+            'beforeend',
+            '<wa-tab panel="general">General</wa-tab><wa-tab panel="custom">Custom</wa-tab>',
+          );
+
+          await waitUntil(() => getActiveTab(tabGroup)?.panel === 'custom');
+          expect(showSpy).not.to.have.been.called;
+
+          await clickOnElement(tabGroup.querySelector<WaTab>('wa-tab[panel="general"]')!);
+          await waitUntil(() => getActiveTab(tabGroup)?.panel === 'general');
+          tabGroup.insertAdjacentHTML(
+            'beforeend',
+            '<wa-tab-panel name="general">General content</wa-tab-panel><wa-tab-panel name="custom">Custom content</wa-tab-panel>',
+          );
+          await waitUntil(() => getActivePanel(tabGroup)?.name === 'general');
+
+          expect(getActiveTab(tabGroup)!.panel).to.equal('general');
+          expect(getActivePanel(tabGroup)!.name).to.equal('general');
+          tabGroup.insertAdjacentHTML(
+            'beforeend',
+            '<wa-tab panel="later">Later</wa-tab><wa-tab-panel name="later">Later content</wa-tab-panel>',
+          );
+          await aTimeout(50);
+          expect(getActiveTab(tabGroup)!.panel).to.equal('general');
+          expect(getActivePanel(tabGroup)!.name).to.equal('general');
+        });
+
+        it('should wait for an enabled tab when tabs are added after becoming visible', async () => {
+          const tabGroup = await fixture<WaTabGroup>(html`<wa-tab-group></wa-tab-group>`);
+          await aTimeout(50);
+
+          tabGroup.insertAdjacentHTML(
+            'beforeend',
+            '<wa-tab panel="disabled" disabled>Disabled</wa-tab><wa-tab-panel name="disabled">Disabled content</wa-tab-panel>',
+          );
+          await aTimeout(50);
+          expect(getActiveTab(tabGroup)).to.be.undefined;
+          expect(getActivePanel(tabGroup)).to.be.undefined;
+
+          tabGroup.querySelector<WaTab>('wa-tab')!.disabled = false;
+          await waitUntil(() => getActiveTab(tabGroup)?.panel === 'disabled');
+          expect(getActivePanel(tabGroup)!.name).to.equal('disabled');
+        });
+
+        it('should select the first enabled tab when tabs are added after becoming visible', async () => {
+          const tabGroup = await fixture<WaTabGroup>(html`<wa-tab-group></wa-tab-group>`);
+          await aTimeout(50);
+
+          tabGroup.insertAdjacentHTML(
+            'beforeend',
+            '<wa-tab panel="disabled" disabled>Disabled</wa-tab><wa-tab panel="general">General</wa-tab>',
+          );
+
+          await waitUntil(() => getActiveTab(tabGroup)?.panel === 'general');
+          tabGroup.insertAdjacentHTML(
+            'beforeend',
+            '<wa-tab-panel name="disabled">Disabled content</wa-tab-panel><wa-tab-panel name="general">General content</wa-tab-panel>',
+          );
+          await waitUntil(() => getActivePanel(tabGroup)?.name === 'general');
+          expect(getActivePanel(tabGroup)!.name).to.equal('general');
+        });
       });
 
       describe('events', () => {
